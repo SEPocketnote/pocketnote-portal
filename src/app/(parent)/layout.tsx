@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import ParentNav from '@/components/parent/ParentNav'
 
 export default async function ParentLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -15,5 +16,16 @@ export default async function ParentLayout({ children }: { children: React.React
 
   if (profile?.role !== 'parent') redirect('/login')
 
-  return <>{children}</>
+  const { data: parent } = await supabase
+    .from('parents')
+    .select('name')
+    .eq('user_id', user.id)
+    .single()
+
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <ParentNav name={parent?.name ?? user.email ?? ''} />
+      <main className="max-w-4xl mx-auto px-6 py-8">{children}</main>
+    </div>
+  )
 }

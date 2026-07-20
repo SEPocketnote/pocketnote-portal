@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import TutorNav from '@/components/tutor/TutorNav'
 
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -15,5 +16,16 @@ export default async function TutorLayout({ children }: { children: React.ReactN
 
   if (profile?.role !== 'tutor') redirect('/login')
 
-  return <>{children}</>
+  const { data: tutor } = await supabase
+    .from('tutors')
+    .select('legal_name')
+    .eq('user_id', user.id)
+    .single()
+
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <TutorNav name={tutor?.legal_name ?? user.email ?? ''} />
+      <main className="max-w-4xl mx-auto px-6 py-8">{children}</main>
+    </div>
+  )
 }
