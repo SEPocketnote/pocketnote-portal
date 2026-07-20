@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -13,15 +12,13 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+    await fetch('/api/auth/otp', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email }),
     })
     setLoading(false)
-    if (!error) setSent(true)
+    setSent(true)
   }
 
   return (
@@ -34,7 +31,7 @@ export default function LoginPage() {
 
         {sent ? (
           <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-4">
-            Check your inbox — a sign-in link is on its way to <strong>{email}</strong>.
+            If you have an account, a sign-in link is on its way to <strong>{email}</strong>.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,7 +45,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="input"
                 placeholder="you@example.com"
               />
             </div>
