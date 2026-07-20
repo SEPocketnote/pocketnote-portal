@@ -14,7 +14,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'tutor') redirect('/login')
+  if (!profile || !['tutor', 'admin'].includes(profile.role)) redirect('/login')
 
   const { data: tutor } = await supabase
     .from('tutors')
@@ -24,6 +24,12 @@ export default async function TutorLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-muted/30">
+      {profile.role === 'admin' && (
+        <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4">
+          Admin preview — viewing tutor portal{' '}
+          <a href="/admin" className="underline font-medium">Back to admin</a>
+        </div>
+      )}
       <TutorNav name={tutor?.legal_name ?? user.email ?? ''} />
       <main className="max-w-4xl mx-auto px-6 py-8">{children}</main>
     </div>

@@ -11,6 +11,11 @@ const links = [
   { href: '/admin/payments', label: 'Payments' },
 ]
 
+const previewLinks = [
+  { href: '/parent', label: 'Parent portal' },
+  { href: '/tutor', label: 'Tutor portal' },
+]
+
 export default function AdminNav() {
   const pathname = usePathname()
 
@@ -38,6 +43,23 @@ export default function AdminNav() {
           )
         })}
       </nav>
+
+      <div className="mt-8">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-3 mb-2">
+          Preview
+        </p>
+        <nav className="space-y-1">
+          {previewLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="block px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
+            >
+              {label} ↗
+            </Link>
+          ))}
+        </nav>
+      </div>
     </aside>
   )
 }
