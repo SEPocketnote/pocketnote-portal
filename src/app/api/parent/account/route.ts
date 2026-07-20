@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
+function isValidAuPhone(value: string): boolean {
+  const digits = value.replace(/[\s\-().]/g, '')
+  return /^(\+?61[2-9]\d{8}|0[2-9]\d{8})$/.test(digits)
+}
+
 const Schema = z.object({
   name: z.string().min(1),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine(
+    v => !v || isValidAuPhone(v),
+    { message: 'Please enter a valid Australian phone number' }
+  ),
 })
 
 export async function PATCH(request: Request) {

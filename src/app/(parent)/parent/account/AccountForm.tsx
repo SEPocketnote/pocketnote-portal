@@ -3,6 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Accepts AU mobiles (04xx), landlines (02/03/07/08), and +61 international format
+function validateAuPhone(value: string): boolean {
+  const digits = value.replace(/[\s\-().]/g, '')
+  return /^(\+?61[2-9]\d{8}|0[2-9]\d{8})$/.test(digits)
+}
+
 export default function AccountForm({ name, email, phone }: {
   name: string
   email: string
@@ -12,10 +18,16 @@ export default function AccountForm({ name, email, phone }: {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
   const [form, setForm] = useState({ name, phone })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setPhoneError('')
+    if (form.phone && !validateAuPhone(form.phone)) {
+      setPhoneError('Please enter a valid Australian phone number')
+      return
+    }
     setSaving(true)
     setSuccess('')
     setError('')
@@ -50,8 +62,9 @@ export default function AccountForm({ name, email, phone }: {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Phone</label>
-        <input type="tel" className="input" value={form.phone}
-          onChange={e => setForm({ ...form, phone: e.target.value })} />
+        <input type="tel" className="input" placeholder="e.g. 0412 345 678" value={form.phone}
+          onChange={e => { setPhoneError(''); setForm({ ...form, phone: e.target.value }) }} />
+        {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
