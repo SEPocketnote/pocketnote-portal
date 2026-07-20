@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import AccountForm from './AccountForm'
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -13,28 +14,11 @@ export default async function AccountPage() {
   return (
     <div className="max-w-lg space-y-6">
       <h1 className="text-2xl font-semibold">Account</h1>
-
-      <div className="bg-white rounded-lg border border-border p-6 space-y-4">
-        <Row label="Name" value={parent?.name ?? '—'} />
-        <Row label="Email" value={parent?.email ?? user?.email ?? '—'} />
-        <Row label="Phone" value={parent?.phone ?? '—'} />
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        To update your details, contact us at{' '}
-        <a href="mailto:hello@pocketnote.com.au" className="text-primary hover:underline">
-          hello@pocketnote.com.au
-        </a>
-      </p>
-    </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-4 text-sm">
-      <span className="w-24 shrink-0 text-muted-foreground">{label}</span>
-      <span>{value}</span>
+      <AccountForm
+        name={parent?.name ?? ''}
+        email={parent?.email ?? user?.email ?? ''}
+        phone={parent?.phone ?? ''}
+      />
     </div>
   )
 }
