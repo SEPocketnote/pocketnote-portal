@@ -7,7 +7,7 @@ const links = [
   { href: '/tutor', label: 'My Sessions', exact: true },
   { href: '/tutor/students', label: 'Students' },
   { href: '/tutor/earnings', label: 'Earnings' },
-  { href: '/tutor/availability', label: 'Availability' },
+  { href: '/tutor/profile', label: 'My Profile' },
 ]
 
 export default function TutorNav({ name }: { name: string }) {
