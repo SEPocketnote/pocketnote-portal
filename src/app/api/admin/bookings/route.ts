@@ -121,14 +121,14 @@ export async function POST(request: Request) {
 
   await admin.from('sessions').insert(sessions)
 
-  // 7. Send parent welcome email
+  // 7. Send parent welcome email (non-blocking — booking is created regardless)
   const firstSession = format(sessionDate, 'EEEE d MMMM \'at\' h:mm a')
-  await sendParentWelcome({
+  sendParentWelcome({
     name: d.parentName,
     email,
     tutorName: tutor.legal_name,
     firstSession,
-  })
+  }).catch(err => console.error('[bookings] welcome email failed:', err))
 
   return NextResponse.json({ id: booking.id })
 }

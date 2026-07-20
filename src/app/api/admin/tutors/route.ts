@@ -59,8 +59,10 @@ export async function POST(request: Request) {
     await admin.from('profiles').upsert({ id: authUser.user.id, role: 'tutor' }, { onConflict: 'id' })
   }
 
-  // Send portal invite email via Brevo
-  await sendTutorInvite({ name: legalName, email: email.toLowerCase().trim() })
+  // Send portal invite email via Brevo (non-blocking — tutor is created regardless)
+  sendTutorInvite({ name: legalName, email: email.toLowerCase().trim() }).catch(err =>
+    console.error('[tutors] invite email failed:', err)
+  )
 
   return NextResponse.json({ id: tutor.id })
 }
