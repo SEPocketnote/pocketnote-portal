@@ -54,6 +54,53 @@ export async function upsertBrevoContact({
   }
 }
 
+export async function sendTutorInvite({ name, email }: { name: string; email: string }) {
+  const firstName = name.split(' ')[0]
+  const loginUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/login`
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Tutors' },
+    to: [{ email, name }],
+    subject: 'Welcome to Pocketnote — your tutor portal is ready',
+    htmlContent: `
+      <p>Hi ${firstName},</p>
+      <p>Welcome to Pocketnote! We've set up your tutor portal.</p>
+      <p>Sign in at any time using your email address — no password needed:</p>
+      <p><a href="${loginUrl}" style="background:#E26F6F;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Access your portal</a></p>
+      <p>If you have any questions, reply to this email and we'll get back to you.</p>
+      <p>The Pocketnote team</p>
+    `,
+  })
+}
+
+export async function sendParentWelcome({
+  name,
+  email,
+  tutorName,
+  firstSession,
+}: {
+  name: string
+  email: string
+  tutorName: string
+  firstSession?: string
+}) {
+  const firstName = name.split(' ')[0]
+  const loginUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/login`
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Tutors' },
+    to: [{ email, name }],
+    subject: 'Your Pocketnote sessions are confirmed',
+    htmlContent: `
+      <p>Hi ${firstName},</p>
+      <p>Great news — your sessions with <strong>${tutorName}</strong> are confirmed.</p>
+      ${firstSession ? `<p>Your first session is scheduled for <strong>${firstSession}</strong>.</p>` : ''}
+      <p>You can view your upcoming sessions and progress reports in your parent portal:</p>
+      <p><a href="${loginUrl}" style="background:#E26F6F;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">View your portal</a></p>
+      <p>If you have any questions, reply to this email.</p>
+      <p>The Pocketnote team</p>
+    `,
+  })
+}
+
 export async function sendEnquiryNotification(data: {
   parentName: string
   email: string
