@@ -27,8 +27,8 @@ export default async function TutorsPage() {
           <p className="text-sm text-muted-foreground">Add your first tutor to get started.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[480px]">
             <thead className="border-b border-border bg-muted/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>

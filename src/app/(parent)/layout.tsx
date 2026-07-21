@@ -37,7 +37,7 @@ export default async function ParentLayout({ children }: { children: React.React
         </div>
       )}
       <ParentNav name={parent?.name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
-      <main className="max-w-4xl mx-auto px-6 py-8">{children}</main>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
     </div>
   )
 }

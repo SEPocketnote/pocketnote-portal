@@ -26,7 +26,7 @@ export default async function TutorEarningsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Earnings</h1>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-border p-5">
           <p className="text-sm text-muted-foreground mb-1">Pending payment</p>
           <p className="text-2xl font-semibold text-primary">${(totalPending / 100).toFixed(2)}</p>

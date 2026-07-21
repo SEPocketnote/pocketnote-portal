@@ -56,7 +56,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       {/* Summary */}
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Booking details</h2>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Info label="Package" value={pkg?.type ? pkg.type.charAt(0).toUpperCase() + pkg.type.slice(1) : null} />
           <Info label="Mode" value={booking.mode} />
           <Info label="Start date" value={booking.start_date ? format(new Date(booking.start_date), 'd MMM yyyy') : null} />
@@ -81,7 +81,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* Parent & tutor contact */}
-      <div className="grid grid-cols-2 gap-4 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <section className="bg-white rounded-lg border border-border p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Parent</h2>
           <p className="text-sm font-medium">{parent?.name}</p>

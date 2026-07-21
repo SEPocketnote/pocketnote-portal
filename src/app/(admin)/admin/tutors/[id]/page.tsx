@@ -51,7 +51,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
       {/* Profile info — filled in by tutor */}
       <section className="bg-white rounded-lg border border-border p-6 mt-4 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</h2>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Info label="Phone" value={tutor.phone} />
           <Info label="Location" value={tutor.location} />
           <Info label="ABN" value={tutor.abn} />
