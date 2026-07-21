@@ -11,6 +11,7 @@ const links = [
   { href: '/admin/tutors', label: 'Tutors' },
   { href: '/admin/messages', label: 'Messages' },
   { href: '/admin/payments', label: 'Payments' },
+  { href: '/admin/users', label: 'Users' },
 ]
 
 const previewLinks = [

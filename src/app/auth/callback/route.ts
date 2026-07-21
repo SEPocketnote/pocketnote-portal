@@ -24,12 +24,16 @@ export async function GET(request: Request) {
         role = 'admin'
       } else {
         const admin = createAdminClient()
-        const { data: tutor } = await admin
-          .from('tutors')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle()
-        if (tutor) role = 'tutor'
+        const [{ data: existingProfile }, { data: tutor }] = await Promise.all([
+          admin.from('profiles').select('role').eq('id', data.user.id).maybeSingle(),
+          admin.from('tutors').select('id').eq('email', email).maybeSingle(),
+        ])
+        // Preserve role if admin already pre-assigned the profile (e.g. UI invite)
+        if (existingProfile?.role === 'admin') {
+          role = 'admin'
+        } else if (tutor) {
+          role = 'tutor'
+        }
       }
 
       // Upsert profile with correct role (trigger sets 'parent' by default)
