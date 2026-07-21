@@ -101,6 +101,38 @@ export async function sendParentWelcome({
   })
 }
 
+export async function sendMessageNotification({
+  recipientName,
+  recipientEmail,
+  senderName,
+  messagePreview,
+  portalPath,
+}: {
+  recipientName: string
+  recipientEmail: string
+  senderName: string
+  messagePreview: string
+  portalPath: string
+}) {
+  const firstName = recipientName.split(' ')[0]
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}${portalPath}`
+  const preview = messagePreview.length > 120 ? messagePreview.slice(0, 120) + '…' : messagePreview
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Tutors' },
+    to: [{ email: recipientEmail, name: recipientName }],
+    subject: `New message from ${senderName}`,
+    htmlContent: `
+      <p>Hi ${firstName},</p>
+      <p>You have a new message from <strong>${senderName}</strong>:</p>
+      <blockquote style="border-left:3px solid #E26F6F;margin:12px 0;padding:8px 16px;color:#555;font-style:italic">
+        ${preview}
+      </blockquote>
+      <p><a href="${url}" style="background:#E26F6F;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">View message</a></p>
+      <p>The Pocketnote team</p>
+    `,
+  })
+}
+
 export async function sendEnquiryNotification(data: {
   parentName: string
   email: string

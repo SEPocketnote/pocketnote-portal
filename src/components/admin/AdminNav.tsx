@@ -8,6 +8,7 @@ const links = [
   { href: '/admin/enquiries', label: 'Enquiries' },
   { href: '/admin/bookings', label: 'Bookings' },
   { href: '/admin/tutors', label: 'Tutors' },
+  { href: '/admin/messages', label: 'Messages' },
   { href: '/admin/payments', label: 'Payments' },
 ]
 

@@ -7,11 +7,12 @@ const links = [
   { href: '/tutor', label: 'My Sessions', exact: true },
   { href: '/tutor/students', label: 'Students' },
   { href: '/tutor/earnings', label: 'Earnings' },
+  { href: '/tutor/messages', label: 'Messages' },
   { href: '/tutor/availability', label: 'Availability' },
   { href: '/tutor/profile', label: 'My Profile' },
 ]
 
-export default function TutorNav({ name }: { name: string }) {
+export default function TutorNav({ name, unreadMessages = 0 }: { name: string; unreadMessages?: number }) {
   const pathname = usePathname()
 
   return (
@@ -21,15 +22,21 @@ export default function TutorNav({ name }: { name: string }) {
         <nav className="flex gap-1">
           {links.map(({ href, label, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href)
+            const isMessages = href === '/tutor/messages'
             return (
               <Link
                 key={href}
                 href={href}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                className={`relative px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   active ? 'bg-secondary text-primary' : 'text-foreground hover:bg-muted'
                 }`}
               >
                 {label}
+                {isMessages && unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full font-medium">
+                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                  </span>
+                )}
               </Link>
             )
           })}
