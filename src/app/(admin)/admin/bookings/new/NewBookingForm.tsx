@@ -2,15 +2,18 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import TutorPicker from './TutorPicker'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export default function NewBookingForm({
   tutors,
   packages,
+  availability,
 }: {
   tutors: any[]
   packages: any[]
+  availability: any[]
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -38,6 +41,7 @@ export default function NewBookingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.tutorId) { setError('Please select a tutor'); return }
     setLoading(true)
     setError('')
     try {
@@ -104,13 +108,12 @@ export default function NewBookingForm({
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Booking</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Tutor" required>
-            <select required className="input" value={form.tutorId}
-              onChange={e => setForm({...form, tutorId: e.target.value})}>
-              <option value="">Select tutor</option>
-              {tutors.map(t => (
-                <option key={t.id} value={t.id}>{t.legal_name} — {t.location}</option>
-              ))}
-            </select>
+            <TutorPicker
+              tutors={tutors}
+              availability={availability}
+              value={form.tutorId}
+              onChange={id => setForm({...form, tutorId: id})}
+            />
           </Field>
           <Field label="Package" required>
             <select required className="input" value={form.packageId}
