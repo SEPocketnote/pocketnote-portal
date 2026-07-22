@@ -55,6 +55,13 @@ export async function POST() {
 
   if (!tutor) return NextResponse.json({ error: 'Failed to get tutor' }, { status: 500 })
 
+  // Always patch tutor with latest seed data (safe to re-run)
+  await admin.from('tutors').update({
+    state: 'NSW',
+    postcode: '2061',
+    credentials: ['Bachelor of Science (Mathematics), UNSW', 'Diploma of Education, UTS', 'HSC Marker — NESA'],
+  }).eq('id', tutor.id)
+
   // 3. Use existing term package (seeded in 002_seed_packages.sql)
   const { data: pkg, error: pkgError } = await admin.from('packages').select('id').eq('type', 'term').single()
   if (pkgError || !pkg) return NextResponse.json({ error: 'Package not found — run migrations first', detail: pkgError?.message }, { status: 500 })
