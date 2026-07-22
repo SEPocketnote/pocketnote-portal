@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   CalendarDays, Users2, DollarSign, MessageSquare,
-  Clock, UserCircle, LogOut,
+  Clock, UserCircle, LogOut, BookOpen,
 } from 'lucide-react'
 
 const links = [
@@ -16,6 +16,7 @@ const links = [
   { href: '/tutor/messages', label: 'Messages', icon: MessageSquare },
   { href: '/tutor/availability', label: 'Availability', icon: Clock },
   { href: '/tutor/profile', label: 'My Profile', icon: UserCircle },
+  { href: '/tutor/resources', label: 'Resources', icon: BookOpen },
 ]
 
 export default function TutorNav({ name, unreadMessages = 0 }: { name: string; unreadMessages?: number }) {
