@@ -49,6 +49,12 @@ export default async function EnquiryDetailPage({
             Received {format(new Date(enquiry.created_at), 'dd MMM yyyy, h:mm a')}
           </p>
         </div>
+        <Link
+          href={`/admin/bookings/new?from=${enquiry.id}`}
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 shrink-0"
+        >
+          Create booking →
+        </Link>
       </div>
 
       {/* Details */}

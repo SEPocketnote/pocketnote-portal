@@ -10,10 +10,12 @@ export default function NewBookingForm({
   tutors,
   packages,
   availability,
+  initialValues,
 }: {
   tutors: any[]
   packages: any[]
   availability: any[]
+  initialValues?: Record<string, string>
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -21,18 +23,18 @@ export default function NewBookingForm({
 
   const [form, setForm] = useState({
     // Parent
-    parentName: '',
-    parentEmail: '',
-    parentPhone: '',
+    parentName: initialValues?.parentName ?? '',
+    parentEmail: initialValues?.parentEmail ?? '',
+    parentPhone: initialValues?.parentPhone ?? '',
     // Student
-    studentName: '',
-    yearLevel: '',
-    subjects: '',
+    studentName: initialValues?.studentName ?? '',
+    yearLevel: initialValues?.yearLevel ?? '',
+    subjects: initialValues?.subjects ?? '',
     // Booking
     tutorId: '',
     packageId: '',
-    mode: 'online' as 'online' | 'in-person',
-    location: '',
+    mode: (initialValues?.mode ?? 'online') as 'online' | 'in-person',
+    location: initialValues?.location ?? '',
     // Schedule
     startDate: '',
     dayOfWeek: '',
