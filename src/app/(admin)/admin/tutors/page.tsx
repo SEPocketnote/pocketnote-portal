@@ -1,12 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
+function formatLocation(suburb?: string | null, state?: string | null, postcode?: string | null) {
+  const statePart = [state, postcode].filter(Boolean).join(' ')
+  return [suburb, statePart].filter(Boolean).join(', ') || '—'
+}
+
 export default async function TutorsPage() {
   const supabase = await createClient()
 
   const { data: tutors } = await supabase
     .from('tutors')
-    .select('id, legal_name, email, phone, subjects, location, active, verified')
+    .select('id, legal_name, email, phone, subjects, location, state, postcode, active, verified')
     .order('legal_name')
 
   return (
@@ -49,7 +54,9 @@ export default async function TutorsPage() {
                   <td className="px-4 py-3 text-muted-foreground">
                     {t.subjects?.slice(0, 3).join(', ')}{(t.subjects?.length ?? 0) > 3 ? '…' : ''}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.location || '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {formatLocation(t.location, (t as any).state, (t as any).postcode)}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       t.active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'

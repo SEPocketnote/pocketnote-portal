@@ -12,16 +12,29 @@ const STATUS_STYLES: Record<string, string> = {
 export default async function BookingsPage() {
   const supabase = await createClient()
 
-  const { data: bookings } = await supabase
-    .from('bookings')
-    .select(`
-      id, status, mode, sessions_completed, created_at,
-      parents ( name, email ),
-      tutors ( legal_name ),
-      students ( name ),
-      packages ( type, sessions_total )
-    `)
-    .order('created_at', { ascending: false })
+  const [{ data: bookings }, { data: completedSessions }] = await Promise.all([
+    supabase
+      .from('bookings')
+      .select(`
+        id, status, mode, student_id, created_at,
+        parents ( name, email ),
+        tutors ( legal_name ),
+        students ( name ),
+        packages ( type, sessions_total )
+      `)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('sessions')
+      .select('booking_id, bookings(student_id)')
+      .eq('status', 'completed'),
+  ])
+
+  // Build lifetime completed session count per student
+  const lifetimeByStudent: Record<string, number> = {}
+  for (const s of completedSessions ?? []) {
+    const sid = (s.bookings as any)?.student_id
+    if (sid) lifetimeByStudent[sid] = (lifetimeByStudent[sid] ?? 0) + 1
+  }
 
   return (
     <div>
@@ -49,7 +62,7 @@ export default async function BookingsPage() {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tutor</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Package</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Progress</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Sessions completed</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
               </tr>
             </thead>
@@ -68,7 +81,7 @@ export default async function BookingsPage() {
                     <td className="px-4 py-3 text-muted-foreground">{(b.tutors as any)?.legal_name}</td>
                     <td className="px-4 py-3 text-muted-foreground capitalize">{pkg?.type}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {b.sessions_completed}/{pkg?.sessions_total}
+                      {lifetimeByStudent[b.student_id] ?? 0}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ''}`}>

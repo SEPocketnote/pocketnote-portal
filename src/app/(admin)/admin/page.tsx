@@ -1,17 +1,37 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { format, startOfDay, endOfDay, addDays } from 'date-fns'
+import PeriodToggle from './PeriodToggle'
 
-export default async function AdminDashboard() {
+const PERIOD_DAYS: Record<string, number> = {
+  week: 7,
+  fortnight: 14,
+  month: 30,
+}
+
+const PERIOD_LABEL: Record<string, string> = {
+  week: 'Next 7 days',
+  fortnight: 'Next 14 days',
+  month: 'Next 30 days',
+}
+
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>
+}) {
+  const { period: rawPeriod = 'fortnight' } = await searchParams
+  const period = rawPeriod in PERIOD_DAYS ? rawPeriod : 'fortnight'
+  const days = PERIOD_DAYS[period]
+
   const supabase = await createClient()
-
   const now = new Date()
-  const weekEnd = endOfDay(addDays(now, 7))
+  const periodEnd = endOfDay(addDays(now, days))
 
   const [
     { count: newEnquiries },
     { count: activeBookings },
-    { count: sessionsThisWeek },
+    { count: sessionsPeriod },
     { data: upcomingSessions },
     { data: recentEnquiries },
   ] = await Promise.all([
@@ -21,7 +41,7 @@ export default async function AdminDashboard() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'scheduled')
       .gte('scheduled_at', startOfDay(now).toISOString())
-      .lte('scheduled_at', weekEnd.toISOString()),
+      .lte('scheduled_at', periodEnd.toISOString()),
     supabase.from('sessions')
       .select(`
         id, scheduled_at,
@@ -33,11 +53,11 @@ export default async function AdminDashboard() {
       `)
       .eq('status', 'scheduled')
       .gte('scheduled_at', startOfDay(now).toISOString())
-      .lte('scheduled_at', weekEnd.toISOString())
+      .lte('scheduled_at', periodEnd.toISOString())
       .order('scheduled_at', { ascending: true })
-      .limit(10),
+      .limit(50),
     supabase.from('enquiries')
-      .select('id, name, email, status, created_at')
+      .select('id, parent_name, email, status, created_at')
       .order('created_at', { ascending: false })
       .limit(5),
   ])
@@ -55,13 +75,13 @@ export default async function AdminDashboard() {
           highlight={!!newEnquiries}
         />
         <StatCard
-          label="Active bookings"
+          label="Active students"
           value={activeBookings ?? 0}
           href="/admin/bookings"
         />
         <StatCard
-          label="Sessions this week"
-          value={sessionsThisWeek ?? 0}
+          label={`Sessions — ${PERIOD_LABEL[period].toLowerCase()}`}
+          value={sessionsPeriod ?? 0}
         />
       </div>
 
@@ -69,16 +89,19 @@ export default async function AdminDashboard() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Upcoming sessions — next 7 days
+            Upcoming sessions — {PERIOD_LABEL[period].toLowerCase()}
           </h2>
-          <Link href="/admin/bookings" className="text-xs text-primary hover:underline">
-            All bookings →
-          </Link>
+          <div className="flex items-center gap-3">
+            <PeriodToggle current={period} />
+            <Link href="/admin/bookings" className="text-xs text-primary hover:underline">
+              All bookings →
+            </Link>
+          </div>
         </div>
 
         {!upcomingSessions?.length ? (
           <div className="bg-white rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">
-            No sessions scheduled in the next 7 days.
+            No sessions scheduled in the {PERIOD_LABEL[period].toLowerCase()}.
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-border divide-y divide-border">
@@ -129,7 +152,7 @@ export default async function AdminDashboard() {
                 className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors"
               >
                 <div>
-                  <p className="text-sm font-medium">{e.name}</p>
+                  <p className="text-sm font-medium">{e.parent_name}</p>
                   <p className="text-xs text-muted-foreground">{e.email}</p>
                 </div>
                 <div className="flex items-center gap-3">

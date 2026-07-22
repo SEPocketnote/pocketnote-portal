@@ -19,6 +19,8 @@ export default function NewTutorPage() {
     email: '',
     phone: '',
     location: '',
+    state: '',
+    postcode: '',
     subjects: [] as string[],
     yearLevels: [] as string[],
   })
@@ -66,10 +68,23 @@ export default function NewTutorPage() {
               <input type="tel" value={form.phone}
                 onChange={e => setForm({...form, phone: e.target.value})} className="input" />
             </Field>
-            <Field label="Location (suburb)">
+            <Field label="Suburb">
               <input type="text" value={form.location}
                 onChange={e => setForm({...form, location: e.target.value})} className="input"
                 placeholder="e.g. Bondi" />
+            </Field>
+            <Field label="State">
+              <select className="input" value={form.state} onChange={e => setForm({...form, state: e.target.value})}>
+                <option value="">Select state</option>
+                {['NSW','VIC','QLD','SA','WA','TAS','ACT','NT'].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Postcode">
+              <input type="text" value={form.postcode}
+                onChange={e => setForm({...form, postcode: e.target.value})} className="input"
+                placeholder="e.g. 2026" />
             </Field>
           </div>
         </section>

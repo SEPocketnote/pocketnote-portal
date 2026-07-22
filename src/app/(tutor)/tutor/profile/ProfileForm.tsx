@@ -21,6 +21,8 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     wwcc_expiry: tutor.wwcc_expiry ?? '',
     date_of_birth: tutor.date_of_birth ?? '',
     location: tutor.location ?? '',
+    state: tutor.state ?? '',
+    postcode: tutor.postcode ?? '',
     subjects: (tutor.subjects ?? []) as string[],
     year_levels: (tutor.year_levels ?? []) as string[],
   })
@@ -73,9 +75,21 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
             <input type="tel" className="input" value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })} />
           </Field>
-          <Field label="Suburb / location">
+          <Field label="Suburb">
             <input type="text" className="input" placeholder="e.g. Bondi" value={form.location}
               onChange={e => setForm({ ...form, location: e.target.value })} />
+          </Field>
+          <Field label="State">
+            <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}>
+              <option value="">Select state</option>
+              {['NSW','VIC','QLD','SA','WA','TAS','ACT','NT'].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Postcode">
+            <input type="text" className="input" placeholder="e.g. 2026" value={form.postcode}
+              onChange={e => setForm({ ...form, postcode: e.target.value })} />
           </Field>
           <Field label="Home address" className="sm:col-span-2">
             <input type="text" className="input" placeholder="Street address" value={form.address}

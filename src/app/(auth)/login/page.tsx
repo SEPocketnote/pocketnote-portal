@@ -24,15 +24,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white rounded-lg shadow-sm border p-8 w-full max-w-sm">
-        <h1 className="text-xl font-semibold mb-1">Sign in to Pocketnote</h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          We&apos;ll send a magic link to your email.
-        </p>
+        <h1 className="text-xl font-semibold mb-4">Sign in to Pocketnote</h1>
 
         {sent ? (
-          <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-4">
-            If you have an account, a sign-in link is on its way to <strong>{email}</strong>.
-          </div>
+          <>
+            <p className="text-sm text-muted-foreground mb-4">Check your email</p>
+            <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-4">
+              If you have an account, a sign-in link is on its way to <strong>{email}</strong>.
+            </div>
+          </>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -54,7 +54,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? 'Sending…' : 'Send magic link'}
+              {loading ? 'Sending…' : 'Continue'}
             </button>
           </form>
         )}

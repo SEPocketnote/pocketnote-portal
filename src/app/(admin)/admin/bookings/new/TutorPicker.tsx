@@ -11,6 +11,8 @@ type Tutor = {
   id: string
   legal_name: string
   location: string | null
+  state: string | null
+  postcode: string | null
   subjects: string[]
   year_levels: string[]
 }
@@ -50,8 +52,8 @@ export default function TutorPicker({
     const matched: Tutor[] = []
     const others: Tutor[] = []
     for (const t of tutors) {
-      const loc = (t.location ?? '').toLowerCase()
-      if (loc.includes(filter)) matched.push(t)
+      const searchStr = [t.location, t.state, t.postcode].filter(Boolean).join(' ').toLowerCase()
+      if (searchStr.includes(filter)) matched.push(t)
       else others.push(t)
     }
     return { matched, others }
@@ -159,8 +161,10 @@ function TutorRow({
       <div className="min-w-0">
         <p className="text-sm font-medium">{tutor.legal_name}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-          {tutor.location && (
-            <span className="text-xs text-muted-foreground">{tutor.location}</span>
+          {(tutor.location || tutor.state || tutor.postcode) && (
+            <span className="text-xs text-muted-foreground">
+              {[tutor.location, [tutor.state, tutor.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ')}
+            </span>
           )}
           {tutor.subjects?.length > 0 && (
             <span className="text-xs text-muted-foreground">{tutor.subjects.slice(0, 3).join(', ')}{tutor.subjects.length > 3 ? '…' : ''}</span>

@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
-import ResendInviteButton from './ResendInviteButton'
 import StatusToggle from './StatusToggle'
 
 export default async function TutorDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,14 +45,23 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Status controls */}
-      <StatusToggle tutorId={id} active={tutor.active} verified={tutor.verified} />
+      <StatusToggle
+        tutorId={id}
+        active={tutor.active}
+        verified={tutor.verified}
+        hasAccount={!!tutor.user_id}
+        name={tutor.legal_name}
+        email={tutor.email}
+      />
 
       {/* Profile info — filled in by tutor */}
       <section className="bg-white rounded-lg border border-border p-6 mt-4 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Info label="Phone" value={tutor.phone} />
-          <Info label="Location" value={tutor.location} />
+          <Info label="Suburb" value={tutor.location} />
+          <Info label="State" value={tutor.state} />
+          <Info label="Postcode" value={tutor.postcode} />
           <Info label="ABN" value={tutor.abn} />
           <Info label="WWCC number" value={tutor.wwcc_number} />
           <Info label="WWCC expiry" value={tutor.wwcc_expiry ? format(new Date(tutor.wwcc_expiry), 'd MMM yyyy') : null} />
@@ -97,21 +105,11 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
         )}
       </section>
 
-      {/* Invite */}
-      <section className="bg-white rounded-lg border border-border p-4 mt-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium">Portal access</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {tutor.user_id ? 'Tutor has a portal account' : 'No portal account yet'}
-          </p>
-        </div>
-        <ResendInviteButton tutorId={id} name={tutor.legal_name} email={tutor.email} />
-      </section>
 
       {/* Bookings */}
       {bookings && bookings.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Bookings</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Students</h2>
           <div className="bg-white rounded-lg border border-border divide-y divide-border">
             {bookings.map((b: any) => (
               <a key={b.id} href={`/admin/bookings/${b.id}`}

@@ -9,6 +9,8 @@ const Schema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   location: z.string().optional(),
+  state: z.string().optional(),
+  postcode: z.string().optional(),
   subjects: z.array(z.string()).default([]),
   yearLevels: z.array(z.string()).default([]),
 })
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
   const parsed = Schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
-  const { legalName, email, phone, location, subjects, yearLevels } = parsed.data
+  const { legalName, email, phone, location, state, postcode, subjects, yearLevels } = parsed.data
   const admin = createAdminClient()
 
   // Create tutor record
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
     email: email.toLowerCase().trim(),
     phone,
     location,
+    state,
+    postcode,
     subjects,
     year_levels: yearLevels,
     active: false,

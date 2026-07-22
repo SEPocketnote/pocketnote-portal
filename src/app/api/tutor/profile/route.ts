@@ -6,6 +6,8 @@ const Schema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   location: z.string().optional(),
+  state: z.string().optional(),
+  postcode: z.string().optional(),
   bio: z.string().optional(),
   abn: z.string().optional(),
   wwcc_number: z.string().optional(),
@@ -27,7 +29,7 @@ export async function PATCH(request: Request) {
   const updates: Record<string, any> = { ...parsed.data }
 
   // Blank strings → null
-  for (const key of ['phone', 'address', 'location', 'bio', 'abn', 'wwcc_number', 'wwcc_expiry', 'date_of_birth']) {
+  for (const key of ['phone', 'address', 'location', 'state', 'postcode', 'bio', 'abn', 'wwcc_number', 'wwcc_expiry', 'date_of_birth']) {
     if (key in updates && updates[key] === '') updates[key] = null
   }
 
