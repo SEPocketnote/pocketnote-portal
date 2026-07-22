@@ -38,7 +38,7 @@ export default async function ParentLayout({ children }: { children: React.React
       )}
       <div className="flex min-h-screen">
         <ParentNav name={parent?.name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
-        <main className="flex-1 pt-14 md:pt-0 p-4 md:p-8 overflow-auto">{children}</main>
+        <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>
       </div>
     </div>
   )
