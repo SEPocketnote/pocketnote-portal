@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const links = [
   { href: '/tutor', label: 'My Sessions', exact: true },
@@ -15,9 +16,16 @@ const links = [
 
 export default function TutorNav({ name, unreadMessages = 0 }: { name: string; unreadMessages?: number }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
+
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
     <header className="bg-white border-b border-border relative z-20">
@@ -52,6 +60,12 @@ export default function TutorNav({ name, unreadMessages = 0 }: { name: string; u
 
         <div className="flex items-center gap-3">
           <span className="hidden sm:block text-sm text-muted-foreground">{name}</span>
+          <button
+            onClick={handleSignOut}
+            className="hidden sm:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Log out
+          </button>
           {/* Mobile burger */}
           <button
             className="sm:hidden p-2 rounded-md hover:bg-muted transition-colors"
@@ -87,6 +101,14 @@ export default function TutorNav({ name, unreadMessages = 0 }: { name: string; u
               </Link>
             )
           })}
+          <div className="pt-2 border-t border-border mt-2">
+            <button
+              onClick={handleSignOut}
+              className="w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              Log out
+            </button>
+          </div>
         </div>
       )}
     </header>
