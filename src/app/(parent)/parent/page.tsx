@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { format, isFuture } from 'date-fns'
+import { CalendarDays } from 'lucide-react'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -22,7 +23,6 @@ export default async function ParentDashboard() {
     )
   }
 
-  // Load active bookings with sessions and tutor
   const { data: bookings } = await supabase
     .from('bookings')
     .select(`
@@ -43,46 +43,42 @@ export default async function ParentDashboard() {
   ).sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()) ?? []
 
   const nextSession = upcomingSessions[0]
+  const firstName = parent.name.split(' ')[0]
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Hello, {parent.name.split(' ')[0]}</h1>
+    <div className="max-w-3xl space-y-8">
+
+      {/* Hero */}
+      <div className="bg-gradient-to-r from-primary to-primary/75 rounded-2xl p-6 text-white relative overflow-hidden">
+        <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full" />
+        <div className="absolute -bottom-8 -right-2 w-24 h-24 bg-white/5 rounded-full" />
+        <h1 className="text-2xl font-bold mb-1 relative">Hello, {firstName}</h1>
+        <p className="text-white/80 text-sm relative">
+          {upcomingSessions.length > 0
+            ? `${upcomingSessions.length} upcoming session${upcomingSessions.length !== 1 ? 's' : ''} scheduled`
+            : 'No upcoming sessions scheduled yet'}
+        </p>
+        {nextSession && (
+          <div className="mt-4 bg-white/15 rounded-xl px-4 py-3 inline-flex items-center gap-3 relative">
+            <CalendarDays className="w-4 h-4 text-white/80 shrink-0" />
+            <div>
+              <p className="text-white text-sm font-medium">
+                Next: {format(new Date(nextSession.scheduled_at), 'EEEE d MMMM')} at {format(new Date(nextSession.scheduled_at), 'h:mm a')}
+              </p>
+              <p className="text-white/70 text-xs">
+                {(nextSession.booking.students as any)?.name}
+                {' · '}
+                with {(nextSession.booking.tutors as any)?.legal_name}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {!bookings?.length ? (
         <EmptyState />
       ) : (
         <>
-          {/* Next session */}
-          {nextSession && (
-            <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Next session
-              </h2>
-              <div className="bg-white rounded-lg border border-border p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold text-lg">
-                      {format(new Date(nextSession.scheduled_at), 'EEEE d MMMM')}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {format(new Date(nextSession.scheduled_at), 'h:mm a')}
-                      {' · '}
-                      {(nextSession.booking.mode === 'online') ? 'Online' : nextSession.booking.location}
-                    </p>
-                  </div>
-                  <span className="text-sm bg-secondary text-primary px-3 py-1 rounded-full font-medium">
-                    {(nextSession.booking.students as any)?.name}
-                  </span>
-                </div>
-                {(nextSession.booking.tutors as any)?.legal_name && (
-                  <p className="text-sm text-muted-foreground mt-3">
-                    Tutor: <span className="text-foreground font-medium">{(nextSession.booking.tutors as any).legal_name}</span>
-                  </p>
-                )}
-              </div>
-            </section>
-          )}
-
           {/* Package progress */}
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -95,7 +91,7 @@ export default async function ParentDashboard() {
                 const total = pkg?.sessions_total ?? 0
                 const pct = total > 0 ? Math.round((completed / total) * 100) : 0
                 return (
-                  <div key={b.id} className="bg-white rounded-lg border border-border p-5">
+                  <div key={b.id} className="bg-white rounded-xl border border-border p-5">
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="font-medium capitalize">
@@ -127,7 +123,7 @@ export default async function ParentDashboard() {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
                 Upcoming sessions
               </h2>
-              <div className="bg-white rounded-lg border border-border divide-y divide-border">
+              <div className="bg-white rounded-xl border border-border divide-y divide-border">
                 {upcomingSessions.slice(1).map((s) => (
                   <div key={s.id} className="px-5 py-3 flex items-center justify-between">
                     <div>
@@ -154,7 +150,7 @@ export default async function ParentDashboard() {
 
 function EmptyState() {
   return (
-    <div className="bg-white rounded-lg border border-border p-10 text-center">
+    <div className="bg-white rounded-xl border border-border p-10 text-center">
       <p className="font-medium mb-1">No sessions booked yet</p>
       <p className="text-sm text-muted-foreground">
         We&apos;re finding the right tutor for you. We&apos;ll be in touch soon.

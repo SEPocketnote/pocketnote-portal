@@ -18,8 +18,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen bg-muted/30">
-      <AdminNav />
-      <main className="flex-1 pt-20 md:pt-8 p-4 md:p-8 overflow-auto">{children}</main>
+      <AdminNav email={user.email ?? ''} />
+      <main className="flex-1 pt-14 md:pt-0 p-4 md:p-8 overflow-auto">{children}</main>
     </div>
   )
 }

@@ -31,13 +31,15 @@ export default async function TutorLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-muted/30">
       {profile.role === 'admin' && (
-        <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4">
+        <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4 relative z-50">
           Admin preview — viewing tutor portal{' '}
           <a href="/admin" className="underline font-medium">Back to admin</a>
         </div>
       )}
-      <TutorNav name={tutor?.legal_name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
+      <div className="flex min-h-screen">
+        <TutorNav name={tutor?.legal_name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
+        <main className="flex-1 pt-14 md:pt-0 p-4 md:p-8 overflow-auto">{children}</main>
+      </div>
     </div>
   )
 }

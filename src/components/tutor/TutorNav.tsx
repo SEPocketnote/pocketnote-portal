@@ -4,14 +4,18 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import {
+  CalendarDays, Users2, DollarSign, MessageSquare,
+  Clock, UserCircle, LogOut,
+} from 'lucide-react'
 
 const links = [
-  { href: '/tutor', label: 'My Sessions', exact: true },
-  { href: '/tutor/students', label: 'Students' },
-  { href: '/tutor/earnings', label: 'Earnings' },
-  { href: '/tutor/messages', label: 'Messages' },
-  { href: '/tutor/availability', label: 'Availability' },
-  { href: '/tutor/profile', label: 'My Profile' },
+  { href: '/tutor', label: 'My Sessions', icon: CalendarDays, exact: true },
+  { href: '/tutor/students', label: 'Students', icon: Users2 },
+  { href: '/tutor/earnings', label: 'Earnings', icon: DollarSign },
+  { href: '/tutor/messages', label: 'Messages', icon: MessageSquare },
+  { href: '/tutor/availability', label: 'Availability', icon: Clock },
+  { href: '/tutor/profile', label: 'My Profile', icon: UserCircle },
 ]
 
 export default function TutorNav({ name, unreadMessages = 0 }: { name: string; unreadMessages?: number }) {
@@ -27,100 +31,102 @@ export default function TutorNav({ name, unreadMessages = 0 }: { name: string; u
     router.push('/login')
   }
 
-  return (
-    <header className="bg-white border-b border-border relative z-20">
-      {/* Main bar */}
-      <div className="px-4 sm:px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-6 sm:gap-8">
-          <span className="text-primary font-bold text-base sm:text-lg tracking-tight shrink-0">Pocketnote</span>
-          {/* Desktop nav */}
-          <nav className="hidden sm:flex gap-1">
-            {links.map(({ href, label, exact }) => {
-              const active = exact ? pathname === href : pathname.startsWith(href)
-              const isMessages = href === '/tutor/messages'
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`relative px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    active ? 'bg-secondary text-primary' : 'text-foreground hover:bg-muted'
-                  }`}
-                >
-                  {label}
-                  {isMessages && unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full font-medium">
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
-                    </span>
-                  )}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
+  const initial = name ? name[0].toUpperCase() : 'T'
 
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:block text-sm text-muted-foreground">{name}</span>
-          <button
-            onClick={handleSignOut}
-            className="hidden sm:block text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Log out
-          </button>
-          {/* Mobile burger */}
-          <button
-            className="sm:hidden p-2 rounded-md hover:bg-muted transition-colors"
-            onClick={() => setMobileOpen(o => !o)}
-            aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
-          >
-            {mobileOpen ? <CloseIcon /> : <BurgerIcon />}
-          </button>
+  const navContent = (
+    <div className="flex flex-col h-full min-h-0">
+      {/* Logo */}
+      <div className="mb-6 px-1">
+        <span className="text-white font-bold text-xl tracking-tight">Pocketnote</span>
+      </div>
+
+      {/* User identity */}
+      <div className="flex items-center gap-3 mb-6 px-1">
+        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <span className="text-white font-semibold text-sm">{initial}</span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-white text-sm font-medium truncate">{name}</p>
+          <span className="text-white/60 text-xs">Tutor</span>
         </div>
       </div>
 
-      {/* Mobile dropdown */}
-      {mobileOpen && (
-        <div className="sm:hidden border-t border-border bg-white px-4 py-3 space-y-1">
-          <p className="text-xs text-muted-foreground pb-1">{name}</p>
-          {links.map(({ href, label, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href)
-            const isMessages = href === '/tutor/messages'
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`relative flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                  active ? 'bg-secondary text-primary' : 'text-foreground hover:bg-muted'
-                }`}
-              >
-                {label}
-                {isMessages && unreadMessages > 0 && (
-                  <span className="inline-flex items-center justify-center w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full font-medium">
-                    {unreadMessages > 9 ? '9+' : unreadMessages}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
-          <div className="pt-2 border-t border-border mt-2">
-            <button
-              onClick={handleSignOut}
-              className="w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      <div className="h-px bg-white/20 mb-4" />
+
+      {/* Main nav */}
+      <nav className="space-y-0.5 flex-1 min-h-0">
+        {links.map(({ href, label, icon: Icon, exact }) => {
+          const active = exact ? pathname === href : pathname.startsWith(href)
+          const isMessages = href === '/tutor/messages'
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                active ? 'bg-white text-primary' : 'text-white/90 hover:bg-white/20 hover:text-white'
+              }`}
             >
-              Log out
+              <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-primary' : 'text-white/70'}`} />
+              {label}
+              {isMessages && unreadMessages > 0 && (
+                <span className="ml-auto inline-flex items-center justify-center w-5 h-5 bg-white text-primary text-[10px] rounded-full font-bold">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </span>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Bottom */}
+      <div className="mt-6 pt-4 border-t border-white/20">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/20 hover:text-white transition-colors"
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          Log out
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-primary sticky top-0 h-screen px-4 py-6 overflow-y-auto">
+        {navContent}
+      </aside>
+
+      {/* Mobile top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-primary h-14 px-4 flex items-center justify-between">
+        <span className="text-white font-bold text-base tracking-tight">Pocketnote</span>
+        <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white" aria-label="Open navigation">
+          <BurgerIcon />
+        </button>
+      </div>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <div className="relative z-50 w-72 bg-primary min-h-screen px-4 py-6 shadow-xl flex flex-col overflow-y-auto">
+            <button onClick={() => setMobileOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors" aria-label="Close navigation">
+              <CloseIcon />
             </button>
+            {navContent}
           </div>
         </div>
       )}
-    </header>
+    </>
   )
 }
 
 function BurgerIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   )
 }
@@ -128,8 +134,7 @@ function BurgerIcon() {
 function CloseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   )
 }
