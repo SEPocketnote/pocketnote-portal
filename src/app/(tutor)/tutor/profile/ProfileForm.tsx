@@ -1,16 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const SUBJECTS = ['Maths', 'English', 'Science', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Economics', 'Legal Studies', 'Music', 'Art']
 const YEAR_LEVELS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12']
+const AU_STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT']
 
 export default function ProfileForm({ tutor }: { tutor: any }) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [credInput, setCredInput] = useState('')
 
   const [form, setForm] = useState({
     phone: tutor.phone ?? '',
@@ -25,6 +31,8 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     postcode: tutor.postcode ?? '',
     subjects: (tutor.subjects ?? []) as string[],
     year_levels: (tutor.year_levels ?? []) as string[],
+    credentials: (tutor.credentials ?? []) as string[],
+    photo_url: tutor.photo_url ?? '',
   })
 
   function togglePill(field: 'subjects' | 'year_levels', value: string) {
@@ -34,6 +42,45 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
         ? f[field].filter((v: string) => v !== value)
         : [...f[field], value],
     }))
+  }
+
+  function addCredential() {
+    const val = credInput.trim()
+    if (val && !form.credentials.includes(val)) {
+      setForm(f => ({ ...f, credentials: [...f.credentials, val] }))
+    }
+    setCredInput('')
+  }
+
+  function removeCredential(val: string) {
+    setForm(f => ({ ...f, credentials: f.credentials.filter((c: string) => c !== val) }))
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const path = `${tutor.id}/avatar.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('tutor-photos')
+        .upload(path, file, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('tutor-photos').getPublicUrl(path)
+      await fetch('/api/tutor/profile', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ photo_url: publicUrl }),
+      })
+      setForm(f => ({ ...f, photo_url: publicUrl }))
+      router.refresh()
+    } catch (err: any) {
+      setError('Photo upload failed: ' + err.message)
+    } finally {
+      setPhotoUploading(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,9 +108,33 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
 
-      {/* Read-only identity */}
-      <section className="bg-white rounded-lg border border-border p-6 space-y-3">
+      {/* Identity + photo */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your details</h2>
+
+        {/* Photo */}
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+            {form.photo_url ? (
+              <img src={form.photo_url} alt="Profile photo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl text-muted-foreground">
+                {tutor.legal_name?.[0]?.toUpperCase() ?? '?'}
+              </span>
+            )}
+          </div>
+          <div>
+            <button type="button" disabled={photoUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm font-medium text-primary hover:underline disabled:opacity-50">
+              {photoUploading ? 'Uploading…' : form.photo_url ? 'Change photo' : 'Upload photo'}
+            </button>
+            <p className="text-xs text-muted-foreground mt-0.5">JPG or PNG, shown to parents and on your profile</p>
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" className="hidden"
+              onChange={handlePhotoChange} />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Legal name">
             <p className="text-sm py-2 px-3 bg-muted/40 rounded-md text-foreground">{tutor.legal_name}</p>
@@ -82,9 +153,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
           <Field label="State">
             <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}>
               <option value="">Select state</option>
-              {['NSW','VIC','QLD','SA','WA','TAS','ACT','NT'].map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              {AU_STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
           <Field label="Postcode">
@@ -127,9 +196,10 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
         </div>
       </section>
 
-      {/* Subjects & year levels */}
-      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+      {/* Subjects, year levels & credentials */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-5">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">What you teach</h2>
+
         <div>
           <p className="text-sm font-medium mb-2">Subjects</p>
           <div className="flex flex-wrap gap-2">
@@ -145,6 +215,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
             ))}
           </div>
         </div>
+
         <div>
           <p className="text-sm font-medium mb-2">Year levels</p>
           <div className="flex flex-wrap gap-2">
@@ -159,6 +230,36 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-medium mb-2">Credentials</p>
+          <p className="text-xs text-muted-foreground mb-3">Add your degrees, diplomas, or relevant qualifications.</p>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              className="input flex-1"
+              placeholder="e.g. Bachelor of Science, UNSW"
+              value={credInput}
+              onChange={e => setCredInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCredential() } }}
+            />
+            <button type="button" onClick={addCredential}
+              className="px-4 py-2 rounded-md text-sm font-medium border border-border hover:bg-muted transition-colors">
+              Add
+            </button>
+          </div>
+          {form.credentials.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {form.credentials.map((c: string) => (
+                <span key={c} className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-secondary text-foreground border border-border">
+                  {c}
+                  <button type="button" onClick={() => removeCredential(c)}
+                    className="text-muted-foreground hover:text-foreground leading-none">×</button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

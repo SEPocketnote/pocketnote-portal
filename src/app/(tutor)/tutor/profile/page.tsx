@@ -7,7 +7,7 @@ export default async function TutorProfilePage() {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, legal_name, email, phone, address, bio, abn, wwcc_number, wwcc_expiry, date_of_birth, subjects, year_levels, location')
+    .select('id, legal_name, email, phone, address, bio, abn, wwcc_number, wwcc_expiry, date_of_birth, subjects, year_levels, location, state, postcode, photo_url, credentials')
     .eq('user_id', user!.id)
     .single()
 

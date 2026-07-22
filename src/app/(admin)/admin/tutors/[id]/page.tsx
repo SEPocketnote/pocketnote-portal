@@ -26,9 +26,20 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
 
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">{tutor.legal_name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{tutor.email}</p>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+            {tutor.photo_url ? (
+              <img src={tutor.photo_url} alt={tutor.legal_name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-lg text-muted-foreground font-medium">
+                {tutor.legal_name?.[0]?.toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold">{tutor.legal_name}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{tutor.email}</p>
+          </div>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -96,6 +107,16 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
                 </div>
               </div>
             )}
+          </div>
+        )}
+        {tutor.credentials?.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-1.5">Credentials</p>
+            <div className="flex flex-wrap gap-1.5">
+              {tutor.credentials.map((c: string) => (
+                <span key={c} className="px-2 py-0.5 bg-secondary text-foreground rounded-full text-xs border border-border">{c}</span>
+              ))}
+            </div>
           </div>
         )}
         {!tutor.bio && !tutor.abn && !tutor.phone && (

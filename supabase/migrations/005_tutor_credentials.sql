@@ -1,0 +1,1 @@
+ALTER TABLE tutors ADD COLUMN IF NOT EXISTS credentials TEXT[] DEFAULT '{}';

@@ -15,6 +15,8 @@ const Schema = z.object({
   date_of_birth: z.string().optional(),
   subjects: z.array(z.string()).optional(),
   year_levels: z.array(z.string()).optional(),
+  credentials: z.array(z.string()).optional(),
+  photo_url: z.string().optional(),
 })
 
 export async function PATCH(request: Request) {
