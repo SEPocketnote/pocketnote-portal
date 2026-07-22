@@ -103,47 +103,56 @@ export async function POST() {
 
   if (!parent) return NextResponse.json({ error: 'Failed to get parent' }, { status: 500 })
 
-  // 6. Create student (always create fresh — parent may have multiple children)
-  const { data: student, error: studentError } = await admin.from('students').insert({
-    parent_id: parent.id,
-    name: 'Tom Smith',
-    year_level: 'Year 11',
-    subjects: ['Maths', 'Physics'],
-  }).select('id').single()
+  // 6. Find or create student
+  let student: { id: string } | null = null
+  const { data: existingStudent } = await admin.from('students').select('id').eq('parent_id', parent.id).eq('name', 'Tom Smith').maybeSingle()
 
-  if (studentError || !student) return NextResponse.json({ error: 'Failed to create student', detail: studentError?.message }, { status: 500 })
-
-  // 7. Create booking (start 3 weeks ago so some sessions are in the past)
-  const startDate = addWeeks(new Date(), -3)
-  const { data: booking, error: bookingError } = await admin.from('bookings').insert({
-    parent_id: parent.id,
-    student_id: student.id,
-    tutor_id: tutor.id,
-    package_id: pkg.id,
-    status: 'confirmed',
-    mode: 'online',
-    start_date: startDate.toISOString().split('T')[0],
-    sessions_completed: 0,
-  }).select('id').single()
-
-  if (bookingError || !booking) return NextResponse.json({ error: 'Failed to create booking', detail: bookingError?.message }, { status: 500 })
-
-  // 8. Generate 10 weekly sessions (Saturdays at 10am, starting 3 weeks ago)
-  const sessions = []
-  let sessionDate = setHours(setMinutes(startDate, 0), 10)
-
-  for (let i = 0; i < 10; i++) {
-    sessions.push({
-      booking_id: booking.id,
-      scheduled_at: addWeeks(sessionDate, i).toISOString(),
-      status: i < 3 ? 'completed' : 'scheduled',
-    })
+  if (existingStudent) {
+    student = existingStudent
+  } else {
+    const { data: newStudent, error: studentError } = await admin.from('students').insert({
+      parent_id: parent.id,
+      name: 'Tom Smith',
+      year_level: 'Year 11',
+      subjects: ['Maths', 'Physics'],
+    }).select('id').single()
+    if (studentError || !newStudent) return NextResponse.json({ error: 'Failed to create student', detail: studentError?.message }, { status: 500 })
+    student = newStudent
   }
 
-  await admin.from('sessions').insert(sessions)
+  if (!student) return NextResponse.json({ error: 'Failed to get student' }, { status: 500 })
 
-  // 9. Sync sessions_completed count
-  await admin.from('bookings').update({ sessions_completed: 3 }).eq('id', booking.id)
+  // 7. Find or create booking
+  let booking: { id: string } | null = null
+  const { data: existingBooking } = await admin.from('bookings').select('id').eq('student_id', student.id).eq('tutor_id', tutor.id).maybeSingle()
+
+  if (existingBooking) {
+    booking = existingBooking
+  } else {
+    const startDate = addWeeks(new Date(), -3)
+    const { data: newBooking, error: bookingError } = await admin.from('bookings').insert({
+      parent_id: parent.id,
+      student_id: student.id,
+      tutor_id: tutor.id,
+      package_id: pkg.id,
+      status: 'confirmed',
+      mode: 'online',
+      start_date: startDate.toISOString().split('T')[0],
+      sessions_completed: 0,
+    }).select('id').single()
+    if (bookingError || !newBooking) return NextResponse.json({ error: 'Failed to create booking', detail: bookingError?.message }, { status: 500 })
+    booking = newBooking
+
+    // Generate 10 weekly sessions (Tuesdays at 10am, starting 3 weeks ago)
+    const sessionDate = setHours(setMinutes(startDate, 0), 10)
+    const sessions = Array.from({ length: 10 }, (_, i) => ({
+      booking_id: newBooking.id,
+      scheduled_at: addWeeks(sessionDate, i).toISOString(),
+      status: i < 4 ? 'completed' : 'scheduled',
+    }))
+    await admin.from('sessions').insert(sessions)
+    await admin.from('bookings').update({ sessions_completed: 4 }).eq('id', newBooking.id)
+  }
 
   return NextResponse.json({
     ok: true,
