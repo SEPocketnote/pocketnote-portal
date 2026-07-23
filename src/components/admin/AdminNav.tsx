@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, Inbox, CalendarDays, Users2,
   MessageSquare, CreditCard, UserCog, Settings,
-  LogOut, ExternalLink,
+  LogOut,
 } from 'lucide-react'
 
 const links = [
@@ -20,10 +20,6 @@ const links = [
   { href: '/admin/users', label: 'Users', icon: UserCog },
 ]
 
-const previewLinks = [
-  { href: '/parent', label: 'Parent portal' },
-  { href: '/tutor', label: 'Tutor portal' },
-]
 
 export default function AdminNav({ email }: { email?: string }) {
   const pathname = usePathname()
@@ -78,18 +74,6 @@ export default function AdminNav({ email }: { email?: string }) {
           )
         })}
       </nav>
-
-      {/* Preview links */}
-      <div className="mt-6">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-wider px-3 mb-2">Preview</p>
-        {previewLinks.map(({ href, label }) => (
-          <Link key={href} href={href}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors">
-            <ExternalLink className="w-4 h-4 shrink-0" />
-            {label}
-          </Link>
-        ))}
-      </div>
 
       {/* Bottom actions */}
       <div className="mt-6 pt-4 border-t border-white/20 space-y-0.5">
