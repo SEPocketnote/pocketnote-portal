@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import StatusToggle from './StatusToggle'
 import EditTutorForm from './EditTutorForm'
 
+
 export default async function TutorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -68,74 +69,24 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
 
       <EditTutorForm
         tutorId={id}
-        initialValues={{
+        tutor={{
           legal_name: tutor.legal_name ?? '',
           email: tutor.email ?? '',
           phone: tutor.phone ?? '',
+          location: tutor.location ?? '',
+          state: tutor.state ?? '',
+          postcode: tutor.postcode ?? '',
+          address: tutor.address ?? '',
+          abn: tutor.abn ?? '',
+          wwcc_number: tutor.wwcc_number ?? '',
+          wwcc_expiry: tutor.wwcc_expiry ?? '',
+          date_of_birth: tutor.date_of_birth ?? '',
+          bio: tutor.bio ?? '',
+          subjects: tutor.subjects ?? [],
+          year_levels: tutor.year_levels ?? [],
+          credentials: tutor.credentials ?? [],
         }}
       />
-
-      {/* Profile info — filled in by tutor */}
-      <section className="bg-white rounded-lg border border-border p-6 mt-4 space-y-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</h2>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <Info label="Phone" value={tutor.phone} />
-          <Info label="Suburb" value={tutor.location} />
-          <Info label="State" value={tutor.state} />
-          <Info label="Postcode" value={tutor.postcode} />
-          <Info label="ABN" value={tutor.abn} />
-          <Info label="WWCC number" value={tutor.wwcc_number} />
-          <Info label="WWCC expiry" value={tutor.wwcc_expiry ? format(new Date(tutor.wwcc_expiry), 'd MMM yyyy') : null} />
-          <Info label="Date of birth" value={tutor.date_of_birth ? format(new Date(tutor.date_of_birth), 'd MMM yyyy') : null} />
-          <Info label="Address" value={tutor.address} />
-        </dl>
-        {tutor.bio && (
-          <div className="pt-2 border-t border-border">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Bio</p>
-            <p className="text-sm">{tutor.bio}</p>
-          </div>
-        )}
-        {(tutor.subjects?.length > 0 || tutor.year_levels?.length > 0) && (
-          <div className="pt-2 border-t border-border flex flex-wrap gap-4">
-            {tutor.subjects?.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1.5">Subjects</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {tutor.subjects.map((s: string) => (
-                    <span key={s} className="px-2 py-0.5 bg-secondary text-primary rounded-full text-xs">{s}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {tutor.year_levels?.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1.5">Year levels</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {tutor.year_levels.map((y: string) => (
-                    <span key={y} className="px-2 py-0.5 bg-secondary text-primary rounded-full text-xs">{y}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        {tutor.credentials?.length > 0 && (
-          <div className="pt-2 border-t border-border">
-            <p className="text-xs font-medium text-muted-foreground mb-1.5">Credentials</p>
-            <div className="flex flex-wrap gap-1.5">
-              {tutor.credentials.map((c: string) => (
-                <span key={c} className="px-2 py-0.5 bg-secondary text-foreground rounded-full text-xs border border-border">{c}</span>
-              ))}
-            </div>
-          </div>
-        )}
-        {!tutor.bio && !tutor.abn && !tutor.phone && (
-          <p className="text-sm text-muted-foreground italic">
-            Tutor hasn't completed their profile yet.
-          </p>
-        )}
-      </section>
-
 
       {/* Bookings */}
       {bookings && bookings.length > 0 && (
@@ -172,11 +123,3 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
   )
 }
 
-function Info({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="font-medium mt-0.5">{value || <span className="text-muted-foreground font-normal">—</span>}</dd>
-    </div>
-  )
-}
