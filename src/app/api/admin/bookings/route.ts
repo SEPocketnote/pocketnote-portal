@@ -6,12 +6,17 @@ import { z } from 'zod'
 import { addWeeks, format, parseISO, setHours, setMinutes } from 'date-fns'
 
 const Schema = z.object({
-  parentName: z.string().min(1),
-  parentEmail: z.string().email(),
+  // Parent — either existing ID or new details
+  parentId: z.string().uuid().optional(),
+  parentName: z.string().optional(),
+  parentEmail: z.string().email().optional(),
   parentPhone: z.string().optional(),
-  studentName: z.string().min(1),
+  // Student — either existing ID or new details
+  studentId: z.string().uuid().optional(),
+  studentName: z.string().optional(),
   yearLevel: z.string().optional(),
   subjects: z.string().optional(),
+  // Booking
   tutorId: z.string().uuid(),
   packageId: z.string().uuid(),
   mode: z.enum(['online', 'in-person']),
@@ -34,6 +39,14 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
   const d = parsed.data
+
+  if (!d.parentId && (!d.parentName || !d.parentEmail)) {
+    return NextResponse.json({ error: 'Parent ID or name + email required' }, { status: 400 })
+  }
+  if (!d.studentId && !d.studentName) {
+    return NextResponse.json({ error: 'Student ID or name required' }, { status: 400 })
+  }
+
   const admin = createAdminClient()
 
   // 1. Get package
@@ -44,73 +57,96 @@ export async function POST(request: Request) {
   const { data: tutor } = await admin.from('tutors').select('legal_name').eq('id', d.tutorId).single()
   if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 400 })
 
-  // 3. Find or create parent record
-  const email = d.parentEmail.toLowerCase().trim()
-  let { data: parent } = await admin.from('parents').select('id, user_id').eq('email', email).maybeSingle()
-
+  // 3. Resolve parent
+  let parent: { id: string; user_id: string | null; name: string; email: string } | null = null
   let authUserId: string | undefined
 
-  if (!parent) {
-    // New parent — create auth account
-    const { data: authData, error: authError } = await admin.auth.admin.createUser({
-      email,
-      email_confirm: true,
-    })
+  if (d.parentId) {
+    // Existing parent selected from search
+    const { data } = await admin.from('parents').select('id, name, email, user_id').eq('id', d.parentId).single()
+    if (!data) return NextResponse.json({ error: 'Parent not found' }, { status: 400 })
+    parent = data
+    authUserId = data.user_id ?? undefined
 
-    if (!authError && authData.user) {
-      authUserId = authData.user.id
-    } else {
-      // Already registered — look up existing auth user
+    if (!authUserId) {
       const { data: { users } } = await admin.auth.admin.listUsers()
-      const existing = users.find(u => u.email?.toLowerCase() === email)
-      if (existing) authUserId = existing.id
-    }
-
-    if (authUserId) {
-      await admin.from('profiles').upsert({ id: authUserId, role: 'parent' }, { onConflict: 'id' })
-    }
-
-    const { data: newParent } = await admin.from('parents').insert({
-      name: d.parentName,
-      email,
-      phone: d.parentPhone,
-      user_id: authUserId ?? null,
-    }).select('id, user_id').single()
-
-    parent = newParent
-
-    // Add to Brevo
-    await upsertBrevoContact({
-      email,
-      firstName: d.parentName.split(' ')[0],
-      lastName: d.parentName.split(' ').slice(1).join(' '),
-    })
-  } else {
-    // Existing parent — resolve auth user ID for magic link generation
-    if (parent.user_id) {
-      authUserId = parent.user_id
-    } else {
-      const { data: { users } } = await admin.auth.admin.listUsers()
-      const existing = users.find(u => u.email?.toLowerCase() === email)
+      const existing = users.find(u => u.email?.toLowerCase() === data.email.toLowerCase())
       if (existing) {
         authUserId = existing.id
-        await admin.from('parents').update({ user_id: authUserId }).eq('id', parent.id)
+        await admin.from('parents').update({ user_id: authUserId }).eq('id', data.id)
+      }
+    }
+  } else {
+    // New parent
+    const email = d.parentEmail!.toLowerCase().trim()
+    let { data: existingParent } = await admin.from('parents').select('id, name, email, user_id').eq('email', email).maybeSingle()
+
+    if (!existingParent) {
+      const { data: authData, error: authError } = await admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+      })
+
+      if (!authError && authData.user) {
+        authUserId = authData.user.id
+      } else {
+        const { data: { users } } = await admin.auth.admin.listUsers()
+        const existing = users.find(u => u.email?.toLowerCase() === email)
+        if (existing) authUserId = existing.id
+      }
+
+      if (authUserId) {
+        await admin.from('profiles').upsert({ id: authUserId, role: 'parent' }, { onConflict: 'id' })
+      }
+
+      const { data: newParent } = await admin.from('parents').insert({
+        name: d.parentName!,
+        email,
+        phone: d.parentPhone,
+        user_id: authUserId ?? null,
+      }).select('id, name, email, user_id').single()
+
+      parent = newParent
+
+      await upsertBrevoContact({
+        email,
+        firstName: d.parentName!.split(' ')[0],
+        lastName: d.parentName!.split(' ').slice(1).join(' '),
+      })
+    } else {
+      parent = existingParent
+      authUserId = existingParent.user_id ?? undefined
+
+      if (!authUserId) {
+        const { data: { users } } = await admin.auth.admin.listUsers()
+        const existing = users.find(u => u.email?.toLowerCase() === email)
+        if (existing) {
+          authUserId = existing.id
+          await admin.from('parents').update({ user_id: authUserId }).eq('id', existingParent.id)
+        }
       }
     }
   }
 
-  if (!parent) return NextResponse.json({ error: 'Failed to create parent' }, { status: 500 })
+  if (!parent) return NextResponse.json({ error: 'Failed to resolve parent' }, { status: 500 })
 
-  // 4. Create student
-  const subjectsArr = d.subjects ? d.subjects.split(',').map(s => s.trim()).filter(Boolean) : []
-  const { data: student } = await admin.from('students').insert({
-    parent_id: parent.id,
-    name: d.studentName,
-    year_level: d.yearLevel,
-    subjects: subjectsArr,
-  }).select('id').single()
+  // 4. Resolve student
+  let student: { id: string } | null = null
 
-  if (!student) return NextResponse.json({ error: 'Failed to create student' }, { status: 500 })
+  if (d.studentId) {
+    student = { id: d.studentId }
+  } else {
+    const subjectsArr = d.subjects ? d.subjects.split(',').map(s => s.trim()).filter(Boolean) : []
+    const { data: newStudent } = await admin.from('students').insert({
+      parent_id: parent.id,
+      name: d.studentName!,
+      year_level: d.yearLevel,
+      subjects: subjectsArr,
+    }).select('id').single()
+    student = newStudent
+  }
+
+  if (!student) return NextResponse.json({ error: 'Failed to resolve student' }, { status: 500 })
 
   // 5. Create booking
   const { data: booking } = await admin.from('bookings').insert({
@@ -126,7 +162,7 @@ export async function POST(request: Request) {
 
   if (!booking) return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
 
-  // 6. Generate sessions (weekly from start date)
+  // 6. Generate sessions
   const [hours, minutes] = d.sessionTime.split(':').map(Number)
   const sessions = []
   let sessionDate = parseISO(d.startDate)
@@ -142,7 +178,7 @@ export async function POST(request: Request) {
 
   await admin.from('sessions').insert(sessions)
 
-  // 7. Generate magic link and send parent welcome email (non-blocking)
+  // 7. Generate magic link and send welcome email (non-blocking)
   const firstSession = format(sessionDate, 'EEEE d MMMM \'at\' h:mm a')
   ;(async () => {
     let inviteUrl: string | undefined
@@ -150,14 +186,14 @@ export async function POST(request: Request) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
       const { data: linkData } = await admin.auth.admin.generateLink({
         type: 'magiclink',
-        email,
+        email: parent!.email,
         options: { redirectTo: `${siteUrl}/auth/confirm` },
       })
       inviteUrl = linkData?.properties?.action_link
     }
     await sendParentWelcome({
-      name: d.parentName,
-      email,
+      name: parent!.name,
+      email: parent!.email,
       tutorName: tutor.legal_name,
       firstSession,
       inviteUrl,
