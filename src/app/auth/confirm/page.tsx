@@ -10,8 +10,23 @@ export default function AuthConfirmPage() {
   useEffect(() => {
     const supabase = createClient()
 
-    // createBrowserClient automatically detects and exchanges hash-fragment tokens
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    async function handleSession() {
+      let session = null
+
+      // Server-generated magic links redirect with hash fragment tokens
+      const hash = window.location.hash.slice(1)
+      const params = new URLSearchParams(hash)
+      const access_token = params.get('access_token')
+      const refresh_token = params.get('refresh_token')
+
+      if (access_token && refresh_token) {
+        const { data } = await supabase.auth.setSession({ access_token, refresh_token })
+        session = data.session
+      } else {
+        const { data } = await supabase.auth.getSession()
+        session = data.session
+      }
+
       if (!session) {
         router.replace('/login?error=auth')
         return
@@ -26,7 +41,9 @@ export default function AuthConfirmPage() {
       if (profile?.role === 'admin') router.replace('/admin')
       else if (profile?.role === 'tutor') router.replace('/tutor')
       else router.replace('/parent')
-    })
+    }
+
+    handleSession()
   }, [router])
 
   return (
