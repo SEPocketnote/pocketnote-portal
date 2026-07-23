@@ -55,8 +55,10 @@ function SuburbAutocomplete({
   const [activeIndex, setActiveIndex] = useState(-1)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const justSelectedRef = useRef(false)
 
   useEffect(() => {
+    if (justSelectedRef.current) { justSelectedRef.current = false; return }
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (value.length < 2) { setResults([]); setOpen(false); return }
     debounceRef.current = setTimeout(async () => {
@@ -90,6 +92,7 @@ function SuburbAutocomplete({
   }
 
   function pick(r: SuburbResult) {
+    justSelectedRef.current = true
     onSelect(r)
     setOpen(false)
     setResults([])
