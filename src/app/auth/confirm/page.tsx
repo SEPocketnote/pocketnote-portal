@@ -13,17 +13,28 @@ export default function AuthConfirmPage() {
     async function handleSession() {
       let session = null
 
-      // Server-generated magic links redirect with hash fragment tokens
       const hash = window.location.hash.slice(1)
-      const params = new URLSearchParams(hash)
-      const access_token = params.get('access_token')
-      const refresh_token = params.get('refresh_token')
+      const hashParams = new URLSearchParams(hash)
+      const searchParams = new URLSearchParams(window.location.search)
+      const access_token = hashParams.get('access_token')
+      const refresh_token = hashParams.get('refresh_token')
+      const code = searchParams.get('code')
+
+      console.log('[confirm] hash:', hash.slice(0, 80))
+      console.log('[confirm] access_token present:', !!access_token)
+      console.log('[confirm] code present:', !!code)
 
       if (access_token && refresh_token) {
-        const { data } = await supabase.auth.setSession({ access_token, refresh_token })
+        const { data, error } = await supabase.auth.setSession({ access_token, refresh_token })
+        console.log('[confirm] setSession:', { userId: data.session?.user.id, error: error?.message })
+        session = data.session
+      } else if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        console.log('[confirm] exchangeCode:', { userId: data.session?.user.id, error: error?.message })
         session = data.session
       } else {
         const { data } = await supabase.auth.getSession()
+        console.log('[confirm] getSession:', { userId: data.session?.user.id })
         session = data.session
       }
 
