@@ -38,6 +38,7 @@ export default async function UsersPage() {
       null
     const detailHref =
       role === 'tutor' && tutorData ? `/admin/tutors/${tutorData.dbId}` :
+      role === 'parent' && parentData ? `/admin/parents/${parentData.dbId}` :
       null
     const banned = u.banned_until ? new Date(u.banned_until) > new Date() : false
     const confirmed = !!u.email_confirmed_at

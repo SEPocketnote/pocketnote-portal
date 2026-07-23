@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import StatusToggle from './StatusToggle'
+import EditTutorForm from './EditTutorForm'
 
 export default async function TutorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -63,6 +64,15 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
         hasAccount={!!tutor.user_id}
         name={tutor.legal_name}
         email={tutor.email}
+      />
+
+      <EditTutorForm
+        tutorId={id}
+        initialValues={{
+          legal_name: tutor.legal_name ?? '',
+          email: tutor.email ?? '',
+          phone: tutor.phone ?? '',
+        }}
       />
 
       {/* Profile info — filled in by tutor */}
