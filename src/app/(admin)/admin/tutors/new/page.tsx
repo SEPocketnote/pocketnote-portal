@@ -10,10 +10,42 @@ function toggle(arr: string[], val: string) {
   return arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]
 }
 
+function formatAustralianPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 10)
+  if (digits.startsWith('04') || digits.startsWith('05')) {
+    // Mobile: 0400 000 000
+    const p1 = digits.slice(0, 4)
+    const p2 = digits.slice(4, 7)
+    const p3 = digits.slice(7, 10)
+    return [p1, p2, p3].filter(Boolean).join(' ')
+  } else if (digits.startsWith('0')) {
+    // Landline: (02) 0000 0000
+    const area = digits.slice(0, 2)
+    const p1 = digits.slice(2, 6)
+    const p2 = digits.slice(6, 10)
+    if (digits.length <= 2) return area
+    if (digits.length <= 6) return `(${area}) ${p1}`
+    return `(${area}) ${p1} ${p2}`.trim()
+  }
+  return digits
+}
+
+function validateEmail(value: string): string {
+  if (!value) return ''
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'Enter a valid email address'
+}
+
+function validatePhone(value: string): string {
+  if (!value) return ''
+  const digits = value.replace(/\D/g, '')
+  return digits.length === 10 ? '' : 'Enter a valid 10-digit Australian phone number'
+}
+
 export default function NewTutorPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({ email: '', phone: '' })
   const [form, setForm] = useState({
     legalName: '',
     email: '',
@@ -25,8 +57,30 @@ export default function NewTutorPage() {
     yearLevels: [] as string[],
   })
 
+  function handleEmailChange(value: string) {
+    setForm(f => ({ ...f, email: value }))
+    if (fieldErrors.email) setFieldErrors(fe => ({ ...fe, email: validateEmail(value) }))
+  }
+
+  function handlePhoneChange(value: string) {
+    const formatted = formatAustralianPhone(value)
+    setForm(f => ({ ...f, phone: formatted }))
+    if (fieldErrors.phone) setFieldErrors(fe => ({ ...fe, phone: validatePhone(formatted) }))
+  }
+
+  function handleBlur(field: 'email' | 'phone') {
+    const value = form[field]
+    const err = field === 'email' ? validateEmail(value) : validatePhone(value)
+    setFieldErrors(fe => ({ ...fe, [field]: err }))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const emailErr = validateEmail(form.email)
+    const phoneErr = validatePhone(form.phone)
+    setFieldErrors({ email: emailErr, phone: phoneErr })
+    if (emailErr || phoneErr) return
+
     setLoading(true)
     setError('')
     try {
@@ -64,13 +118,25 @@ export default function NewTutorPage() {
               <input type="text" required value={form.legalName}
                 onChange={e => setForm({...form, legalName: e.target.value})} className="input" />
             </Field>
-            <Field label="Email address" required>
-              <input type="email" required value={form.email}
-                onChange={e => setForm({...form, email: e.target.value})} className="input" />
+            <Field label="Email address" required error={fieldErrors.email}>
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={e => handleEmailChange(e.target.value)}
+                onBlur={() => handleBlur('email')}
+                className={`input ${fieldErrors.email ? 'border-destructive focus:ring-destructive' : ''}`}
+              />
             </Field>
-            <Field label="Phone number">
-              <input type="tel" value={form.phone}
-                onChange={e => setForm({...form, phone: e.target.value})} className="input" />
+            <Field label="Phone number" error={fieldErrors.phone}>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => handlePhoneChange(e.target.value)}
+                onBlur={() => handleBlur('phone')}
+                placeholder="0400 000 000"
+                className={`input ${fieldErrors.phone ? 'border-destructive focus:ring-destructive' : ''}`}
+              />
             </Field>
             <Field label="Suburb">
               <input type="text" value={form.location}
@@ -134,13 +200,19 @@ export default function NewTutorPage() {
   )
 }
 
-function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+function Field({ label, children, required, error }: {
+  label: string
+  children: React.ReactNode
+  required?: boolean
+  error?: string
+}) {
   return (
     <div>
       <label className="block text-sm font-medium mb-1">
         {label}{required && <span className="text-destructive ml-0.5">*</span>}
       </label>
       {children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   )
 }
