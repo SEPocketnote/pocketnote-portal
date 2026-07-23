@@ -89,12 +89,6 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
         }}
       />
 
-      <DeleteAccountButton
-        deleteUrl={`/api/admin/tutors/${id}`}
-        redirectTo="/admin/tutors"
-        name={tutor.legal_name}
-      />
-
       {/* Bookings */}
       {bookings && bookings.length > 0 && (
         <section className="mt-6">
@@ -126,6 +120,12 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           </div>
         </section>
       )}
+
+      <DeleteAccountButton
+        deleteUrl={`/api/admin/tutors/${id}`}
+        redirectTo="/admin/tutors"
+        name={tutor.legal_name}
+      />
     </div>
   )
 }
