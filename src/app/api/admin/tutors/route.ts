@@ -65,17 +65,22 @@ export async function POST(request: Request) {
     await admin.from('profiles').upsert({ id: authUser.user.id, role: 'tutor' }, { onConflict: 'id' })
 
     // Generate a direct magic link so the tutor signs in with one click
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
     const { data: linkData } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email: tutorEmail,
+      options: { redirectTo: `${siteUrl}/auth/callback` },
     })
     inviteUrl = linkData?.properties?.action_link
   }
 
-  // Send portal invite email via Brevo (non-blocking — tutor is created regardless)
-  sendTutorInvite({ name: legalName, email: tutorEmail, inviteUrl }).catch(err =>
+  // Send portal invite email via Brevo
+  try {
+    await sendTutorInvite({ name: legalName, email: tutorEmail, inviteUrl })
+  } catch (err) {
     console.error('[tutors] invite email failed:', err)
-  )
+    return NextResponse.json({ id: tutor.id, emailError: (err as Error).message })
+  }
 
   return NextResponse.json({ id: tutor.id })
 }

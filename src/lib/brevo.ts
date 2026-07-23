@@ -13,7 +13,7 @@ async function brevoRequest(path: string, body: unknown) {
   })
   if (!res.ok) {
     const text = await res.text()
-    console.error(`[brevo] ${path} failed ${res.status}: ${text}`)
+    throw new Error(`[brevo] ${path} failed ${res.status}: ${text}`)
   }
 }
 

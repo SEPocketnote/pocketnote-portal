@@ -37,6 +37,10 @@ export default function NewTutorPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to create tutor')
+      if (data.emailError) {
+        setError(`Tutor created but invite email failed: ${data.emailError}`)
+        return
+      }
       router.push('/admin/tutors')
     } catch (err: any) {
       setError(err.message)
