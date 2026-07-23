@@ -31,8 +31,8 @@ export async function POST(request: Request) {
   const { legalName, email, phone, location, state, postcode, subjects, yearLevels } = parsed.data
   const admin = createAdminClient()
 
-  // Create tutor record
-  const { data: tutor, error: tutorError } = await admin.from('tutors').insert({
+  // Upsert tutor record — if email already exists, update details rather than duplicate
+  const { data: tutor, error: tutorError } = await admin.from('tutors').upsert({
     legal_name: legalName,
     email: email.toLowerCase().trim(),
     phone,
@@ -43,10 +43,10 @@ export async function POST(request: Request) {
     year_levels: yearLevels,
     active: false,
     verified: false,
-  }).select('id').single()
+  }, { onConflict: 'email' }).select('id').single()
 
   if (tutorError) {
-    console.error('[tutors] insert error:', tutorError)
+    console.error('[tutors] upsert error:', tutorError)
     return NextResponse.json({ error: 'Failed to create tutor' }, { status: 500 })
   }
 
@@ -59,6 +59,8 @@ export async function POST(request: Request) {
     email_confirm: true,
   })
 
+  console.log('[tutors] createUser result:', { authUserId: authUser?.user?.id, authError: authError?.message })
+
   if (!authError && authUser.user) {
     authUserId = authUser.user.id
   } else {
@@ -66,22 +68,26 @@ export async function POST(request: Request) {
     const { data: { users } } = await admin.auth.admin.listUsers()
     const existing = users.find(u => u.email?.toLowerCase() === tutorEmail)
     if (existing) authUserId = existing.id
+    console.log('[tutors] existing user lookup:', { authUserId })
   }
 
   let inviteUrl: string | undefined
   if (authUserId) {
-    // Link auth user to tutor record and set role
-    await admin.from('tutors').update({ user_id: authUserId }).eq('id', tutor.id)
-    await admin.from('profiles').upsert({ id: authUserId, role: 'tutor' }, { onConflict: 'id' })
+    const { error: updateError } = await admin.from('tutors').update({ user_id: authUserId }).eq('id', tutor.id)
+    const { error: profileError } = await admin.from('profiles').upsert({ id: authUserId, role: 'tutor' }, { onConflict: 'id' })
+    console.log('[tutors] link result:', { updateError: updateError?.message, profileError: profileError?.message })
 
     // Generate a direct magic link so the tutor signs in with one click
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-    const { data: linkData } = await admin.auth.admin.generateLink({
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email: tutorEmail,
       options: { redirectTo: `${siteUrl}/auth/confirm` },
     })
+    console.log('[tutors] generateLink result:', { actionLink: linkData?.properties?.action_link?.slice(0, 60), linkError: linkError?.message })
     inviteUrl = linkData?.properties?.action_link
+  } else {
+    console.error('[tutors] no authUserId — user_id not linked for tutor', tutor.id)
   }
 
 
