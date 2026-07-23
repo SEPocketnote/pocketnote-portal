@@ -27,13 +27,14 @@ export default async function TutorDashboard() {
     .from('sessions')
     .select(`
       id, scheduled_at, status,
-      bookings (
-        mode, location,
+      bookings!inner (
+        mode, location, status,
         students ( name, year_level, subjects ),
         parents ( name, phone )
       )
     `)
     .eq('bookings.tutor_id', tutor.id)
+    .eq('bookings.status', 'confirmed')
     .eq('status', 'scheduled')
     .gte('scheduled_at', new Date().toISOString())
     .order('scheduled_at', { ascending: true })

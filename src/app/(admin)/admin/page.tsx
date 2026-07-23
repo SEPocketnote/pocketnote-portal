@@ -39,20 +39,22 @@ export default async function AdminDashboard({
     supabase.from('enquiries').select('*', { count: 'exact', head: true }).eq('status', 'new'),
     supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
     supabase.from('sessions')
-      .select('*', { count: 'exact', head: true })
+      .select('*, bookings!inner(status)', { count: 'exact', head: true })
       .eq('status', 'scheduled')
+      .eq('bookings.status', 'confirmed')
       .gte('scheduled_at', startOfDay(now).toISOString())
       .lte('scheduled_at', periodEnd.toISOString()),
     supabase.from('sessions')
       .select(`
         id, scheduled_at,
-        bookings (
-          id,
+        bookings!inner (
+          id, status,
           students ( name ),
           tutors ( legal_name )
         )
       `)
       .eq('status', 'scheduled')
+      .eq('bookings.status', 'confirmed')
       .gte('scheduled_at', startOfDay(now).toISOString())
       .lte('scheduled_at', periodEnd.toISOString())
       .order('scheduled_at', { ascending: true })
