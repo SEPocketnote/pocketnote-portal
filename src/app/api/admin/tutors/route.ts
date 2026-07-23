@@ -52,17 +52,27 @@ export async function POST(request: Request) {
 
   const tutorEmail = email.toLowerCase().trim()
 
-  // Create Supabase auth account for tutor
+  // Create Supabase auth account for tutor (or look up existing)
+  let authUserId: string | undefined
   const { data: authUser, error: authError } = await admin.auth.admin.createUser({
     email: tutorEmail,
     email_confirm: true,
   })
 
-  let inviteUrl: string | undefined
   if (!authError && authUser.user) {
+    authUserId = authUser.user.id
+  } else {
+    // User already exists — fetch their ID
+    const { data: { users } } = await admin.auth.admin.listUsers()
+    const existing = users.find(u => u.email?.toLowerCase() === tutorEmail)
+    if (existing) authUserId = existing.id
+  }
+
+  let inviteUrl: string | undefined
+  if (authUserId) {
     // Link auth user to tutor record and set role
-    await admin.from('tutors').update({ user_id: authUser.user.id }).eq('id', tutor.id)
-    await admin.from('profiles').upsert({ id: authUser.user.id, role: 'tutor' }, { onConflict: 'id' })
+    await admin.from('tutors').update({ user_id: authUserId }).eq('id', tutor.id)
+    await admin.from('profiles').upsert({ id: authUserId, role: 'tutor' }, { onConflict: 'id' })
 
     // Generate a direct magic link so the tutor signs in with one click
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -73,6 +83,7 @@ export async function POST(request: Request) {
     })
     inviteUrl = linkData?.properties?.action_link
   }
+
 
   // Send portal invite email via Brevo
   try {

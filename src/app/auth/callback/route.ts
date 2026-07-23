@@ -26,13 +26,17 @@ export async function GET(request: Request) {
         const admin = createAdminClient()
         const [{ data: existingProfile }, { data: tutor }] = await Promise.all([
           admin.from('profiles').select('role').eq('id', data.user.id).maybeSingle(),
-          admin.from('tutors').select('id').eq('email', email).maybeSingle(),
+          admin.from('tutors').select('id, user_id').eq('email', email).maybeSingle(),
         ])
         // Preserve role if admin already pre-assigned the profile (e.g. UI invite)
         if (existingProfile?.role === 'admin') {
           role = 'admin'
         } else if (tutor) {
           role = 'tutor'
+          // Backfill user_id if the tutor record isn't linked yet
+          if (!tutor.user_id) {
+            await admin.from('tutors').update({ user_id: data.user.id }).eq('id', tutor.id)
+          }
         }
       }
 
