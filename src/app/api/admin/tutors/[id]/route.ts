@@ -53,3 +53,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json({ ok: true })
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const admin = createAdminClient()
+
+  const { count } = await admin.from('bookings')
+    .select('*', { count: 'exact', head: true })
+    .eq('tutor_id', id)
+    .eq('status', 'confirmed')
+  if (count && count > 0) {
+    return NextResponse.json({ error: 'Cannot delete a tutor with active bookings. Cancel their bookings first.' }, { status: 400 })
+  }
+
+  const { data: tutor } = await admin.from('tutors').select('user_id').eq('id', id).single()
+  await admin.from('tutors').delete().eq('id', id)
+  if (tutor?.user_id) {
+    await admin.auth.admin.deleteUser(tutor.user_id)
+  }
+
+  return NextResponse.json({ ok: true })
+}

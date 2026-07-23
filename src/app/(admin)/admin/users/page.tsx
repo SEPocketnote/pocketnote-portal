@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import AddAdminForm from './AddAdminForm'
 import { RemoveAdminButton, BanButton } from './UserActions'
+import UsersSearch from './UsersSearch'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,21 +73,11 @@ export default async function UsersPage() {
         <UserTable users={adminUsers} meId={me?.id ?? ''} showAdminActions />
       </section>
 
-      {/* Tutors */}
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Tutors ({tutorUsers.length})
-        </h2>
-        <UserTable users={tutorUsers} meId={me?.id ?? ''} />
-      </section>
-
-      {/* Parents */}
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Parents ({parentUsers.length})
-        </h2>
-        <UserTable users={parentUsers} meId={me?.id ?? ''} />
-      </section>
+      <UsersSearch
+        tutorUsers={tutorUsers}
+        parentUsers={parentUsers}
+        meId={me?.id ?? ''}
+      />
 
       {/* Others (invited but not confirmed, or no profile yet) */}
       {otherUsers.length > 0 && (
@@ -101,14 +92,8 @@ export default async function UsersPage() {
   )
 }
 
-function UserTable({
-  users,
-  meId,
-  showAdminActions,
-}: {
-  users: any[]
-  meId: string
-  showAdminActions?: boolean
+function UserTable({ users, meId, showAdminActions }: {
+  users: any[]; meId: string; showAdminActions?: boolean
 }) {
   if (!users.length) {
     return (
@@ -117,7 +102,6 @@ function UserTable({
       </div>
     )
   }
-
   return (
     <div className="bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
       <table className="w-full text-sm min-w-[560px]">
@@ -131,18 +115,12 @@ function UserTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {users.map(u => {
+          {users.map((u: any) => {
             const isSelf = u.id === meId
-            const row = (
+            return (
               <tr key={u.id} className="hover:bg-muted/20">
                 <td className="px-4 py-3">
-                  {u.detailHref ? (
-                    <a href={u.detailHref} className="font-medium hover:text-primary hover:underline">
-                      {u.name ?? '—'}
-                    </a>
-                  ) : (
-                    <p className="font-medium">{u.name ?? <span className="text-muted-foreground font-normal">—</span>}</p>
-                  )}
+                  <p className="font-medium">{u.name ?? u.email}</p>
                   <p className="text-xs text-muted-foreground">{u.email}</p>
                   {isSelf && <span className="text-[10px] text-primary font-medium">You</span>}
                 </td>
@@ -163,19 +141,16 @@ function UserTable({
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-3">
-                    {showAdminActions && (
-                      <RemoveAdminButton userId={u.id} isSelf={isSelf} />
-                    )}
+                    {showAdminActions && <RemoveAdminButton userId={u.id} isSelf={isSelf} />}
                     <BanButton userId={u.id} banned={u.banned} />
                   </div>
                 </td>
               </tr>
             )
-
-            return row
           })}
         </tbody>
       </table>
     </div>
   )
 }
+

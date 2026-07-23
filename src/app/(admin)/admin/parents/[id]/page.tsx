@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import EditParentForm from './EditParentForm'
 import ResendParentInviteButton from '../../bookings/[id]/ResendParentInviteButton'
 import StudentManager from '@/components/StudentManager'
+import DeleteAccountButton from '@/components/DeleteAccountButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -142,6 +143,12 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           </div>
         </section>
       )}
+
+      <DeleteAccountButton
+        deleteUrl={`/api/admin/parents/${id}`}
+        redirectTo="/admin/users"
+        name={parent.name}
+      />
     </div>
   )
 }

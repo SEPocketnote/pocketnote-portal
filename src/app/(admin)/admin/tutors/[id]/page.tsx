@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import StatusToggle from './StatusToggle'
 import EditTutorForm from './EditTutorForm'
+import DeleteAccountButton from '@/components/DeleteAccountButton'
 
 
 export default async function TutorDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -86,6 +87,12 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           year_levels: tutor.year_levels ?? [],
           credentials: tutor.credentials ?? [],
         }}
+      />
+
+      <DeleteAccountButton
+        deleteUrl={`/api/admin/tutors/${id}`}
+        redirectTo="/admin/tutors"
+        name={tutor.legal_name}
       />
 
       {/* Bookings */}
