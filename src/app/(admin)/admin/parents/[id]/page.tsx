@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import EditParentForm from './EditParentForm'
 import ResendParentInviteButton from '../../bookings/[id]/ResendParentInviteButton'
+import StudentManager from '@/components/StudentManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,23 +91,21 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
       </section>
 
       {/* Students */}
-      {parent.students && parent.students.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Students ({parent.students.length})
-          </h2>
-          <div className="bg-white rounded-lg border border-border divide-y divide-border">
-            {parent.students.map((s: any) => (
-              <div key={s.id} className="px-4 py-3">
-                <p className="text-sm font-medium">{s.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {[s.year_level, s.subjects?.length ? s.subjects.join(', ') : null].filter(Boolean).join(' · ')}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+          Students
+        </h2>
+        <StudentManager
+          students={(parent.students ?? []).map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            year_level: s.year_level ?? null,
+            subjects: s.subjects ?? [],
+          }))}
+          createUrl={`/api/admin/parents/${id}/students`}
+          updateUrlBase="/api/admin/students"
+        />
+      </section>
 
       {/* Bookings */}
       {bookings && bookings.length > 0 && (
