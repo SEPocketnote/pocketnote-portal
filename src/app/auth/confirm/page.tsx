@@ -20,21 +20,14 @@ export default function AuthConfirmPage() {
       const refresh_token = hashParams.get('refresh_token')
       const code = searchParams.get('code')
 
-      console.log('[confirm] hash:', hash.slice(0, 80))
-      console.log('[confirm] access_token present:', !!access_token)
-      console.log('[confirm] code present:', !!code)
-
       if (access_token && refresh_token) {
-        const { data, error } = await supabase.auth.setSession({ access_token, refresh_token })
-        console.log('[confirm] setSession:', { userId: data.session?.user.id, error: error?.message })
+        const { data } = await supabase.auth.setSession({ access_token, refresh_token })
         session = data.session
       } else if (code) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        console.log('[confirm] exchangeCode:', { userId: data.session?.user.id, error: error?.message })
+        const { data } = await supabase.auth.exchangeCodeForSession(code)
         session = data.session
       } else {
         const { data } = await supabase.auth.getSession()
-        console.log('[confirm] getSession:', { userId: data.session?.user.id })
         session = data.session
       }
 
