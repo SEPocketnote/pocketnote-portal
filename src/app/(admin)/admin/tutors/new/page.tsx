@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 const SUBJECTS = ['Maths', 'English', 'Science', 'Chemistry', 'Physics', 'Biology', 'History', 'Geography', 'Economics', 'Other']
@@ -13,13 +13,11 @@ function toggle(arr: string[], val: string) {
 function formatAustralianPhone(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 10)
   if (digits.startsWith('04') || digits.startsWith('05')) {
-    // Mobile: 0400 000 000
     const p1 = digits.slice(0, 4)
     const p2 = digits.slice(4, 7)
     const p3 = digits.slice(7, 10)
     return [p1, p2, p3].filter(Boolean).join(' ')
   } else if (digits.startsWith('0')) {
-    // Landline: (02) 0000 0000
     const area = digits.slice(0, 2)
     const p1 = digits.slice(2, 6)
     const p2 = digits.slice(6, 10)
@@ -39,6 +37,94 @@ function validatePhone(value: string): string {
   if (!value) return ''
   const digits = value.replace(/\D/g, '')
   return digits.length === 10 ? '' : 'Enter a valid 10-digit Australian phone number'
+}
+
+type SuburbResult = { suburb: string; state: string; postcode: string }
+
+function SuburbAutocomplete({
+  value,
+  onChange,
+  onSelect,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onSelect: (result: SuburbResult) => void
+}) {
+  const [results, setResults] = useState<SuburbResult[]>([])
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (value.length < 2) { setResults([]); setOpen(false); return }
+    debounceRef.current = setTimeout(async () => {
+      const res = await fetch(`/api/admin/suburbs?q=${encodeURIComponent(value)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setResults(data)
+        setOpen(data.length > 0)
+        setActiveIndex(-1)
+      }
+    }, 350)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [value])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!open) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, results.length - 1)) }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)) }
+    if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); pick(results[activeIndex]) }
+    if (e.key === 'Escape') setOpen(false)
+  }
+
+  function pick(r: SuburbResult) {
+    onSelect(r)
+    setOpen(false)
+    setResults([])
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        className="input"
+        placeholder="e.g. Bondi"
+        autoComplete="off"
+      />
+      {open && (
+        <ul className="absolute z-50 mt-1 w-full bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+          {results.map((r, i) => (
+            <li
+              key={`${r.suburb}-${r.postcode}`}
+              onMouseDown={() => pick(r)}
+              className={`px-4 py-2.5 text-sm cursor-pointer flex justify-between items-center gap-3 ${
+                i === activeIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+              }`}
+            >
+              <span>{r.suburb}</span>
+              <span className="text-muted-foreground text-xs shrink-0">{r.state} {r.postcode}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 export default function NewTutorPage() {
@@ -72,6 +158,10 @@ export default function NewTutorPage() {
     const value = form[field]
     const err = field === 'email' ? validateEmail(value) : validatePhone(value)
     setFieldErrors(fe => ({ ...fe, [field]: err }))
+  }
+
+  function handleSuburbSelect(result: SuburbResult) {
+    setForm(f => ({ ...f, location: result.suburb, state: result.state, postcode: result.postcode }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -139,9 +229,11 @@ export default function NewTutorPage() {
               />
             </Field>
             <Field label="Suburb">
-              <input type="text" value={form.location}
-                onChange={e => setForm({...form, location: e.target.value})} className="input"
-                placeholder="e.g. Bondi" />
+              <SuburbAutocomplete
+                value={form.location}
+                onChange={v => setForm(f => ({ ...f, location: v }))}
+                onSelect={handleSuburbSelect}
+              />
             </Field>
             <Field label="State">
               <select className="input" value={form.state} onChange={e => setForm({...form, state: e.target.value})}>
