@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
+import ResendParentInviteButton from './ResendParentInviteButton'
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -13,7 +14,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .from('bookings')
       .select(`
         id, status, mode, location, start_date, sessions_completed,
-        parents ( name, email, phone ),
+        parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
         tutors ( legal_name, email ),
         packages ( type, sessions_total )
@@ -87,6 +88,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <p className="text-sm font-medium">{parent?.name}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{parent?.email}</p>
           {parent?.phone && <p className="text-xs text-muted-foreground">{parent.phone}</p>}
+          {parent?.id && (
+            <ResendParentInviteButton parentId={parent.id} name={parent.name} />
+          )}
         </section>
         <section className="bg-white rounded-lg border border-border p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Tutor</h2>

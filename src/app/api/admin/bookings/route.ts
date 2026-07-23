@@ -48,15 +48,24 @@ export async function POST(request: Request) {
   const email = d.parentEmail.toLowerCase().trim()
   let { data: parent } = await admin.from('parents').select('id, user_id').eq('email', email).maybeSingle()
 
+  let authUserId: string | undefined
+
   if (!parent) {
-    // Create Supabase auth account
-    const { data: authData } = await admin.auth.admin.createUser({
+    // New parent — create auth account
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email,
       email_confirm: true,
     })
-    const authUserId = authData.user?.id
 
-    // Set profile role to parent
+    if (!authError && authData.user) {
+      authUserId = authData.user.id
+    } else {
+      // Already registered — look up existing auth user
+      const { data: { users } } = await admin.auth.admin.listUsers()
+      const existing = users.find(u => u.email?.toLowerCase() === email)
+      if (existing) authUserId = existing.id
+    }
+
     if (authUserId) {
       await admin.from('profiles').upsert({ id: authUserId, role: 'parent' }, { onConflict: 'id' })
     }
@@ -76,6 +85,18 @@ export async function POST(request: Request) {
       firstName: d.parentName.split(' ')[0],
       lastName: d.parentName.split(' ').slice(1).join(' '),
     })
+  } else {
+    // Existing parent — resolve auth user ID for magic link generation
+    if (parent.user_id) {
+      authUserId = parent.user_id
+    } else {
+      const { data: { users } } = await admin.auth.admin.listUsers()
+      const existing = users.find(u => u.email?.toLowerCase() === email)
+      if (existing) {
+        authUserId = existing.id
+        await admin.from('parents').update({ user_id: authUserId }).eq('id', parent.id)
+      }
+    }
   }
 
   if (!parent) return NextResponse.json({ error: 'Failed to create parent' }, { status: 500 })
@@ -121,14 +142,27 @@ export async function POST(request: Request) {
 
   await admin.from('sessions').insert(sessions)
 
-  // 7. Send parent welcome email (non-blocking — booking is created regardless)
+  // 7. Generate magic link and send parent welcome email (non-blocking)
   const firstSession = format(sessionDate, 'EEEE d MMMM \'at\' h:mm a')
-  sendParentWelcome({
-    name: d.parentName,
-    email,
-    tutorName: tutor.legal_name,
-    firstSession,
-  }).catch(err => console.error('[bookings] welcome email failed:', err))
+  ;(async () => {
+    let inviteUrl: string | undefined
+    if (authUserId) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+      const { data: linkData } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+        options: { redirectTo: `${siteUrl}/auth/confirm` },
+      })
+      inviteUrl = linkData?.properties?.action_link
+    }
+    await sendParentWelcome({
+      name: d.parentName,
+      email,
+      tutorName: tutor.legal_name,
+      firstSession,
+      inviteUrl,
+    })
+  })().catch(err => console.error('[bookings] welcome email failed:', err))
 
   return NextResponse.json({ id: booking.id })
 }
