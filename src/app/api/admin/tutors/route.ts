@@ -50,21 +50,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create tutor' }, { status: 500 })
   }
 
+  const tutorEmail = email.toLowerCase().trim()
+
   // Create Supabase auth account for tutor
   const { data: authUser, error: authError } = await admin.auth.admin.createUser({
-    email: email.toLowerCase().trim(),
+    email: tutorEmail,
     email_confirm: true,
   })
 
+  let inviteUrl: string | undefined
   if (!authError && authUser.user) {
-    // Link auth user to tutor record
+    // Link auth user to tutor record and set role
     await admin.from('tutors').update({ user_id: authUser.user.id }).eq('id', tutor.id)
-    // Set role to tutor
     await admin.from('profiles').upsert({ id: authUser.user.id, role: 'tutor' }, { onConflict: 'id' })
+
+    // Generate a direct magic link so the tutor signs in with one click
+    const { data: linkData } = await admin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: tutorEmail,
+    })
+    inviteUrl = linkData?.properties?.action_link
   }
 
   // Send portal invite email via Brevo (non-blocking — tutor is created regardless)
-  sendTutorInvite({ name: legalName, email: email.toLowerCase().trim() }).catch(err =>
+  sendTutorInvite({ name: legalName, email: tutorEmail, inviteUrl }).catch(err =>
     console.error('[tutors] invite email failed:', err)
   )
 
