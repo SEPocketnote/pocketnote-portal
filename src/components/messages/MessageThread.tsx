@@ -60,7 +60,7 @@ export default function MessageThread({
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
-      .channel(`messages-${bookingId}`)
+      .channel(`messages-${bookingId}`, { config: { private: true } })
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
