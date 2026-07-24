@@ -22,7 +22,7 @@ const links = [
 ]
 
 
-export default function AdminNav({ email }: { email?: string }) {
+export default function AdminNav({ email, navCounts }: { email?: string; navCounts?: { messages: number; invoices: number } }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -61,6 +61,10 @@ export default function AdminNav({ email }: { email?: string }) {
       <nav className="space-y-0.5 flex-1 min-h-0">
         {links.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href)
+          const badge =
+            href === '/admin/messages' ? (navCounts?.messages ?? 0)
+            : href === '/admin/invoices' ? (navCounts?.invoices ?? 0)
+            : 0
           return (
             <Link
               key={href}
@@ -70,7 +74,12 @@ export default function AdminNav({ email }: { email?: string }) {
               }`}
             >
               <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-primary' : 'text-white/70'}`} />
-              {label}
+              <span className="flex-1">{label}</span>
+              {badge > 0 && (
+                <span className="ml-auto min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center leading-none">
+                  {badge > 99 ? '99+' : badge}
+                </span>
+              )}
             </Link>
           )
         })}
