@@ -6,6 +6,17 @@ import { format } from 'date-fns'
 
 const AUS_STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
 
+const ABN_WEIGHTS = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+
+function isValidABN(abn: string): boolean {
+  const digits = abn.replace(/\s/g, '')
+  if (!/^\d{11}$/.test(digits)) return false
+  const nums = digits.split('').map(Number)
+  nums[0] -= 1
+  const sum = nums.reduce((acc, d, i) => acc + d * ABN_WEIGHTS[i], 0)
+  return sum % 89 === 0
+}
+
 type TutorValues = {
   legal_name: string
   email: string
@@ -114,8 +125,13 @@ export default function EditTutorForm({
                 onChange={e => set('phone', e.target.value)} />
             </Field>
             <Field label="ABN">
-              <input className="input" value={values.abn}
-                onChange={e => set('abn', e.target.value)} />
+              <div className="relative">
+                <input className="input" value={values.abn}
+                  onChange={e => set('abn', e.target.value)} />
+                {isValidABN(values.abn) && (
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-green-500 text-sm">✓</span>
+                )}
+              </div>
             </Field>
             <Field label="Address">
               <input className="input" value={values.address}
@@ -179,7 +195,13 @@ export default function EditTutorForm({
             <Info label="Suburb" value={tutor.location} />
             <Info label="State" value={tutor.state} />
             <Info label="Postcode" value={tutor.postcode} />
-            <Info label="ABN" value={tutor.abn} />
+            <div>
+              <dt className="text-xs text-muted-foreground">ABN</dt>
+              <dd className="font-medium mt-0.5 flex items-center gap-1.5">
+                {tutor.abn || <span className="text-muted-foreground font-normal">—</span>}
+                {isValidABN(tutor.abn ?? '') && <span className="text-green-500 text-sm">✓</span>}
+              </dd>
+            </div>
             <Info label="WWCC number" value={tutor.wwcc_number} />
             <Info label="WWCC expiry" value={tutor.wwcc_expiry ? format(new Date(tutor.wwcc_expiry), 'd MMM yyyy') : null} />
             <Info label="Date of birth" value={tutor.date_of_birth ? format(new Date(tutor.date_of_birth), 'd MMM yyyy') : null} />
