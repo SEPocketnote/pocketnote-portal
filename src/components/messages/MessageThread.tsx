@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { format, isToday, isYesterday } from 'date-fns'
 
 type Message = {
@@ -56,26 +55,27 @@ export default function MessageThread({
     fetch(`/api/messages/${bookingId}/read`, { method: 'PATCH' })
   }, [bookingId, readOnly])
 
-  // Realtime subscription
+  // Poll for new messages every 4 seconds
   useEffect(() => {
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`messages-${bookingId}`, { config: { private: true } })
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
-        (payload) => {
-          const msg = payload.new as Message
-          setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
-          // Mark as read if it came from the other party
-          if (!readOnly && msg.sender_role !== currentRole) {
-            fetch(`/api/messages/${bookingId}/read`, { method: 'PATCH' })
-          }
+    const poll = async () => {
+      const res = await fetch(`/api/messages/${bookingId}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const fetched: Message[] = data.messages ?? []
+      setMessages(prev => {
+        const existingIds = new Set(prev.map(m => m.id))
+        const newMsgs = fetched.filter(m => !existingIds.has(m.id))
+        if (!newMsgs.length) return prev
+        if (!readOnly) {
+          const hasNewFromOther = newMsgs.some(m => m.sender_role !== currentRole)
+          if (hasNewFromOther) fetch(`/api/messages/${bookingId}/read`, { method: 'PATCH' })
         }
-      )
-      .subscribe()
+        return [...prev, ...newMsgs]
+      })
+    }
 
-    return () => { supabase.removeChannel(channel) }
+    const interval = setInterval(poll, 4000)
+    return () => clearInterval(interval)
   }, [bookingId, currentRole, readOnly])
 
   async function handleSend() {
