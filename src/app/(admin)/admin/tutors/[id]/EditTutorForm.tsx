@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 
@@ -50,10 +50,34 @@ export default function EditTutorForm({
   const [credentialsText, setCredentialsText] = useState(tutor.credentials.join(', '))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [abnStatus, setAbnStatus] = useState<{ state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; status?: string }>({ state: 'idle' })
+  const abnDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function set(key: keyof TutorValues, value: string) {
     setValues(v => ({ ...v, [key]: value }))
+    if (key === 'abn') lookupABN(value)
   }
+
+  function lookupABN(raw: string) {
+    if (abnDebounce.current) clearTimeout(abnDebounce.current)
+    if (!isValidABN(raw)) {
+      setAbnStatus({ state: 'idle' })
+      return
+    }
+    setAbnStatus({ state: 'loading' })
+    abnDebounce.current = setTimeout(async () => {
+      const res = await fetch(`/api/admin/abn-lookup?abn=${encodeURIComponent(raw.replace(/\s/g, ''))}`)
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setAbnStatus({ state: 'invalid' })
+      } else {
+        setAbnStatus({ state: data.status === 'Active' ? 'valid' : 'invalid', name: data.name, status: data.status })
+      }
+    }, 600)
+  }
+
+  // Run lookup on mount if ABN is already populated
+  useEffect(() => { if (tutor.abn) lookupABN(tutor.abn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     setSaving(true)
@@ -128,10 +152,22 @@ export default function EditTutorForm({
               <div className="relative">
                 <input className="input" value={values.abn}
                   onChange={e => set('abn', e.target.value)} />
-                {isValidABN(values.abn) && (
+                {abnStatus.state === 'loading' && (
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">…</span>
+                )}
+                {abnStatus.state === 'valid' && (
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-green-500 text-sm">✓</span>
                 )}
+                {abnStatus.state === 'invalid' && (
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-red-500 text-sm">✗</span>
+                )}
               </div>
+              {abnStatus.state === 'valid' && abnStatus.name && (
+                <p className="text-xs text-green-600 mt-1">{abnStatus.name} · {abnStatus.status}</p>
+              )}
+              {abnStatus.state === 'invalid' && (
+                <p className="text-xs text-red-500 mt-1">ABN not found or cancelled</p>
+              )}
             </Field>
             <Field label="Address">
               <input className="input" value={values.address}
@@ -195,13 +231,7 @@ export default function EditTutorForm({
             <Info label="Suburb" value={tutor.location} />
             <Info label="State" value={tutor.state} />
             <Info label="Postcode" value={tutor.postcode} />
-            <div>
-              <dt className="text-xs text-muted-foreground">ABN</dt>
-              <dd className="font-medium mt-0.5 flex items-center gap-1.5">
-                {tutor.abn || <span className="text-muted-foreground font-normal">—</span>}
-                {isValidABN(tutor.abn ?? '') && <span className="text-green-500 text-sm">✓</span>}
-              </dd>
-            </div>
+            <Info label="ABN" value={tutor.abn} />
             <Info label="WWCC number" value={tutor.wwcc_number} />
             <Info label="WWCC expiry" value={tutor.wwcc_expiry ? format(new Date(tutor.wwcc_expiry), 'd MMM yyyy') : null} />
             <Info label="Date of birth" value={tutor.date_of_birth ? format(new Date(tutor.date_of_birth), 'd MMM yyyy') : null} />
