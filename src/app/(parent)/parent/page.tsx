@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { format, isFuture } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
 
@@ -26,15 +27,23 @@ export default async function ParentDashboard() {
   const { data: bookings } = await supabase
     .from('bookings')
     .select(`
-      id, status, mode, location, sessions_completed,
+      id, status, mode, location, sessions_completed, tutor_id,
       packages ( type, sessions_total ),
-      tutors ( legal_name, bio, photo_url ),
       students ( name, year_level ),
       sessions ( id, scheduled_at, status, duration_minutes )
     `)
     .eq('parent_id', parent.id)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
+
+  // Tutors RLS restricts reads to own row — fetch names via admin client
+  const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
+  const admin = createAdminClient()
+  const { data: tutorRows } = tutorIds.length
+    ? await admin.from('tutors').select('id, legal_name').in('id', tutorIds)
+    : { data: [] }
+  const tutorNames: Record<string, string> = {}
+  for (const t of tutorRows ?? []) tutorNames[t.id] = t.legal_name
 
   const upcomingSessions = bookings?.flatMap((b) =>
     (b.sessions as any[])
@@ -68,7 +77,7 @@ export default async function ParentDashboard() {
               <p className="text-white/70 text-xs">
                 {(nextSession.booking.students as any)?.name}
                 {' · '}
-                with {(nextSession.booking.tutors as any)?.legal_name}
+                with {tutorNames[(nextSession.booking as any).tutor_id] ?? 'TBC'}
               </p>
             </div>
           </div>
@@ -98,7 +107,7 @@ export default async function ParentDashboard() {
                           {pkg?.type} pack — {(b.students as any)?.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          with {(b.tutors as any)?.legal_name ?? 'tutor TBC'}
+                          with {tutorNames[(b as any).tutor_id] ?? 'tutor TBC'}
                         </p>
                       </div>
                       <span className="text-sm text-muted-foreground">
