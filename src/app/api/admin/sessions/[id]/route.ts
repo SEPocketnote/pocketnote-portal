@@ -4,7 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
 const Schema = z.object({
-  status: z.enum(['scheduled', 'completed', 'cancelled']),
+  status: z.enum(['scheduled', 'completed', 'cancelled', 'rescheduled']).optional(),
+  scheduled_at: z.string().datetime().optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,10 +22,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const admin = createAdminClient()
 
-  // Update session status
+  const updates: Record<string, string> = {}
+  if (parsed.data.status) updates.status = parsed.data.status
+  if (parsed.data.scheduled_at) updates.scheduled_at = parsed.data.scheduled_at
+
   const { data: session, error } = await admin
     .from('sessions')
-    .update({ status: parsed.data.status })
+    .update(updates)
     .eq('id', id)
     .select('booking_id')
     .single()
