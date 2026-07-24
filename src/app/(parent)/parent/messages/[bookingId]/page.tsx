@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import MessageThread from '@/components/messages/MessageThread'
 
 export default async function ParentThreadPage({ params }: { params: Promise<{ bookingId: string }> }) {
@@ -12,7 +13,7 @@ export default async function ParentThreadPage({ params }: { params: Promise<{ b
 
   const [{ data: booking }, { data: messages }] = await Promise.all([
     supabase.from('bookings')
-      .select('id, students(name), tutors(legal_name)')
+      .select('id, tutor_id, students(name)')
       .eq('id', bookingId)
       .eq('parent_id', parent?.id)
       .single(),
@@ -24,7 +25,14 @@ export default async function ParentThreadPage({ params }: { params: Promise<{ b
 
   if (!booking) notFound()
 
-  const tutor = booking.tutors as any
+  // Tutors RLS only allows own row — use admin client to safely read the name
+  const admin = createAdminClient()
+  const { data: tutor } = await admin
+    .from('tutors')
+    .select('legal_name')
+    .eq('id', (booking as any).tutor_id)
+    .single()
+
   const student = booking.students as any
 
   return (
