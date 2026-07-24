@@ -94,6 +94,11 @@ export default function MessageThread({
     if (!res.ok) {
       setInput(text)
       setError('Failed to send. Please try again.')
+    } else {
+      const data = await res.json()
+      if (data.message) {
+        setMessages(prev => prev.find(m => m.id === data.message.id) ? prev : [...prev, data.message])
+      }
     }
     setSending(false)
     inputRef.current?.focus()
