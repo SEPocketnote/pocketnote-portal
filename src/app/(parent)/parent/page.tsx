@@ -30,7 +30,7 @@ export default async function ParentDashboard() {
       packages ( type, sessions_total ),
       tutors ( legal_name, bio, photo_url ),
       students ( name, year_level ),
-      sessions ( id, scheduled_at, status )
+      sessions ( id, scheduled_at, status, duration_minutes )
     `)
     .eq('parent_id', parent.id)
     .eq('status', 'confirmed')
@@ -132,6 +132,7 @@ export default async function ParentDashboard() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {(s.booking.mode === 'online') ? 'Online' : s.booking.location}
+                        {' · '}{s.duration_minutes ?? 60} min
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground">

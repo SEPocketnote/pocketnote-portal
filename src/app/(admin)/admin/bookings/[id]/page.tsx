@@ -23,7 +23,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .single(),
     supabase
       .from('sessions')
-      .select('id, scheduled_at, status')
+      .select('id, scheduled_at, status, duration_minutes')
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
   ])
@@ -117,6 +117,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 index={i + 1}
                 scheduledAt={session.scheduled_at}
                 status={session.status}
+                durationMinutes={session.duration_minutes ?? 60}
               />
             ))}
           </div>

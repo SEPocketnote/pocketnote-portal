@@ -6,6 +6,7 @@ import { z } from 'zod'
 const Schema = z.object({
   status: z.enum(['scheduled', 'completed', 'cancelled', 'rescheduled']).optional(),
   scheduled_at: z.string().datetime().optional(),
+  duration_minutes: z.number().int().min(15).optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -22,9 +23,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const admin = createAdminClient()
 
-  const updates: Record<string, string> = {}
+  const updates: Record<string, string | number> = {}
   if (parsed.data.status) updates.status = parsed.data.status
   if (parsed.data.scheduled_at) updates.scheduled_at = parsed.data.scheduled_at
+  if (parsed.data.duration_minutes !== undefined) updates.duration_minutes = parsed.data.duration_minutes
 
   const { data: session, error } = await admin
     .from('sessions')

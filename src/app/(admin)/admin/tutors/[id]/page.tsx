@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import StatusToggle from './StatusToggle'
 import EditTutorForm from './EditTutorForm'
@@ -9,14 +10,16 @@ import DeleteAccountButton from '@/components/DeleteAccountButton'
 export default async function TutorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const [{ data: tutor }, { data: bookings }] = await Promise.all([
+  const [{ data: tutor }, { data: bookings }, { data: rateTiers }] = await Promise.all([
     supabase.from('tutors').select('*').eq('id', id).single(),
     supabase
       .from('bookings')
       .select('id, status, mode, start_date, students(name, year_level), packages(type, sessions_total), parents(name)')
       .eq('tutor_id', id)
       .order('start_date', { ascending: false }),
+    admin.from('rate_tiers').select('id, name, hourly_rate_cents').order('sort_order', { ascending: true }),
   ])
 
   if (!tutor) notFound()
@@ -86,7 +89,10 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           subjects: tutor.subjects ?? [],
           year_levels: tutor.year_levels ?? [],
           credentials: tutor.credentials ?? [],
+          rate_tier_id: tutor.rate_tier_id ?? null,
+          hourly_rate_override_cents: tutor.hourly_rate_override_cents ?? null,
         }}
+        rateTiers={rateTiers ?? []}
       />
 
       {/* Bookings */}

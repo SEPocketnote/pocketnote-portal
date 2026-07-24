@@ -17,17 +17,19 @@ function toLocalDatetimeValue(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export default function SessionRow({ sessionId, index, scheduledAt, status }: {
+export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes }: {
   sessionId: string
   index: number
   scheduledAt: string
   status: string
+  durationMinutes: number
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [datetimeValue, setDatetimeValue] = useState(toLocalDatetimeValue(scheduledAt))
   const [statusValue, setStatusValue] = useState(status)
+  const [durationValue, setDurationValue] = useState(String(durationMinutes ?? 60))
 
   async function save() {
     setLoading(true)
@@ -37,6 +39,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status }: {
       body: JSON.stringify({
         scheduled_at: new Date(datetimeValue).toISOString(),
         status: statusValue,
+        duration_minutes: parseInt(durationValue),
       }),
     })
     setEditing(false)
@@ -47,6 +50,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status }: {
   function cancel() {
     setDatetimeValue(toLocalDatetimeValue(scheduledAt))
     setStatusValue(status)
+    setDurationValue(String(durationMinutes ?? 60))
     setEditing(false)
   }
 
@@ -58,7 +62,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status }: {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="w-16">Session {index}</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Date & time</label>
             <input
@@ -66,6 +70,17 @@ export default function SessionRow({ sessionId, index, scheduledAt, status }: {
               className="input text-sm"
               value={datetimeValue}
               onChange={e => setDatetimeValue(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">Duration (min)</label>
+            <input
+              type="number"
+              min="15"
+              step="15"
+              className="input text-sm"
+              value={durationValue}
+              onChange={e => setDurationValue(e.target.value)}
             />
           </div>
           <div>
@@ -102,7 +117,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status }: {
         <span className="text-xs text-muted-foreground w-16">Session {index}</span>
         <div>
           <p className="text-sm font-medium">{format(date, 'EEEE d MMMM yyyy')}</p>
-          <p className="text-xs text-muted-foreground">{format(date, 'h:mm a')}</p>
+          <p className="text-xs text-muted-foreground">{format(date, 'h:mm a')} · {durationMinutes} min</p>
         </div>
       </div>
       <div className="flex items-center gap-3">

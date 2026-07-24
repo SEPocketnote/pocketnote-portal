@@ -17,6 +17,12 @@ function isValidABN(abn: string): boolean {
   return sum % 89 === 0
 }
 
+type RateTier = {
+  id: string
+  name: string
+  hourly_rate_cents: number
+}
+
 type TutorValues = {
   legal_name: string
   email: string
@@ -33,14 +39,18 @@ type TutorValues = {
   subjects: string[]
   year_levels: string[]
   credentials: string[]
+  rate_tier_id: string | null
+  hourly_rate_override_cents: number | null
 }
 
 export default function EditTutorForm({
   tutorId,
   tutor,
+  rateTiers,
 }: {
   tutorId: string
   tutor: TutorValues
+  rateTiers: RateTier[]
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -48,14 +58,17 @@ export default function EditTutorForm({
   const [subjectsText, setSubjectsText] = useState(tutor.subjects.join(', '))
   const [yearLevelsText, setYearLevelsText] = useState(tutor.year_levels.join(', '))
   const [credentialsText, setCredentialsText] = useState(tutor.credentials.join(', '))
+  const [rateOverrideDollars, setRateOverrideDollars] = useState(
+    tutor.hourly_rate_override_cents ? (tutor.hourly_rate_override_cents / 100).toFixed(2) : ''
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [abnStatus, setAbnStatus] = useState<{ state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; status?: string }>({ state: 'idle' })
   const abnDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function set(key: keyof TutorValues, value: string) {
+  function set(key: keyof TutorValues, value: string | null) {
     setValues(v => ({ ...v, [key]: value }))
-    if (key === 'abn') lookupABN(value)
+    if (key === 'abn') lookupABN(value ?? '')
   }
 
   function lookupABN(raw: string) {
@@ -79,16 +92,30 @@ export default function EditTutorForm({
   // Run lookup on mount if ABN is already populated
   useEffect(() => { if (tutor.abn) lookupABN(tutor.abn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Compute effective rate for display
+  const effectiveRateCents = rateOverrideDollars
+    ? Math.round(parseFloat(rateOverrideDollars) * 100)
+    : (rateTiers.find(t => t.id === values.rate_tier_id)?.hourly_rate_cents ?? null)
+
   async function save() {
     setSaving(true)
     setError(null)
     const subjects = subjectsText.split(',').map(s => s.trim()).filter(Boolean)
     const year_levels = yearLevelsText.split(',').map(s => s.trim()).filter(Boolean)
     const credentials = credentialsText.split(',').map(s => s.trim()).filter(Boolean)
+    const hourly_rate_override_cents = rateOverrideDollars
+      ? Math.round(parseFloat(rateOverrideDollars) * 100)
+      : null
     const res = await fetch(`/api/admin/tutors/${tutorId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...values, subjects, year_levels, credentials }),
+      body: JSON.stringify({
+        ...values,
+        subjects,
+        year_levels,
+        credentials,
+        hourly_rate_override_cents,
+      }),
     })
     setSaving(false)
     if (!res.ok) {
@@ -105,6 +132,7 @@ export default function EditTutorForm({
     setSubjectsText(tutor.subjects.join(', '))
     setYearLevelsText(tutor.year_levels.join(', '))
     setCredentialsText(tutor.credentials.join(', '))
+    setRateOverrideDollars(tutor.hourly_rate_override_cents ? (tutor.hourly_rate_override_cents / 100).toFixed(2) : '')
     setError(null)
     setEditing(false)
   }
@@ -217,6 +245,47 @@ export default function EditTutorForm({
             <input className="input" value={credentialsText}
               onChange={e => setCredentialsText(e.target.value)} />
           </Field>
+
+          {/* Pay Rate section */}
+          <div className="border-t border-border pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Pay Rate</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Rate tier">
+                <select
+                  className="input"
+                  value={values.rate_tier_id ?? ''}
+                  onChange={e => setValues(v => ({ ...v, rate_tier_id: e.target.value || null }))}
+                >
+                  <option value="">No tier assigned</option>
+                  {rateTiers.map(tier => (
+                    <option key={tier.id} value={tier.id}>
+                      {tier.name} — ${(tier.hourly_rate_cents / 100).toFixed(2)}/hr
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Rate override ($/hr)">
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Leave blank to use tier rate"
+                  className="input"
+                  value={rateOverrideDollars}
+                  onChange={e => setRateOverrideDollars(e.target.value)}
+                />
+                {effectiveRateCents !== null && !isNaN(effectiveRateCents) && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Effective rate: ${(effectiveRateCents / 100).toFixed(2)}/hr
+                    {rateOverrideDollars ? ' (custom override)' : ' (from tier)'}
+                  </p>
+                )}
+                {!effectiveRateCents && !values.rate_tier_id && (
+                  <p className="text-xs text-amber-600 mt-1">No rate set — tutor cannot submit invoices.</p>
+                )}
+              </Field>
+            </div>
+          </div>
+
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
       ) : (
@@ -237,6 +306,24 @@ export default function EditTutorForm({
             <Info label="Date of birth" value={tutor.date_of_birth ? format(new Date(tutor.date_of_birth), 'd MMM yyyy') : null} />
             <Info label="Address" value={tutor.address} />
           </dl>
+
+          {/* Pay rate display */}
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Pay rate</p>
+            {tutor.hourly_rate_override_cents ? (
+              <p className="text-sm font-medium">${(tutor.hourly_rate_override_cents / 100).toFixed(2)}/hr <span className="text-xs font-normal text-muted-foreground">(custom override)</span></p>
+            ) : tutor.rate_tier_id ? (
+              (() => {
+                const tier = rateTiers.find(t => t.id === tutor.rate_tier_id)
+                return tier ? (
+                  <p className="text-sm font-medium">${(tier.hourly_rate_cents / 100).toFixed(2)}/hr <span className="text-xs font-normal text-muted-foreground">({tier.name} tier)</span></p>
+                ) : <p className="text-sm text-muted-foreground">—</p>
+              })()
+            ) : (
+              <p className="text-sm text-amber-600">No rate assigned</p>
+            )}
+          </div>
+
           {tutor.bio && (
             <div className="pt-2 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-1">Bio</p>

@@ -21,6 +21,8 @@ const Schema = z.object({
   credentials: z.array(z.string()).optional(),
   active: z.boolean().optional(),
   verified: z.boolean().optional(),
+  rate_tier_id: z.string().uuid().nullable().optional(),
+  hourly_rate_override_cents: z.number().int().min(1).nullable().optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

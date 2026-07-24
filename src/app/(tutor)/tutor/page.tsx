@@ -31,7 +31,7 @@ export default async function TutorDashboard() {
     supabase
       .from('sessions')
       .select(`
-        id, scheduled_at, status,
+        id, scheduled_at, status, duration_minutes,
         bookings!inner (
           mode, location, status,
           students ( name, year_level, subjects ),
@@ -156,6 +156,8 @@ export default async function TutorDashboard() {
                       <p className="font-semibold">{dateLabel(s.scheduled_at)}</p>
                       <p className="text-sm text-muted-foreground mt-0.5">
                         {format(new Date(s.scheduled_at), 'h:mm a')}
+                        {' · '}
+                        {s.duration_minutes ?? 60} min
                         {' · '}
                         {booking?.mode === 'online' ? 'Online' : booking?.location ?? '—'}
                       </p>

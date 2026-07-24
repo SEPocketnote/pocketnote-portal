@@ -27,7 +27,7 @@ export default async function TutorStudentsPage() {
           .eq('status', 'confirmed'),
         supabase
           .from('sessions')
-          .select('id, scheduled_at, status, booking_id')
+          .select('id, scheduled_at, status, duration_minutes, booking_id')
           .order('scheduled_at', { ascending: false }),
       ])
     : [{ data: [] }, { data: [] }]
@@ -110,7 +110,10 @@ export default async function TutorStudentsPage() {
                         const hasReport = reportedSessionIds.has(s.id)
                         return (
                           <div key={s.id} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}</span>
+                            <span className="text-muted-foreground">
+                              {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                              {' · '}{s.duration_minutes ?? 60} min
+                            </span>
                             {!isPast ? (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">Upcoming</span>
                             ) : hasReport ? (

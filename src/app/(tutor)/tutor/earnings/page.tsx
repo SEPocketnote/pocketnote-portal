@@ -1,31 +1,111 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
+import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
+
+const STATUS_STYLES: Record<string, string> = {
+  submitted: 'bg-amber-100 text-amber-700',
+  approved: 'bg-blue-100 text-blue-700',
+  paid: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700',
+}
 
 export default async function TutorEarningsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Get tutor with rate info
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id')
+    .select('id, rate_tier_id, hourly_rate_override_cents')
     .eq('user_id', user!.id)
     .single()
 
-  const { data: invoices } = tutor
-    ? await supabase
-        .from('invoices')
-        .select('*')
-        .eq('tutor_id', tutor.id)
-        .order('submitted_at', { ascending: false })
-    : { data: [] }
+  if (!tutor) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-muted-foreground text-sm">Tutor profile not found.</p>
+      </div>
+    )
+  }
 
-  const totalPaid = invoices?.filter((i) => i.paid_at).reduce((sum, i) => sum + i.amount, 0) ?? 0
-  const totalPending = invoices?.filter((i) => !i.paid_at).reduce((sum, i) => sum + i.amount, 0) ?? 0
+  const admin = createAdminClient()
+
+  // Get effective rate
+  let hourly_rate_cents: number | null = tutor.hourly_rate_override_cents ?? null
+  let rateLabel = 'Custom rate'
+  if (!hourly_rate_cents && tutor.rate_tier_id) {
+    const { data: tier } = await admin
+      .from('rate_tiers')
+      .select('hourly_rate_cents, name')
+      .eq('id', tutor.rate_tier_id)
+      .single()
+    if (tier) {
+      hourly_rate_cents = tier.hourly_rate_cents
+      rateLabel = tier.name
+    }
+  }
+
+  // Get all completed sessions for this tutor
+  const { data: allCompletedSessions } = await supabase
+    .from('sessions')
+    .select(`
+      id, scheduled_at, duration_minutes,
+      bookings!inner ( tutor_id, students ( name ) )
+    `)
+    .eq('status', 'completed')
+    .eq('bookings.tutor_id', tutor.id)
+    .order('scheduled_at', { ascending: false })
+
+  // Get session IDs already in invoices — query separately to avoid RLS join issues
+  const completedIds = (allCompletedSessions ?? []).map(s => s.id)
+  const invoicedSessionIds = new Set<string>()
+  if (completedIds.length) {
+    const { data: links } = await admin
+      .from('invoice_sessions')
+      .select('session_id')
+      .in('session_id', completedIds)
+    for (const l of links ?? []) invoicedSessionIds.add(l.session_id)
+  }
+
+  const uninvoiced = (allCompletedSessions ?? []).filter(s => !invoicedSessionIds.has(s.id))
+
+  // Get past invoices
+  const { data: invoices } = await supabase
+    .from('invoices')
+    .select('*')
+    .eq('tutor_id', tutor.id)
+    .order('submitted_at', { ascending: false })
+
+  const totalPaid = (invoices ?? []).filter(i => i.status === 'paid').reduce((sum, i) => sum + i.total_cents, 0)
+  const totalPending = (invoices ?? []).filter(i => i.status !== 'paid' && i.status !== 'rejected').reduce((sum, i) => sum + i.total_cents, 0)
+
+  // Estimate for uninvoiced
+  const uninvoicedMinutes = uninvoiced.reduce((sum, s) => sum + (s.duration_minutes ?? 60), 0)
+  const uninvoicedEstimate = hourly_rate_cents
+    ? Math.round((uninvoicedMinutes / 60) * hourly_rate_cents)
+    : null
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl space-y-8">
       <h1 className="text-2xl font-semibold">Earnings</h1>
 
+      {/* Rate banner or no-rate warning */}
+      {!hourly_rate_cents ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-800">
+          No pay rate has been assigned to your account yet. Contact your admin to set up your rate before submitting invoices.
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Rate:</span>
+          <span className="font-semibold text-foreground">${(hourly_rate_cents / 100).toFixed(2)}/hr</span>
+          <span className="px-2 py-0.5 rounded-full bg-muted text-xs">{rateLabel}</span>
+        </div>
+      )}
+
+      {/* Summary tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-border p-5">
           <p className="text-sm text-muted-foreground mb-1">Pending payment</p>
@@ -37,14 +117,59 @@ export default async function TutorEarningsPage() {
         </div>
       </div>
 
+      {/* Uninvoiced sessions */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Invoices
+          Uninvoiced sessions
+        </h2>
+        {uninvoiced.length === 0 ? (
+          <div className="bg-white rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
+            No completed sessions awaiting invoicing.
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-border overflow-hidden">
+            <div className="divide-y divide-border">
+              {uninvoiced.map((s) => {
+                const student = (s.bookings as any)?.students
+                return (
+                  <div key={s.id} className="flex items-center justify-between px-5 py-3">
+                    <div>
+                      <p className="text-sm font-medium">{student?.name ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="border-t border-border px-5 py-4 bg-muted/30 flex items-center justify-between">
+              <div className="text-sm">
+                <span className="font-medium">{uninvoiced.length} session{uninvoiced.length !== 1 ? 's' : ''}</span>
+                <span className="text-muted-foreground"> · {Math.floor(uninvoicedMinutes / 60)}h {uninvoicedMinutes % 60 > 0 ? `${uninvoicedMinutes % 60}m` : ''}</span>
+                {uninvoicedEstimate !== null && (
+                  <span className="text-muted-foreground"> · ~${(uninvoicedEstimate / 100).toFixed(2)} estimated</span>
+                )}
+              </div>
+              {hourly_rate_cents && (
+                <Link href="/tutor/earnings/new" className="btn btn-primary text-sm px-4 py-2">
+                  Create Invoice
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Invoice history */}
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+          Invoice history
         </h2>
         {!invoices?.length ? (
-          <div className="bg-white rounded-lg border border-border p-10 text-center">
-            <p className="font-medium mb-1">No invoices yet</p>
-            <p className="text-sm text-muted-foreground">Invoice submission coming soon.</p>
+          <div className="bg-white rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
+            No invoices submitted yet.
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-border divide-y divide-border">
@@ -54,13 +179,17 @@ export default async function TutorEarningsPage() {
                   <p className="text-sm font-medium">
                     {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yyyy')}
                   </p>
-                  <p className="text-xs text-muted-foreground">{inv.sessions_count} sessions</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">${(inv.amount / 100).toFixed(2)}</p>
-                  <p className={`text-xs ${inv.paid_at ? 'text-green-600' : inv.approved_at ? 'text-blue-600' : 'text-muted-foreground'}`}>
-                    {inv.paid_at ? 'Paid' : inv.approved_at ? 'Approved' : 'Pending'}
+                  <p className="text-xs text-muted-foreground">
+                    {inv.sessions_count} session{inv.sessions_count !== 1 ? 's' : ''}
+                    {' · '}
+                    {Math.floor(inv.total_minutes / 60)}h{inv.total_minutes % 60 > 0 ? ` ${inv.total_minutes % 60}m` : ''}
                   </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <p className="font-medium text-sm">${(inv.total_cents / 100).toFixed(2)}</p>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status] ?? 'bg-muted text-muted-foreground'}`}>
+                    {inv.status}
+                  </span>
                 </div>
               </div>
             ))}
