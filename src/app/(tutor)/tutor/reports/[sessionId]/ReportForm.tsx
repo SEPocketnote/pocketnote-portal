@@ -90,7 +90,7 @@ export default function ReportForm({ sessionId, existing }: Props) {
           onChange={e => set('notes', e.target.value)} />
       </Field>
 
-      <Field label="Session rating (private — not shown to parents)">
+      <Field label="Session progress status">
         <div className="flex gap-2 flex-wrap">
           {RATINGS.map(r => (
             <button

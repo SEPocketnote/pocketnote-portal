@@ -15,7 +15,7 @@ export default async function ProgressPage() {
     ? await supabase
         .from('progress_reports')
         .select(`
-          id, covered, went_well, needs_work, next_session_plan, notes, submitted_at,
+          id, covered, went_well, needs_work, next_session_plan, notes, internal_rating, submitted_at,
           sessions ( scheduled_at, bookings ( students ( name ), tutors ( legal_name ) ) )
         `)
         .eq('sessions.bookings.parent_id', parent.id)
@@ -54,9 +54,12 @@ export default async function ProgressPage() {
                         : ''}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(r.submitted_at), 'd MMM')}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0 ml-4">
+                    {r.internal_rating ? <RatingPill rating={r.internal_rating} /> : null}
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(r.submitted_at), 'd MMM')}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3 text-sm">
@@ -81,5 +84,23 @@ function ReportRow({ label, value }: { label: string; value: string }) {
       <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-0.5">{label}</p>
       <p>{value}</p>
     </div>
+  )
+}
+
+const RATING_CONFIG: Record<number, { label: string; className: string }> = {
+  1: { label: 'Struggling',     className: 'bg-red-100 text-red-700' },
+  2: { label: 'Below average',  className: 'bg-orange-100 text-orange-700' },
+  3: { label: 'On track',       className: 'bg-blue-100 text-blue-700' },
+  4: { label: 'Good progress',  className: 'bg-emerald-100 text-emerald-700' },
+  5: { label: 'Excellent',      className: 'bg-green-100 text-green-700' },
+}
+
+function RatingPill({ rating }: { rating: number }) {
+  const config = RATING_CONFIG[rating]
+  if (!config) return null
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
+      {config.label}
+    </span>
   )
 }
