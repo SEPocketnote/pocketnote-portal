@@ -23,22 +23,37 @@ export default async function TutorDashboard() {
     )
   }
 
-  const { data: sessions } = await supabase
-    .from('sessions')
-    .select(`
-      id, scheduled_at, status,
-      bookings!inner (
-        mode, location, status,
-        students ( name, year_level, subjects ),
-        parents ( name, phone )
-      )
-    `)
-    .eq('bookings.tutor_id', tutor.id)
-    .eq('bookings.status', 'confirmed')
-    .eq('status', 'scheduled')
-    .gte('scheduled_at', new Date().toISOString())
-    .order('scheduled_at', { ascending: true })
-    .limit(20)
+  const now = new Date().toISOString()
+
+  const [{ data: sessions }, { data: pastSessions }] = await Promise.all([
+    supabase
+      .from('sessions')
+      .select(`
+        id, scheduled_at, status,
+        bookings!inner (
+          mode, location, status,
+          students ( name, year_level, subjects ),
+          parents ( name, phone )
+        )
+      `)
+      .eq('bookings.tutor_id', tutor.id)
+      .eq('bookings.status', 'confirmed')
+      .eq('status', 'scheduled')
+      .gte('scheduled_at', now)
+      .order('scheduled_at', { ascending: true })
+      .limit(20),
+    supabase
+      .from('sessions')
+      .select('id, scheduled_at, bookings(students(name)), progress_reports(id)')
+      .lt('scheduled_at', now)
+      .in('status', ['scheduled', 'completed'])
+      .order('scheduled_at', { ascending: false })
+      .limit(10),
+  ])
+
+  const reportsdue = (pastSessions ?? []).filter(
+    s => !(s.progress_reports as any[])?.length
+  )
 
   const upcomingSessions = sessions ?? []
   const firstName = tutor.legal_name.split(' ')[0]
@@ -80,6 +95,32 @@ export default async function TutorDashboard() {
           </div>
         )}
       </div>
+
+      {/* Reports due */}
+      {reportsdue.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            Reports due
+          </h2>
+          <div className="space-y-2">
+            {reportsdue.map((s) => {
+              const student = (s.bookings as any)?.students
+              return (
+                <a key={s.id} href={`/tutor/reports/${s.id}`}
+                  className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 hover:bg-amber-100 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium">{student?.name ?? 'Student'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Session on {format(new Date(s.scheduled_at), 'EEE d MMM')}
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-amber-700">Write report →</span>
+                </a>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Upcoming sessions list */}
       <section>
