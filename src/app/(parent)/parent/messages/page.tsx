@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { format } from 'date-fns'
 
@@ -11,7 +12,7 @@ export default async function ParentMessagesPage() {
 
   const [{ data: bookings }, { data: messages }] = await Promise.all([
     supabase.from('bookings')
-      .select('id, students(name), tutors(legal_name)')
+      .select('id, tutor_id, students(name)')
       .eq('parent_id', parent!.id)
       .eq('status', 'confirmed')
       .order('created_at', { ascending: false }),
@@ -19,6 +20,15 @@ export default async function ParentMessagesPage() {
       .select('id, booking_id, sender_role, body, read_at, created_at')
       .order('created_at', { ascending: false }),
   ])
+
+  // Tutors RLS restricts reads to own row — fetch names via admin client
+  const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
+  const admin = createAdminClient()
+  const { data: tutors } = tutorIds.length
+    ? await admin.from('tutors').select('id, legal_name').in('id', tutorIds)
+    : { data: [] }
+  const tutorNames: Record<string, string> = {}
+  for (const t of tutors ?? []) tutorNames[t.id] = t.legal_name
 
   // Group messages by booking
   const msgsByBooking: Record<string, typeof messages> = {}
@@ -57,10 +67,10 @@ export default async function ParentMessagesPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">with {b.tutors?.legal_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">with {tutorNames[b.tutor_id] ?? 'Tutor'}</p>
                   {last && (
                     <p className="text-xs text-muted-foreground mt-1 truncate">
-                      {last.sender_role === 'tutor' ? b.tutors?.legal_name : 'You'}: {last.body}
+                      {last.sender_role === 'tutor' ? (tutorNames[b.tutor_id] ?? 'Tutor') : 'You'}: {last.body}
                     </p>
                   )}
                   {!last && (
