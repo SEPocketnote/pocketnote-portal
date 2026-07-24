@@ -27,7 +27,7 @@ export default async function TutorStudentsPage() {
           .eq('status', 'confirmed'),
         supabase
           .from('sessions')
-          .select('id, scheduled_at, status, booking_id, progress_reports(id, submitted_at)')
+          .select('id, scheduled_at, status, booking_id')
           .order('scheduled_at', { ascending: false }),
       ])
     : [{ data: [] }, { data: [] }]
@@ -40,6 +40,17 @@ export default async function TutorStudentsPage() {
   for (const s of allSessions) {
     if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = []
     sessionsByBooking[s.booking_id].push(s)
+  }
+
+  // Query progress_reports separately to avoid RLS interaction in join context
+  const sessionIds = allSessions.map(s => s.id)
+  const reportedSessionIds = new Set<string>()
+  if (sessionIds.length) {
+    const { data: reports } = await supabase
+      .from('progress_reports')
+      .select('session_id')
+      .in('session_id', sessionIds)
+    for (const r of reports ?? []) reportedSessionIds.add(r.session_id)
   }
 
   const now = new Date()
@@ -92,7 +103,7 @@ export default async function TutorStudentsPage() {
                     <div className="space-y-2">
                       {sessions.map(s => {
                         const isPast = new Date(s.scheduled_at) < now
-                        const hasReport = (s.progress_reports as any[])?.length > 0
+                        const hasReport = reportedSessionIds.has(s.id)
                         return (
                           <div key={s.id} className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">{format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}</span>

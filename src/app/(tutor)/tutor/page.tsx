@@ -46,16 +46,25 @@ export default async function TutorDashboard() {
       .limit(20),
     supabase
       .from('sessions')
-      .select('id, scheduled_at, bookings(students(name)), progress_reports(id)')
+      .select('id, scheduled_at, bookings(students(name))')
       .lt('scheduled_at', now)
       .in('status', ['scheduled', 'completed'])
       .order('scheduled_at', { ascending: false })
       .limit(10),
   ])
 
-  const reportsdue = (pastSessions ?? []).filter(
-    s => !(s.progress_reports as any[])?.length
-  )
+  // Query progress_reports separately to avoid RLS interaction in join context
+  const pastIds = (pastSessions ?? []).map(s => s.id)
+  const reportedPastIds = new Set<string>()
+  if (pastIds.length) {
+    const { data: reports } = await supabase
+      .from('progress_reports')
+      .select('session_id')
+      .in('session_id', pastIds)
+    for (const r of reports ?? []) reportedPastIds.add(r.session_id)
+  }
+
+  const reportsdue = (pastSessions ?? []).filter(s => !reportedPastIds.has(s.id))
 
   const upcomingSessions = sessions ?? []
   const firstName = tutor.legal_name.split(' ')[0]
