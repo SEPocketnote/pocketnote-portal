@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { format, isToday, isTomorrow } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function TutorDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

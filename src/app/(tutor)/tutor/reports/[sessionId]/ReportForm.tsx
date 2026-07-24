@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 const RATINGS = [
   { value: 1, label: 'Struggling' },
@@ -24,7 +23,6 @@ type Props = {
 }
 
 export default function ReportForm({ sessionId, existing }: Props) {
-  const router = useRouter()
   const [values, setValues] = useState({
     covered: existing?.covered ?? '',
     went_well: existing?.went_well ?? '',
@@ -62,8 +60,7 @@ export default function ReportForm({ sessionId, existing }: Props) {
       return
     }
 
-    router.push('/tutor/students')
-    router.refresh()
+    window.location.href = '/tutor/students'
   }
 
   return (
@@ -119,7 +116,7 @@ export default function ReportForm({ sessionId, existing }: Props) {
           className="btn btn-primary disabled:opacity-50">
           {saving ? 'Saving…' : existing ? 'Update report' : 'Submit report'}
         </button>
-        <button type="button" onClick={() => router.back()}
+        <button type="button" onClick={() => window.history.back()}
           className="btn">
           Cancel
         </button>
