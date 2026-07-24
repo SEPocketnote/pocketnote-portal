@@ -70,7 +70,11 @@ export default async function TutorStudentsPage() {
             const student = b.students
             const parent = b.parents
             const pkg = b.packages
-            const sessions = (sessionsByBooking[b.id] ?? []).filter(s => s.status !== 'cancelled')
+            const rawSessions = (sessionsByBooking[b.id] ?? []).filter(s => s.status !== 'cancelled')
+            // Past sessions first (newest past first), then upcoming (nearest first)
+            const pastS = rawSessions.filter(s => new Date(s.scheduled_at) < now)
+            const upcomingS = rawSessions.filter(s => new Date(s.scheduled_at) >= now).reverse()
+            const sessions = [...pastS, ...upcomingS]
 
             return (
               <div key={b.id} className="bg-white rounded-lg border border-border p-6">
