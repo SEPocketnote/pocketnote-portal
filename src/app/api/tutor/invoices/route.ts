@@ -91,6 +91,7 @@ export async function POST(request: Request) {
       period_start,
       period_end,
       sessions_count,
+      amount: total_cents,
       total_minutes,
       hourly_rate_cents,
       total_cents,
