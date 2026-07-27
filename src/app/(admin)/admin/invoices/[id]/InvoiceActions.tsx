@@ -53,7 +53,7 @@ export default function InvoiceActions({
           </button>
         )}
         {status === 'approved' && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-end gap-2 flex-wrap">
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Paid on</label>
               <input
@@ -66,13 +66,23 @@ export default function InvoiceActions({
             <button
               onClick={() => update({ status: 'paid', paid_at: new Date(paidAt).toISOString(), admin_notes: adminNotes })}
               disabled={saving}
-              className="btn btn-primary text-sm px-4 py-2 self-end disabled:opacity-50"
+              className="btn btn-primary text-sm px-4 py-2 disabled:opacity-50"
             >
               Mark Paid
             </button>
+            <button
+              onClick={() => {
+                if (!confirm('Reject this invoice?')) return
+                update({ status: 'rejected', admin_notes: adminNotes })
+              }}
+              disabled={saving}
+              className="btn text-sm px-4 py-2 text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
+            >
+              Reject
+            </button>
           </div>
         )}
-        {(status === 'submitted' || status === 'approved') && (
+        {status === 'submitted' && (
           <button
             onClick={() => {
               if (!confirm('Reject this invoice?')) return
