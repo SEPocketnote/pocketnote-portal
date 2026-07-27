@@ -27,7 +27,7 @@ export default async function ParentDashboard() {
   const { data: bookings } = await supabase
     .from('bookings')
     .select(`
-      id, status, mode, location, sessions_completed, tutor_id,
+      id, status, mode, location, sessions_count, schedule_type, tutor_id,
       packages ( type, sessions_total ),
       students ( name, year_level ),
       sessions ( id, scheduled_at, status, duration_minutes )
@@ -96,15 +96,16 @@ export default async function ParentDashboard() {
             <div className="space-y-3">
               {bookings!.map((b) => {
                 const pkg = b.packages as any
-                const completed = b.sessions_completed
-                const total = pkg?.sessions_total ?? 0
+                const sessions = b.sessions as any[]
+                const completed = sessions.filter(s => s.status === 'completed').length
+                const total = (b as any).sessions_count ?? pkg?.sessions_total ?? 0
                 const pct = total > 0 ? Math.round((completed / total) * 100) : 0
                 return (
                   <div key={b.id} className="bg-white rounded-xl border border-border p-5">
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="font-medium capitalize">
-                          {pkg?.type} pack — {(b.students as any)?.name}
+                          {pkg?.type ? `${pkg.type} pack` : (b as any).schedule_type ?? 'Sessions'} — {(b.students as any)?.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           with {tutorNames[(b as any).tutor_id] ?? 'tutor TBC'}
