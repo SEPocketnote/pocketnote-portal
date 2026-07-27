@@ -23,6 +23,7 @@ export default function EnquiryNotes({
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   async function handleAdd() {
     const text = input.trim()
@@ -57,9 +58,11 @@ export default function EnquiryNotes({
   }
 
   async function handleDelete(noteId: string) {
-    if (!confirm('Delete this note?')) return
     const res = await fetch(`/api/admin/enquiry-notes/${noteId}`, { method: 'DELETE' })
-    if (res.ok) setNotes(prev => prev.filter(n => n.id !== noteId))
+    if (res.ok) {
+      setNotes(prev => prev.filter(n => n.id !== noteId))
+      setConfirmDeleteId(null)
+    }
   }
 
   function startEdit(note: Note) {
@@ -157,12 +160,30 @@ export default function EnquiryNotes({
                       >
                         Edit
                       </button>
-                      <button
-                        onClick={() => handleDelete(note.id)}
-                        className="text-xs text-muted-foreground hover:text-destructive"
-                      >
-                        Delete
-                      </button>
+                      {confirmDeleteId === note.id ? (
+                        <>
+                          <span className="text-xs text-destructive font-medium">Delete?</span>
+                          <button
+                            onClick={() => handleDelete(note.id)}
+                            className="text-xs text-destructive font-medium hover:underline"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            No
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(note.id)}
+                          className="text-xs text-muted-foreground hover:text-destructive"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
