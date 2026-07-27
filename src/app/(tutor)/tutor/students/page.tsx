@@ -18,7 +18,7 @@ export default async function TutorStudentsPage() {
         supabase
           .from('bookings')
           .select(`
-            id, mode, location, sessions_completed,
+            id, mode, location, sessions_count,
             packages ( type, sessions_total ),
             students ( name, year_level, subjects, notes ),
             parents ( name, phone, email )
@@ -86,7 +86,7 @@ export default async function TutorStudentsPage() {
                     </p>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {b.sessions_completed}/{pkg?.sessions_total} sessions
+                    {rawSessions.filter((s: any) => s.status === 'completed').length}/{b.sessions_count ?? pkg?.sessions_total ?? 0} sessions
                   </span>
                 </div>
 
