@@ -18,6 +18,7 @@ export default function InvoiceActions({
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes)
   const [paidAt, setPaidAt] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
+  const [confirmReject, setConfirmReject] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function update(payload: Record<string, string | null>) {
@@ -70,29 +71,47 @@ export default function InvoiceActions({
             >
               Mark Paid
             </button>
+            {confirmReject ? (
+              <span className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Reject?</span>
+                <button
+                  onClick={() => { setConfirmReject(false); update({ status: 'rejected', admin_notes: adminNotes }) }}
+                  disabled={saving}
+                  className="text-red-600 font-medium hover:underline disabled:opacity-50"
+                >Yes</button>
+                <button onClick={() => setConfirmReject(false)} className="text-muted-foreground hover:underline">No</button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setConfirmReject(true)}
+                disabled={saving}
+                className="btn text-sm px-4 py-2 text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
+              >
+                Reject
+              </button>
+            )}
+          </div>
+        )}
+        {status === 'submitted' && (
+          confirmReject ? (
+            <span className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Reject?</span>
+              <button
+                onClick={() => { setConfirmReject(false); update({ status: 'rejected', admin_notes: adminNotes }) }}
+                disabled={saving}
+                className="text-red-600 font-medium hover:underline disabled:opacity-50"
+              >Yes</button>
+              <button onClick={() => setConfirmReject(false)} className="text-muted-foreground hover:underline">No</button>
+            </span>
+          ) : (
             <button
-              onClick={() => {
-                if (!confirm('Reject this invoice?')) return
-                update({ status: 'rejected', admin_notes: adminNotes })
-              }}
+              onClick={() => setConfirmReject(true)}
               disabled={saving}
               className="btn text-sm px-4 py-2 text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
             >
               Reject
             </button>
-          </div>
-        )}
-        {status === 'submitted' && (
-          <button
-            onClick={() => {
-              if (!confirm('Reject this invoice?')) return
-              update({ status: 'rejected', admin_notes: adminNotes })
-            }}
-            disabled={saving}
-            className="btn text-sm px-4 py-2 text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
-          >
-            Reject
-          </button>
+          )
         )}
         {status === 'rejected' && (
           <button
