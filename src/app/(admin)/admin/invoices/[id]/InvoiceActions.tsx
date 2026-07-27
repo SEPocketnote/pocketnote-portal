@@ -72,7 +72,7 @@ export default function InvoiceActions({
               Mark Paid
             </button>
             {confirmReject ? (
-              <span className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm h-[38px] px-1">
                 <span className="text-muted-foreground">Reject?</span>
                 <button
                   onClick={() => { setConfirmReject(false); update({ status: 'rejected', admin_notes: adminNotes }) }}
@@ -80,7 +80,7 @@ export default function InvoiceActions({
                   className="text-red-600 font-medium hover:underline disabled:opacity-50"
                 >Yes</button>
                 <button onClick={() => setConfirmReject(false)} className="text-muted-foreground hover:underline">No</button>
-              </span>
+              </div>
             ) : (
               <button
                 onClick={() => setConfirmReject(true)}
