@@ -40,8 +40,10 @@ export default async function ParentDashboard() {
   const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
   const admin = createAdminClient()
   const { data: tutorRows } = tutorIds.length
-    ? await admin.from('tutors').select('id, legal_name').in('id', tutorIds)
+    ? await admin.from('tutors').select('id, legal_name, bio, photo_url, subjects, location, state').in('id', tutorIds)
     : { data: [] }
+  const tutorMap: Record<string, any> = {}
+  for (const t of tutorRows ?? []) tutorMap[t.id] = t
   const tutorNames: Record<string, string> = {}
   for (const t of tutorRows ?? []) tutorNames[t.id] = t.legal_name
 
@@ -126,6 +128,56 @@ export default async function ParentDashboard() {
               })}
             </div>
           </section>
+
+          {/* Tutor cards */}
+          {(tutorRows ?? []).length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                {(tutorRows ?? []).length === 1 ? 'Your tutor' : 'Your tutors'}
+              </h2>
+              <div className="space-y-3">
+                {(tutorRows ?? []).map((t: any) => (
+                  <a
+                    key={t.id}
+                    href={`/parent/tutor/${t.id}`}
+                    className="bg-white rounded-xl border border-border p-5 flex items-start gap-4 hover:border-primary/40 transition-colors block"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {t.photo_url ? (
+                        <img src={t.photo_url} alt={t.legal_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-medium text-muted-foreground">
+                          {t.legal_name?.[0]?.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold">{t.legal_name}</p>
+                        <span className="text-xs text-primary shrink-0">View profile →</span>
+                      </div>
+                      {(t.location || t.state) && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{[t.location, t.state].filter(Boolean).join(', ')}</p>
+                      )}
+                      {t.bio && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{t.bio}</p>
+                      )}
+                      {(t.subjects as string[] | null)?.length ? (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {(t.subjects as string[]).slice(0, 4).map((s: string) => (
+                            <span key={s} className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">{s}</span>
+                          ))}
+                          {(t.subjects as string[]).length > 4 && (
+                            <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">+{(t.subjects as string[]).length - 4} more</span>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Upcoming sessions list */}
           {upcomingSessions.length > 1 && (
