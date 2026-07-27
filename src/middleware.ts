@@ -26,6 +26,16 @@ export async function middleware(request: NextRequest) {
   // Refresh session
   await supabase.auth.getUser()
 
+  // Track when admin last viewed the invoices list
+  if (request.nextUrl.pathname === '/admin/invoices') {
+    supabaseResponse.cookies.set('invoices_last_seen', new Date().toISOString(), {
+      path: '/',
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+    })
+  }
+
   return supabaseResponse
 }
 

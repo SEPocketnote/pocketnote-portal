@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import AdminNav from '@/components/admin/AdminNav'
 
@@ -16,9 +17,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (profile?.role !== 'admin') redirect('/login')
 
+  const cookieStore = await cookies()
+  const lastSeenInvoices = cookieStore.get('invoices_last_seen')?.value
+
+  const invoicesQuery = supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'submitted')
+
   const [{ count: unreadMessages }, { count: pendingInvoices }] = await Promise.all([
     supabase.from('messages').select('*', { count: 'exact', head: true }).is('read_at', null),
-    supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'submitted'),
+    lastSeenInvoices ? invoicesQuery.gt('submitted_at', lastSeenInvoices) : invoicesQuery,
   ])
 
   return (
