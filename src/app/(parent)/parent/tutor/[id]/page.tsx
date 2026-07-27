@@ -17,6 +17,7 @@ export default async function TutorPublicProfilePage({ params }: { params: Promi
     .select('id, legal_name, bio, photo_url, subjects, year_levels, location, state, credentials')
     .eq('id', id)
     .eq('active', true)
+    .eq('verified', true)
     .single()
 
   if (!tutor) notFound()
