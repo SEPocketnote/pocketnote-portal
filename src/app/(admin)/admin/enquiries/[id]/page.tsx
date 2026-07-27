@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import EnquiryNotes from './EnquiryNotes'
 
 const STATUSES = ['new', 'contacted', 'confirmed', 'waitlisted'] as const
 
@@ -21,15 +22,18 @@ export default async function EnquiryDetailPage({
 
   if (!enquiry) notFound()
 
-  async function updateEnquiry(formData: FormData) {
+  const { data: notes } = await supabase
+    .from('enquiry_notes')
+    .select('id, body, author_email, created_at, updated_at')
+    .eq('enquiry_id', id)
+    .order('created_at', { ascending: false })
+
+  async function updateStatus(formData: FormData) {
     'use server'
     const supabase = await createClient()
     await supabase
       .from('enquiries')
-      .update({
-        status: formData.get('status'),
-        notes: formData.get('notes'),
-      })
+      .update({ status: formData.get('status') })
       .eq('id', id)
     redirect(`/admin/enquiries/${id}`)
   }
@@ -90,47 +94,36 @@ export default async function EnquiryDetailPage({
         )}
       </div>
 
-      {/* Status + notes form */}
-      <form action={updateEnquiry} className="bg-white rounded-lg border border-border p-6 space-y-5">
-        <h2 className="font-medium">Update enquiry</h2>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Status</label>
-          <div className="flex flex-wrap gap-2">
-            {STATUSES.map((s) => (
-              <label key={s} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="status"
-                  value={s}
-                  defaultChecked={enquiry.status === s}
-                  className="accent-primary"
-                />
-                <span className="text-sm capitalize">{s}</span>
-              </label>
-            ))}
-          </div>
+      {/* Status form */}
+      <form action={updateStatus} className="bg-white rounded-lg border border-border p-6 space-y-5 mb-6">
+        <h2 className="font-medium">Status</h2>
+        <div className="flex flex-wrap gap-2">
+          {STATUSES.map((s) => (
+            <label key={s} className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="status"
+                value={s}
+                defaultChecked={enquiry.status === s}
+                className="accent-primary"
+              />
+              <span className="text-sm capitalize">{s}</span>
+            </label>
+          ))}
         </div>
-
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium mb-1">Notes</label>
-          <textarea
-            id="notes"
-            name="notes"
-            defaultValue={enquiry.notes ?? ''}
-            rows={4}
-            className="input resize-none"
-            placeholder="Add internal notes about this enquiry…"
-          />
-        </div>
-
         <button
           type="submit"
           className="bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:opacity-90"
         >
-          Save changes
+          Update status
         </button>
       </form>
+
+      {/* Notes log */}
+      <div className="bg-white rounded-lg border border-border p-6">
+        <h2 className="font-medium mb-4">Notes</h2>
+        <EnquiryNotes enquiryId={id} initialNotes={notes ?? []} />
+      </div>
     </div>
   )
 }
