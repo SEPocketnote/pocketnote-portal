@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import TutorPicker from './TutorPicker'
 import ParentSearch, { type ParentResult } from './ParentSearch'
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
 function formatAustralianPhone(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 10)
   if (digits.startsWith('04') || digits.startsWith('05')) {
@@ -39,14 +37,15 @@ function validatePhone(value: string): string {
 type ParentMode = 'idle' | 'existing' | 'new'
 type StudentMode = 'existing' | 'new'
 
+type ScheduleType = 'single' | 'weekly' | 'fortnightly'
+type EndCondition = 'count' | 'endDate'
+
 export default function NewBookingForm({
   tutors,
-  packages,
   availability,
   initialValues,
 }: {
   tutors: any[]
-  packages: any[]
   availability: any[]
   initialValues?: Record<string, string>
 }) {
@@ -76,13 +75,15 @@ export default function NewBookingForm({
   // Booking
   const [form, setForm] = useState({
     tutorId: '',
-    packageId: '',
     mode: (initialValues?.mode ?? 'online') as 'online' | 'in-person',
     location: initialValues?.location ?? '',
     startDate: '',
     sessionTime: '',
-    dayOfWeek: '',
   })
+  const [scheduleType, setScheduleType] = useState<ScheduleType>('single')
+  const [endCondition, setEndCondition] = useState<EndCondition>('count')
+  const [sessionsCount, setSessionsCount] = useState('10')
+  const [endDate, setEndDate] = useState('')
 
   function handleSelectExistingParent(parent: ParentResult) {
     setSelectedParent(parent)
@@ -136,7 +137,14 @@ export default function NewBookingForm({
     if (studentMode === 'new' && !newStudent.name) { setError('Student name is required'); return }
     if (studentMode === 'existing' && !selectedStudentId) { setError('Please select a student'); return }
     if (!form.tutorId) { setError('Please select a tutor'); return }
-    if (!form.packageId) { setError('Please select a package'); return }
+    if (scheduleType !== 'single') {
+      if (endCondition === 'count' && (!sessionsCount || parseInt(sessionsCount) < 1)) {
+        setError('Enter a valid number of sessions'); return
+      }
+      if (endCondition === 'endDate' && !endDate) {
+        setError('Enter an end date'); return
+      }
+    }
 
     setLoading(true)
     setError('')
@@ -149,6 +157,9 @@ export default function NewBookingForm({
         ? { studentId: selectedStudentId }
         : { studentName: newStudent.name, yearLevel: newStudent.yearLevel, subjects: newStudent.subjects }),
       ...form,
+      scheduleType,
+      ...(scheduleType !== 'single' && endCondition === 'count' ? { sessionsCount: parseInt(sessionsCount) } : {}),
+      ...(scheduleType !== 'single' && endCondition === 'endDate' ? { recurrenceEndDate: endDate } : {}),
     }
 
     try {
@@ -168,7 +179,14 @@ export default function NewBookingForm({
   }
 
   const parentResolved = parentMode !== 'idle'
-  const selectedPkg = packages.find(p => p.id === form.packageId)
+
+  function sessionSummary() {
+    if (scheduleType === 'single') return '1 session will be created'
+    const freq = scheduleType === 'weekly' ? 'weekly' : 'fortnightly'
+    if (endCondition === 'count' && sessionsCount) return `${sessionsCount} sessions, ${freq}`
+    if (endCondition === 'endDate' && endDate) return `${freq} sessions until ${endDate}`
+    return `${freq} recurring`
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -315,18 +333,6 @@ export default function NewBookingForm({
                 onChange={id => setForm(f => ({ ...f, tutorId: id }))}
               />
             </Field>
-            <Field label="Package" required>
-              <select required className="input" value={form.packageId}
-                onChange={e => setForm(f => ({ ...f, packageId: e.target.value }))}>
-                <option value="">Select package</option>
-                {packages.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.type.charAt(0).toUpperCase() + p.type.slice(1)} ({p.sessions_total} sessions) —{' '}
-                    ${p.type === 'single' ? (p.price_online / 100).toFixed(0) : (p.price_online / 100 / p.sessions_total).toFixed(0)}/session online
-                  </option>
-                ))}
-              </select>
-            </Field>
             <Field label="Mode" required>
               <select required className="input" value={form.mode}
                 onChange={e => setForm(f => ({ ...f, mode: e.target.value as any }))}>
@@ -346,11 +352,72 @@ export default function NewBookingForm({
 
       {/* Schedule */}
       {parentResolved && (
-        <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <section className="bg-white rounded-lg border border-border p-6 space-y-5">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Schedule{selectedPkg ? ` — ${selectedPkg.sessions_total} sessions will be generated` : ''}
+            Schedule — {sessionSummary()}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+          {/* Type picker */}
+          <div>
+            <p className="text-sm font-medium mb-2">Session type</p>
+            <div className="flex gap-2 flex-wrap">
+              {(['single', 'weekly', 'fortnightly'] as ScheduleType[]).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setScheduleType(t)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    scheduleType === t
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-white border-border hover:border-primary'
+                  }`}
+                >
+                  {t === 'single' ? 'Single session' : t === 'weekly' ? 'Weekly recurring' : 'Fortnightly recurring'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* End condition — only for recurring */}
+          {scheduleType !== 'single' && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">End condition</p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" className="accent-primary" checked={endCondition === 'count'}
+                    onChange={() => setEndCondition('count')} />
+                  <span className="text-sm">Number of sessions</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" className="accent-primary" checked={endCondition === 'endDate'}
+                    onChange={() => setEndCondition('endDate')} />
+                  <span className="text-sm">End date</span>
+                </label>
+              </div>
+              {endCondition === 'count' ? (
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  className="input w-36"
+                  value={sessionsCount}
+                  onChange={e => setSessionsCount(e.target.value)}
+                  placeholder="e.g. 10"
+                />
+              ) : (
+                <input
+                  type="date"
+                  className="input w-48"
+                  value={endDate}
+                  min={form.startDate || undefined}
+                  onChange={e => setEndDate(e.target.value)}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Date & time */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="First session date" required>
               <input type="date" required className="input" value={form.startDate}
                 onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
@@ -359,15 +426,7 @@ export default function NewBookingForm({
               <input type="time" required className="input" value={form.sessionTime}
                 onChange={e => setForm(f => ({ ...f, sessionTime: e.target.value }))} />
             </Field>
-            <Field label="Recurring day">
-              <select className="input" value={form.dayOfWeek}
-                onChange={e => setForm(f => ({ ...f, dayOfWeek: e.target.value }))}>
-                <option value="">Same as start date</option>
-                {DAYS.map(d => <option key={d}>{d}</option>)}
-              </select>
-            </Field>
           </div>
-          <p className="text-xs text-muted-foreground">Sessions will be created weekly from the start date.</p>
         </section>
       )}
 

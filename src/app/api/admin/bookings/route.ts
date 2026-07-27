@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendParentWelcome, upsertBrevoContact } from '@/lib/brevo'
 import { z } from 'zod'
-import { addWeeks, format, parseISO, setHours, setMinutes } from 'date-fns'
+import { addWeeks, format, isBefore, isEqual, parseISO, setHours, setMinutes } from 'date-fns'
 
 const Schema = z.object({
   // Parent — either existing ID or new details
@@ -18,12 +18,13 @@ const Schema = z.object({
   subjects: z.string().optional(),
   // Booking
   tutorId: z.string().uuid(),
-  packageId: z.string().uuid(),
   mode: z.enum(['online', 'in-person']),
   location: z.string().optional(),
   startDate: z.string().min(1),
   sessionTime: z.string().min(1),
-  dayOfWeek: z.string().optional(),
+  scheduleType: z.enum(['single', 'weekly', 'fortnightly']),
+  sessionsCount: z.number().int().min(1).max(200).optional(),
+  recurrenceEndDate: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -49,15 +50,11 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient()
 
-  // 1. Get package
-  const { data: pkg } = await admin.from('packages').select('*').eq('id', d.packageId).single()
-  if (!pkg) return NextResponse.json({ error: 'Package not found' }, { status: 400 })
-
-  // 2. Get tutor
+  // 1. Get tutor
   const { data: tutor } = await admin.from('tutors').select('legal_name').eq('id', d.tutorId).single()
   if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 400 })
 
-  // 3. Resolve parent
+  // 2. Resolve parent
   let parent: { id: string; user_id: string | null; name: string; email: string } | null = null
   let authUserId: string | undefined
 
@@ -148,38 +145,55 @@ export async function POST(request: Request) {
 
   if (!student) return NextResponse.json({ error: 'Failed to resolve student' }, { status: 500 })
 
-  // 5. Create booking
+  // 5. Generate session dates
+  const [hours, minutes] = d.sessionTime.split(':').map(Number)
+  const intervalWeeks = d.scheduleType === 'fortnightly' ? 2 : 1
+  let firstSession = parseISO(d.startDate)
+  firstSession = setHours(setMinutes(firstSession, minutes), hours)
+
+  const sessionDates: Date[] = []
+  if (d.scheduleType === 'single') {
+    sessionDates.push(firstSession)
+  } else if (d.sessionsCount) {
+    for (let i = 0; i < d.sessionsCount; i++) {
+      sessionDates.push(addWeeks(firstSession, i * intervalWeeks))
+    }
+  } else if (d.recurrenceEndDate) {
+    const end = parseISO(d.recurrenceEndDate)
+    let cur = firstSession
+    while (isBefore(cur, end) || isEqual(cur, end)) {
+      sessionDates.push(cur)
+      cur = addWeeks(cur, intervalWeeks)
+    }
+  }
+
+  // 6. Create booking
   const { data: booking } = await admin.from('bookings').insert({
     parent_id: parent.id,
     student_id: student.id,
     tutor_id: d.tutorId,
-    package_id: d.packageId,
     status: 'confirmed',
     mode: d.mode,
     location: d.location,
     start_date: d.startDate,
+    schedule_type: d.scheduleType,
+    sessions_count: sessionDates.length,
+    recurrence_end_date: d.recurrenceEndDate ?? null,
   }).select('id').single()
 
   if (!booking) return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
 
-  // 6. Generate sessions
-  const [hours, minutes] = d.sessionTime.split(':').map(Number)
-  const sessions = []
-  let sessionDate = parseISO(d.startDate)
-  sessionDate = setHours(setMinutes(sessionDate, minutes), hours)
-
-  for (let i = 0; i < pkg.sessions_total; i++) {
-    sessions.push({
+  // 7. Insert sessions
+  await admin.from('sessions').insert(
+    sessionDates.map(dt => ({
       booking_id: booking.id,
-      scheduled_at: addWeeks(sessionDate, i).toISOString(),
+      scheduled_at: dt.toISOString(),
       status: 'scheduled',
-    })
-  }
+    }))
+  )
 
-  await admin.from('sessions').insert(sessions)
-
-  // 7. Generate magic link and send welcome email (non-blocking)
-  const firstSession = format(sessionDate, 'EEEE d MMMM \'at\' h:mm a')
+  // 8. Generate magic link and send welcome email (non-blocking)
+  const firstSessionLabel = format(firstSession, 'EEEE d MMMM \'at\' h:mm a')
   ;(async () => {
     let inviteUrl: string | undefined
     if (authUserId) {
@@ -195,7 +209,7 @@ export async function POST(request: Request) {
       name: parent!.name,
       email: parent!.email,
       tutorName: tutor.legal_name,
-      firstSession,
+      firstSession: firstSessionLabel,
       inviteUrl,
     })
   })().catch(err => console.error('[bookings] welcome email failed:', err))

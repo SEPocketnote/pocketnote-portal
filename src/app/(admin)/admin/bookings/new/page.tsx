@@ -9,9 +9,8 @@ export default async function NewBookingPage({
   const { from } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: tutors }, { data: packages }, { data: availability }] = await Promise.all([
+  const [{ data: tutors }, { data: availability }] = await Promise.all([
     supabase.from('tutors').select('id, legal_name, subjects, year_levels, location, state, postcode').eq('active', true).order('legal_name'),
-    supabase.from('packages').select('*').eq('active', true).order('sessions_total'),
     supabase.from('tutor_availability').select('tutor_id, day_of_week').order('day_of_week'),
   ])
 
@@ -49,7 +48,6 @@ export default async function NewBookingPage({
       <h1 className="text-2xl font-semibold mb-6">Create booking</h1>
       <NewBookingForm
         tutors={tutors ?? []}
-        packages={packages ?? []}
         availability={availability ?? []}
         initialValues={initialValues}
       />
