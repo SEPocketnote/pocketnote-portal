@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
+import MarkCompleteButton from './MarkCompleteButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -116,6 +117,8 @@ export default async function TutorStudentsPage() {
                             </span>
                             {!isPast ? (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">Upcoming</span>
+                            ) : s.status === 'scheduled' ? (
+                              <MarkCompleteButton sessionId={s.id} />
                             ) : hasReport ? (
                               <a href={`/tutor/reports/${s.id}`}
                                 className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 hover:bg-green-100">
