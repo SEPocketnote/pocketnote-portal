@@ -40,6 +40,8 @@ export default async function AdminThreadPage({ params }: { params: Promise<{ bo
         currentRole="admin"
         myName="Admin"
         otherPartyName=""
+        adminParentName={parent?.name}
+        adminTutorName={tutor?.legal_name}
         readOnly
       />
     </div>

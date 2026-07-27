@@ -25,6 +25,8 @@ export default function MessageThread({
   currentRole,
   myName,
   otherPartyName,
+  adminParentName,
+  adminTutorName,
   readOnly = false,
 }: {
   bookingId: string
@@ -32,6 +34,8 @@ export default function MessageThread({
   currentRole: 'parent' | 'tutor' | 'admin'
   myName: string
   otherPartyName: string
+  adminParentName?: string
+  adminTutorName?: string
   readOnly?: boolean
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
@@ -115,8 +119,17 @@ export default function MessageThread({
         )}
 
         {messages.map((msg) => {
-          const isOwn = currentRole !== 'admin' && msg.sender_role === currentRole
-          const senderLabel = msg.sender_role === currentRole ? myName : otherPartyName
+          let isOwn: boolean
+          let senderLabel: string
+          if (currentRole === 'admin') {
+            isOwn = msg.sender_role === 'tutor'
+            senderLabel = msg.sender_role === 'tutor'
+              ? (adminTutorName ?? 'Tutor')
+              : (adminParentName ?? 'Parent')
+          } else {
+            isOwn = msg.sender_role === currentRole
+            senderLabel = msg.sender_role === currentRole ? myName : otherPartyName
+          }
 
           return (
             <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
