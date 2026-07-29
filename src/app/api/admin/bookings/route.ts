@@ -97,25 +97,29 @@ export async function POST(request: Request) {
         await admin.from('profiles').upsert({ id: authUserId, role: 'parent' }, { onConflict: 'id' })
       }
 
+      // Create Stripe customer before inserting parent so the ID is stored atomically
+      let stripeCustomerId: string | null = null
+      try {
+        const customer = await stripe.customers.create({
+          name: d.parentName!,
+          email,
+          phone: d.parentPhone,
+        })
+        stripeCustomerId = customer.id
+      } catch (err) {
+        console.error('[bookings] stripe customer create failed:', err)
+        return NextResponse.json({ error: 'Failed to create payment account. Please try again.' }, { status: 502 })
+      }
+
       const { data: newParent } = await admin.from('parents').insert({
         name: d.parentName!,
         email,
         phone: d.parentPhone,
         user_id: authUserId ?? null,
+        stripe_customer_id: stripeCustomerId,
       }).select('id, name, email, user_id').single()
 
       parent = newParent
-
-      // Create Stripe customer for new parent (non-blocking)
-      ;(async () => {
-        const customer = await stripe.customers.create({
-          name: d.parentName!,
-          email,
-          phone: d.parentPhone,
-          metadata: { parent_id: newParent!.id },
-        })
-        await admin.from('parents').update({ stripe_customer_id: customer.id }).eq('id', newParent!.id)
-      })().catch(err => console.error('[bookings] stripe customer create failed:', err))
 
       await upsertBrevoContact({
         email,

@@ -325,7 +325,11 @@ export async function createBrevoDeal({
   const dealRes = await fetch(`${BASE}/crm/deals`, {
     method: 'POST',
     headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({
+      name,
+      ...(process.env.BREVO_DEALS_PIPELINE_ID && { pipelineId: process.env.BREVO_DEALS_PIPELINE_ID }),
+      ...(process.env.BREVO_DEALS_PIPELINE_STAGE_ID && { stageId: process.env.BREVO_DEALS_PIPELINE_STAGE_ID }),
+    }),
   })
 
   if (!dealRes.ok) {
