@@ -372,7 +372,10 @@ export async function sendEnquiryNotification(data: {
 }) {
   await brevoRequest('/smtp/email', {
     sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Portal' },
-    to: [{ email: process.env.ADMIN_EMAIL || 'tara@pocketnote.com.au' }],
+    to: (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || 'tara@pocketnote.com.au')
+      .split(',')
+      .map(e => ({ email: e.trim() }))
+      .filter(e => e.email),
     subject: `New enquiry — ${data.studentName} (${data.yearLevel})`,
     htmlContent: `
       <h2>New Enquiry</h2>
