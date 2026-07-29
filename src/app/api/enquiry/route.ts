@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     await Promise.allSettled([
       createBrevoDeal({
-        name: `Enquiry — ${data.studentName} (${data.yearLevel})`,
+        name: data.parentName,
         email: data.email,
       }),
       sendEnquiryNotification(data),
