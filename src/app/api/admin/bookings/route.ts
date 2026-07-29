@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendParentWelcome, upsertBrevoContact } from '@/lib/brevo'
+import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
 import { addWeeks, format, isBefore, isEqual, parseISO, setHours, setMinutes } from 'date-fns'
 
@@ -104,6 +105,17 @@ export async function POST(request: Request) {
       }).select('id, name, email, user_id').single()
 
       parent = newParent
+
+      // Create Stripe customer for new parent (non-blocking)
+      ;(async () => {
+        const customer = await stripe.customers.create({
+          name: d.parentName!,
+          email,
+          phone: d.parentPhone,
+          metadata: { parent_id: newParent!.id },
+        })
+        await admin.from('parents').update({ stripe_customer_id: customer.id }).eq('id', newParent!.id)
+      })().catch(err => console.error('[bookings] stripe customer create failed:', err))
 
       await upsertBrevoContact({
         email,

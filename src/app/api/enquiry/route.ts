@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { sendEnquiryNotification, upsertBrevoContact } from '@/lib/brevo'
+import { createBrevoDeal, sendEnquiryNotification, upsertBrevoContact } from '@/lib/brevo'
 import { z } from 'zod'
 
 const EnquirySchema = z.object({
@@ -48,24 +48,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save enquiry' }, { status: 500 })
   }
 
-  // Add to Brevo CRM as a contact
-  await upsertBrevoContact({
-    email: data.email,
-    firstName: data.parentName.split(' ')[0],
-    lastName: data.parentName.split(' ').slice(1).join(' '),
-    listIds: [Number(process.env.BREVO_ENQUIRY_LIST_ID)],
-    attributes: {
-      PHONE: data.phone,
-      STUDENT_NAME: data.studentName,
-      YEAR_LEVEL: data.yearLevel,
-      SUBJECTS: data.subjects.join(', '),
-      LOCATION: data.location,
-      MODE_PREFERENCE: data.modePreference,
-    },
-  })
+  // Add to Brevo CRM as a contact, create a deal, and notify the team (non-blocking)
+  ;(async () => {
+    await upsertBrevoContact({
+      email: data.email,
+      firstName: data.parentName.split(' ')[0],
+      lastName: data.parentName.split(' ').slice(1).join(' '),
+      listIds: [Number(process.env.BREVO_ENQUIRY_LIST_ID)],
+      attributes: {
+        PHONE: data.phone,
+        STUDENT_NAME: data.studentName,
+        YEAR_LEVEL: data.yearLevel,
+        SUBJECTS: data.subjects.join(', '),
+        LOCATION: data.location,
+        MODE_PREFERENCE: data.modePreference,
+      },
+    })
 
-  // Email Tara
-  await sendEnquiryNotification(data)
+    await Promise.allSettled([
+      createBrevoDeal({
+        name: `Enquiry — ${data.studentName} (${data.yearLevel})`,
+        email: data.email,
+      }),
+      sendEnquiryNotification(data),
+    ])
+  })().catch(err => console.error('[enquiry] brevo error:', err))
 
   return NextResponse.json({ ok: true })
 }

@@ -3,11 +3,14 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const reason = searchParams.get('reason')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,6 +28,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white rounded-lg shadow-sm border p-8 w-full max-w-sm">
         <h1 className="text-xl font-semibold mb-4">Sign in to Pocketnote</h1>
+
+        {reason === 'tos' && (
+          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 mb-4">
+            You must accept our Terms of Service to use Pocketnote. Sign in again to continue.
+          </div>
+        )}
 
         {sent ? (
           <>

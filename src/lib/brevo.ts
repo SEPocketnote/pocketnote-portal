@@ -315,6 +315,44 @@ export async function sendMessageNotification({
   })
 }
 
+export async function createBrevoDeal({
+  name,
+  email,
+}: {
+  name: string
+  email: string
+}): Promise<void> {
+  const dealRes = await fetch(`${BASE}/crm/deals`, {
+    method: 'POST',
+    headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+
+  if (!dealRes.ok) {
+    console.error('[brevo] createBrevoDeal failed:', await dealRes.text())
+    return
+  }
+
+  const { id: dealId } = await dealRes.json()
+
+  // Get contact's numeric ID so we can link the deal
+  const contactRes = await fetch(`${BASE}/contacts/${encodeURIComponent(email)}`, {
+    headers: { 'api-key': BREVO_API_KEY, accept: 'application/json' },
+  })
+
+  if (!contactRes.ok || !dealId) return
+
+  const { id: contactId } = await contactRes.json()
+
+  if (contactId) {
+    await fetch(`${BASE}/crm/deals/${dealId}`, {
+      method: 'PATCH',
+      headers: { 'api-key': BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ linkedContactsIds: [contactId] }),
+    })
+  }
+}
+
 export async function sendEnquiryNotification(data: {
   parentName: string
   email: string
