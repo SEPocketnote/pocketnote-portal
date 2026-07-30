@@ -184,10 +184,14 @@ export default function OnboardingFlow({
 
     setSaving(true)
     try {
+      // Only include gst_registered if ABN was verified this session
+      const payload: Record<string, any> = { ...form }
+      if (abnStatus.state !== 'valid') delete payload.gst_registered
+
       const res = await fetch('/api/tutor/profile', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const data = await res.json()
