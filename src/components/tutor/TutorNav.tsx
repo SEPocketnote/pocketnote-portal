@@ -19,7 +19,7 @@ const links = [
   { href: '/tutor/resources', label: 'Resources', icon: BookOpen },
 ]
 
-export default function TutorNav({ name, unreadMessages = 0 }: { name: string; unreadMessages?: number }) {
+export default function TutorNav({ name, photoUrl, unreadMessages = 0 }: { name: string; photoUrl?: string | null; unreadMessages?: number }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -43,8 +43,11 @@ export default function TutorNav({ name, unreadMessages = 0 }: { name: string; u
 
       {/* User identity */}
       <div className="flex items-center gap-3 mb-6 px-1">
-        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-          <span className="text-white font-semibold text-sm">{initial}</span>
+        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 overflow-hidden">
+          {photoUrl
+            ? <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+            : <span className="text-white font-semibold text-sm">{initial}</span>
+          }
         </div>
         <div className="min-w-0">
           <p className="text-white text-sm font-medium truncate">{name}</p>
