@@ -13,6 +13,9 @@ const Schema = z.object({
   postcode: z.string().optional(),
   subjects: z.array(z.string()).default([]),
   yearLevels: z.array(z.string()).default([]),
+  wwccNumber: z.string().optional(),
+  wwccExpiry: z.string().optional(),
+  credentials: z.array(z.string()).default([]),
 })
 
 export async function POST(request: Request) {
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
   const parsed = Schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
-  const { legalName, email, phone, location, state, postcode, subjects, yearLevels } = parsed.data
+  const { legalName, email, phone, location, state, postcode, subjects, yearLevels, wwccNumber, wwccExpiry, credentials } = parsed.data
   const admin = createAdminClient()
 
   // Upsert tutor record — if email already exists, update details rather than duplicate
@@ -41,6 +44,9 @@ export async function POST(request: Request) {
     postcode,
     subjects,
     year_levels: yearLevels,
+    wwcc_number: wwccNumber ?? null,
+    wwcc_expiry: wwccExpiry ?? null,
+    credentials,
     active: false,
     verified: false,
   }, { onConflict: 'email' }).select('id').single()

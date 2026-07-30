@@ -144,6 +144,9 @@ export default function NewTutorPage() {
     postcode: '',
     subjects: [] as string[],
     yearLevels: [] as string[],
+    wwccNumber: '',
+    wwccExpiry: '',
+    credentials: '',
   })
 
   function handleEmailChange(value: string) {
@@ -180,7 +183,10 @@ export default function NewTutorPage() {
       const res = await fetch('/api/admin/tutors', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          credentials: form.credentials.split(',').map(s => s.trim()).filter(Boolean),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to create tutor')
@@ -250,6 +256,28 @@ export default function NewTutorPage() {
               <input type="text" value={form.postcode}
                 onChange={e => setForm({...form, postcode: e.target.value})} className="input"
                 placeholder="e.g. 2026" />
+            </Field>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Compliance</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="WWCC number">
+              <input type="text" value={form.wwccNumber}
+                onChange={e => setForm({...form, wwccNumber: e.target.value})} className="input"
+                placeholder="e.g. WWC0123456E" />
+            </Field>
+            <Field label="WWCC expiry">
+              <input type="date" value={form.wwccExpiry}
+                onChange={e => setForm({...form, wwccExpiry: e.target.value})} className="input" />
+            </Field>
+          </div>
+          <div className="mt-4">
+            <Field label="Credentials (comma-separated)">
+              <input type="text" value={form.credentials}
+                onChange={e => setForm({...form, credentials: e.target.value})} className="input"
+                placeholder="e.g. Bachelor of Education, HSC Mathematics" />
             </Field>
           </div>
         </section>
