@@ -87,6 +87,10 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (form.bio.trim().length < 50) {
+      setError('Bio must be at least 50 characters.')
+      return
+    }
     setSaving(true)
     setError('')
     setSuccess('')
@@ -171,6 +175,9 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
           <textarea rows={4} className="input resize-none"
             placeholder="A short intro about yourself, your teaching style and experience"
             value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
+          <p className={`text-xs mt-1 ${form.bio.trim().length >= 50 ? 'text-muted-foreground' : 'text-amber-600'}`}>
+            {form.bio.trim().length}/50 minimum characters
+          </p>
         </Field>
       </section>
 

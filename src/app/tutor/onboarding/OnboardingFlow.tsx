@@ -170,7 +170,7 @@ export default function OnboardingFlow({
     setError('')
     const missing: string[] = []
     if (!form.photo_url) missing.push('profile photo')
-    if (!form.bio.trim()) missing.push('bio')
+    if (form.bio.trim().length < 50) missing.push('bio (minimum 50 characters)')
     if (!form.phone.trim()) missing.push('phone number')
     if (!form.abn.trim()) missing.push('ABN')
     if (!form.wwcc_number.trim()) missing.push('WWCC number')
@@ -320,6 +320,9 @@ export default function OnboardingFlow({
               <textarea rows={4} className="input resize-none"
                 placeholder="A short intro about yourself — your teaching style, experience, and what you enjoy helping students with."
                 value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} />
+              <p className={`text-xs mt-1 ${form.bio.trim().length >= 50 ? 'text-muted-foreground' : 'text-amber-600'}`}>
+                {form.bio.trim().length}/50 minimum characters
+              </p>
             </Field>
           </section>
 
