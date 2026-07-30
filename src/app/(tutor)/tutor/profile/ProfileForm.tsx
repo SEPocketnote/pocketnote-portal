@@ -17,12 +17,14 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
   const [success, setSuccess] = useState('')
   const [photoUploading, setPhotoUploading] = useState(false)
   const [credInput, setCredInput] = useState('')
+  const [abnStatus, setAbnStatus] = useState<{ state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; gstRegistered?: boolean }>({ state: 'idle' })
 
   const [form, setForm] = useState({
     phone: tutor.phone ?? '',
     address: tutor.address ?? '',
     bio: tutor.bio ?? '',
     abn: tutor.abn ?? '',
+    gst_registered: tutor.gst_registered ?? false,
     wwcc_number: tutor.wwcc_number ?? '',
     wwcc_expiry: tutor.wwcc_expiry ?? '',
     date_of_birth: tutor.date_of_birth ?? '',
@@ -178,8 +180,39 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
         <p className="text-xs text-muted-foreground">Required before you can be activated on the platform.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="ABN">
-            <input type="text" className="input" placeholder="e.g. 12 345 678 901" value={form.abn}
-              onChange={e => setForm({ ...form, abn: e.target.value })} />
+            <div className="flex gap-2">
+              <input type="text" className="input flex-1" placeholder="e.g. 12 345 678 901" value={form.abn}
+                onChange={e => { setForm({ ...form, abn: e.target.value }); setAbnStatus({ state: 'idle' }) }} />
+              <button type="button" onClick={async () => {
+                const abn = form.abn.replace(/\s/g, '')
+                if (!abn) return
+                setAbnStatus({ state: 'loading' })
+                try {
+                  const res = await fetch(`/api/admin/abn-lookup?abn=${encodeURIComponent(abn)}`)
+                  const data = await res.json()
+                  if (!res.ok || data.error) { setAbnStatus({ state: 'invalid' }); return }
+                  const gstRegistered = data.gstRegistered ?? false
+                  setAbnStatus({ state: data.status === 'Active' ? 'valid' : 'invalid', name: data.name, gstRegistered })
+                  if (data.status === 'Active') setForm(f => ({ ...f, gst_registered: gstRegistered }))
+                } catch { setAbnStatus({ state: 'invalid' }) }
+              }} disabled={!form.abn.trim() || abnStatus.state === 'loading'}
+                className="px-3 py-2 text-sm rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50 shrink-0">
+                {abnStatus.state === 'loading' ? '…' : 'Verify'}
+              </button>
+            </div>
+            {abnStatus.state === 'valid' && (
+              <div className="mt-1 space-y-0.5">
+                <p className="text-xs text-green-600">✓ {abnStatus.name}</p>
+                <p className="text-xs text-muted-foreground">GST: <span className="font-medium text-foreground">{abnStatus.gstRegistered ? 'Registered' : 'Not registered'}</span></p>
+              </div>
+            )}
+            {abnStatus.state === 'idle' && form.abn && (
+              <p className="text-xs text-muted-foreground mt-1">
+                GST: <span className="font-medium text-foreground">{form.gst_registered ? 'Registered' : 'Not registered'}</span>
+                {' '}· <button type="button" onClick={() => {}} className="text-primary underline text-xs">verify to update</button>
+              </p>
+            )}
+            {abnStatus.state === 'invalid' && <p className="text-xs text-destructive mt-1">ABN not found or cancelled</p>}
           </Field>
           <Field label="WWCC number">
             <input type="text" className="input" value={form.wwcc_number}

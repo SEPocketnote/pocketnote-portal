@@ -28,5 +28,6 @@ export async function GET(request: NextRequest) {
     status: data.AbnStatus, // 'Active' | 'Cancelled'
     state: data.AddressState,
     postcode: data.AddressPostcode,
+    gstRegistered: !!data.Gst, // Gst is a date string when registered, empty/null otherwise
   })
 }

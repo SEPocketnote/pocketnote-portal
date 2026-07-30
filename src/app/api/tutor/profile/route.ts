@@ -10,6 +10,7 @@ const Schema = z.object({
   postcode: z.string().optional(),
   bio: z.string().optional(),
   abn: z.string().optional(),
+  gst_registered: z.boolean().optional(),
   wwcc_number: z.string().optional(),
   wwcc_expiry: z.string().optional(),
   date_of_birth: z.string().optional(),

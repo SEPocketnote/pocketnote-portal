@@ -1,0 +1,2 @@
+ALTER TABLE tutors ADD COLUMN IF NOT EXISTS onboarding_completed_at TIMESTAMPTZ;
+ALTER TABLE tutors ADD COLUMN IF NOT EXISTS gst_registered BOOLEAN;

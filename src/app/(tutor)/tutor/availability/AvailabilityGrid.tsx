@@ -21,7 +21,13 @@ function formatTime(t: string) {
   return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`
 }
 
-export default function AvailabilityGrid({ initialSlots }: { initialSlots: Slot[] }) {
+export default function AvailabilityGrid({
+  initialSlots,
+  onSlotsChange,
+}: {
+  initialSlots: Slot[]
+  onSlotsChange?: (count: number) => void
+}) {
   const [slots, setSlots] = useState<Slot[]>(initialSlots)
   const [adding, setAdding] = useState<Record<number, boolean>>({})
   const [form, setForm] = useState<Record<number, { start: string; end: string }>>({})
@@ -56,11 +62,15 @@ export default function AvailabilityGrid({ initialSlots }: { initialSlots: Slot[
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
-      setSlots(s => [...s, data.slot].sort((a, b) =>
-        a.day_of_week !== b.day_of_week
-          ? a.day_of_week - b.day_of_week
-          : a.start_time.localeCompare(b.start_time)
-      ))
+      setSlots(s => {
+        const next = [...s, data.slot].sort((a, b) =>
+          a.day_of_week !== b.day_of_week
+            ? a.day_of_week - b.day_of_week
+            : a.start_time.localeCompare(b.start_time)
+        )
+        onSlotsChange?.(next.length)
+        return next
+      })
       setAdding(a => ({ ...a, [day]: false }))
     } catch (err: any) {
       setError(e => ({ ...e, [day]: err.message }))
@@ -72,7 +82,11 @@ export default function AvailabilityGrid({ initialSlots }: { initialSlots: Slot[
   async function handleDelete(slotId: string) {
     setDeleting(d => ({ ...d, [slotId]: true }))
     await fetch(`/api/tutor/availability/${slotId}`, { method: 'DELETE' })
-    setSlots(s => s.filter(sl => sl.id !== slotId))
+    setSlots(s => {
+      const next = s.filter(sl => sl.id !== slotId)
+      onSlotsChange?.(next.length)
+      return next
+    })
     setDeleting(d => ({ ...d, [slotId]: false }))
   }
 

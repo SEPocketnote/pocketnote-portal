@@ -18,9 +18,14 @@ export default async function TutorLayout({ children }: { children: React.ReactN
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('legal_name')
+    .select('legal_name, onboarding_completed_at')
     .eq('user_id', user.id)
     .single()
+
+  // Gate: redirect tutors who haven't completed onboarding (admins bypass)
+  if (profile.role !== 'admin' && tutor && !tutor.onboarding_completed_at) {
+    redirect('/tutor/onboarding')
+  }
 
   const { count: unreadMessages } = await supabase
     .from('messages')
