@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, Inbox, CalendarDays, Users2,
   MessageSquare, CreditCard, UserCog, Settings,
-  LogOut, FileText,
+  LogOut, FileText, Megaphone,
 } from 'lucide-react'
 
 const links = [
@@ -18,6 +18,7 @@ const links = [
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/invoices', label: 'Invoices', icon: FileText },
+  { href: '/admin/notices', label: 'Notices', icon: Megaphone },
   { href: '/admin/users', label: 'Users', icon: UserCog },
 ]
 

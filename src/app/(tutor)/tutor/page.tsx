@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { CalendarDays } from 'lucide-react'
+import NoticeBanners from '@/components/tutor/NoticeBanner'
 import {
   stateToTimezone,
   formatSessionDate,
@@ -33,6 +34,25 @@ export default async function TutorDashboard() {
   }
 
   const now = new Date().toISOString()
+
+  // Fetch active notices not yet dismissed by this tutor
+  const { data: allNotices } = await supabase
+    .from('tutor_notices')
+    .select('id, message, type')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+
+  const { data: dismissals } = tutor
+    ? await supabase
+        .from('tutor_notice_dismissals')
+        .select('notice_id')
+        .eq('tutor_id', tutor.id)
+    : { data: [] }
+
+  const dismissedIds = new Set((dismissals ?? []).map((d: any) => d.notice_id))
+  const visibleNotices = (allNotices ?? []).filter(n => !dismissedIds.has(n.id)) as {
+    id: string; message: string; type: 'info' | 'warning' | 'action'
+  }[]
 
   const [{ data: sessions }, { data: pastSessions }] = await Promise.all([
     supabase
@@ -86,6 +106,8 @@ export default async function TutorDashboard() {
 
   return (
     <div className="max-w-3xl space-y-8">
+
+      {visibleNotices.length > 0 && <NoticeBanners notices={visibleNotices} />}
 
       {/* Hero */}
       <div className="bg-gradient-to-r from-primary to-primary/75 rounded-2xl p-6 text-white relative overflow-hidden">
