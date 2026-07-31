@@ -1,6 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
-import { format, isToday, isTomorrow } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
+import {
+  stateToTimezone,
+  formatSessionDate,
+  formatSessionDateShort,
+  formatTime,
+  isTodayInTz,
+  isTomorrowInTz,
+} from '@/lib/timezone'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +17,7 @@ export default async function TutorDashboard() {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, legal_name')
+    .select('id, legal_name, state')
     .eq('user_id', user!.id)
     .single()
 
@@ -69,12 +76,12 @@ export default async function TutorDashboard() {
   const upcomingSessions = sessions ?? []
   const firstName = tutor.legal_name.split(' ')[0]
   const nextSession = upcomingSessions[0]
+  const tz = stateToTimezone(tutor.state)
 
   function dateLabel(dateStr: string) {
-    const d = new Date(dateStr)
-    if (isToday(d)) return 'Today'
-    if (isTomorrow(d)) return 'Tomorrow'
-    return format(d, 'EEEE d MMMM')
+    if (isTodayInTz(dateStr, tz)) return 'Today'
+    if (isTomorrowInTz(dateStr, tz)) return 'Tomorrow'
+    return formatSessionDate(dateStr, tz)
   }
 
   return (
@@ -95,7 +102,7 @@ export default async function TutorDashboard() {
             <CalendarDays className="w-4 h-4 text-white/80 shrink-0" />
             <div>
               <p className="text-white text-sm font-medium">
-                Next: {dateLabel(nextSession.scheduled_at)} at {format(new Date(nextSession.scheduled_at), 'h:mm a')}
+                Next: {dateLabel(nextSession.scheduled_at)} at {formatTime(nextSession.scheduled_at, tz)}
               </p>
               <p className="text-white/70 text-xs">
                 {(nextSession.bookings as any)?.students?.name}
@@ -122,7 +129,7 @@ export default async function TutorDashboard() {
                   <div>
                     <p className="text-sm font-medium">{student?.name ?? 'Student'}</p>
                     <p className="text-xs text-muted-foreground">
-                      Session on {format(new Date(s.scheduled_at), 'EEE d MMM')}
+                      Session on {formatSessionDateShort(s.scheduled_at, tz)}
                     </p>
                   </div>
                   <span className="text-xs font-medium text-amber-700">Write report →</span>
@@ -155,7 +162,7 @@ export default async function TutorDashboard() {
                     <div>
                       <p className="font-semibold">{dateLabel(s.scheduled_at)}</p>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        {format(new Date(s.scheduled_at), 'h:mm a')}
+                        {formatTime(s.scheduled_at, tz)}
                         {' · '}
                         {s.duration_minutes ?? 60} min
                         {' · '}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
+import { formatSessionDateFullYear, formatTime, toZonedDatetimeInput, toUtcFromZoned } from '@/lib/timezone'
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-700',
@@ -11,23 +11,18 @@ const STATUS_STYLES: Record<string, string> = {
   rescheduled: 'bg-yellow-100 text-yellow-700',
 }
 
-function toLocalDatetimeValue(iso: string) {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes }: {
+export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone }: {
   sessionId: string
   index: number
   scheduledAt: string
   status: string
   durationMinutes: number
+  timezone: string
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [datetimeValue, setDatetimeValue] = useState(toLocalDatetimeValue(scheduledAt))
+  const [datetimeValue, setDatetimeValue] = useState(toZonedDatetimeInput(scheduledAt, timezone))
   const [statusValue, setStatusValue] = useState(status)
   const [durationValue, setDurationValue] = useState(String(durationMinutes ?? 60))
 
@@ -37,7 +32,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        scheduled_at: new Date(datetimeValue).toISOString(),
+        scheduled_at: toUtcFromZoned(datetimeValue, timezone).toISOString(),
         status: statusValue,
         duration_minutes: parseInt(durationValue),
       }),
@@ -48,13 +43,11 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
   }
 
   function cancel() {
-    setDatetimeValue(toLocalDatetimeValue(scheduledAt))
+    setDatetimeValue(toZonedDatetimeInput(scheduledAt, timezone))
     setStatusValue(status)
     setDurationValue(String(durationMinutes ?? 60))
     setEditing(false)
   }
-
-  const date = new Date(scheduledAt)
 
   if (editing) {
     return (
@@ -116,8 +109,8 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
       <div className="flex items-center gap-4">
         <span className="text-xs text-muted-foreground w-16">Session {index}</span>
         <div>
-          <p className="text-sm font-medium">{format(date, 'EEEE d MMMM yyyy')}</p>
-          <p className="text-xs text-muted-foreground">{format(date, 'h:mm a')} · {durationMinutes} min</p>
+          <p className="text-sm font-medium">{formatSessionDateFullYear(scheduledAt, timezone)}</p>
+          <p className="text-xs text-muted-foreground">{formatTime(scheduledAt, timezone)} · {durationMinutes} min</p>
         </div>
       </div>
       <div className="flex items-center gap-3">

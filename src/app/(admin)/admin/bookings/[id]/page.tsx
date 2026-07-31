@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
+import { stateToTimezone } from '@/lib/timezone'
 import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
 import ResendParentInviteButton from './ResendParentInviteButton'
@@ -16,7 +17,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         id, status, mode, location, start_date, sessions_completed,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
-        tutors ( legal_name, email ),
+        tutors ( legal_name, email, state ),
         packages ( type, sessions_total )
       `)
       .eq('id', id)
@@ -34,6 +35,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const student = booking.students as any
   const tutor = booking.tutors as any
   const pkg = booking.packages as any
+  const tutorTimezone = stateToTimezone(tutor?.state)
 
   const completedCount = sessions?.filter(s => s.status === 'completed').length ?? 0
 
@@ -118,6 +120,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 scheduledAt={session.scheduled_at}
                 status={session.status}
                 durationMinutes={session.duration_minutes ?? 60}
+                timezone={tutorTimezone}
               />
             ))}
           </div>

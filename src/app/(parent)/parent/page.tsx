@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { format, isFuture } from 'date-fns'
+import { isFuture } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
+import { stateToTimezone, formatSessionDate, formatSessionDateShortTime, formatTime } from '@/lib/timezone'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -55,6 +56,7 @@ export default async function ParentDashboard() {
 
   const nextSession = upcomingSessions[0]
   const firstName = parent.name.split(' ')[0]
+  const nextTz = nextSession ? stateToTimezone(tutorMap[(nextSession.booking as any).tutor_id]?.state) : 'Australia/Sydney'
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -74,7 +76,7 @@ export default async function ParentDashboard() {
             <CalendarDays className="w-4 h-4 text-white/80 shrink-0" />
             <div>
               <p className="text-white text-sm font-medium">
-                Next: {format(new Date(nextSession.scheduled_at), 'EEEE d MMMM')} at {format(new Date(nextSession.scheduled_at), 'h:mm a')}
+                Next: {formatSessionDate(nextSession.scheduled_at, nextTz)} at {formatTime(nextSession.scheduled_at, nextTz)}
               </p>
               <p className="text-white/70 text-xs">
                 {(nextSession.booking.students as any)?.name}
@@ -190,7 +192,7 @@ export default async function ParentDashboard() {
                   <div key={s.id} className="px-5 py-3 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">
-                        {format(new Date(s.scheduled_at), 'EEE d MMM · h:mm a')}
+                        {formatSessionDateShortTime(s.scheduled_at, stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state))}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {(s.booking.mode === 'online') ? 'Online' : s.booking.location}

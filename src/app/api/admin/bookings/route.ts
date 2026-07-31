@@ -4,7 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendParentWelcome, upsertBrevoContact } from '@/lib/brevo'
 import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
-import { addWeeks, format, isBefore, isEqual, parseISO, setHours, setMinutes } from 'date-fns'
+import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
+import { stateToTimezone, toUtcFromZoned, formatSessionFull } from '@/lib/timezone'
 
 const Schema = z.object({
   // Parent — either existing ID or new details
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient()
 
   // 1. Get tutor
-  const { data: tutor } = await admin.from('tutors').select('legal_name').eq('id', d.tutorId).single()
+  const { data: tutor } = await admin.from('tutors').select('legal_name, state').eq('id', d.tutorId).single()
   if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 400 })
 
   // 2. Resolve parent
@@ -162,10 +163,10 @@ export async function POST(request: Request) {
   if (!student) return NextResponse.json({ error: 'Failed to resolve student' }, { status: 500 })
 
   // 5. Generate session dates
-  const [hours, minutes] = d.sessionTime.split(':').map(Number)
   const intervalWeeks = d.scheduleType === 'fortnightly' ? 2 : 1
-  let firstSession = parseISO(d.startDate)
-  firstSession = setHours(setMinutes(firstSession, minutes), hours)
+  const tutorTimezone = stateToTimezone(tutor.state)
+  // Interpret the admin's entered date+time in the tutor's local timezone
+  const firstSession = toUtcFromZoned(`${d.startDate}T${d.sessionTime}`, tutorTimezone)
 
   const sessionDates: Date[] = []
   if (d.scheduleType === 'single') {
@@ -209,7 +210,7 @@ export async function POST(request: Request) {
   )
 
   // 8. Generate magic link and send welcome email (non-blocking)
-  const firstSessionLabel = format(firstSession, 'EEEE d MMMM \'at\' h:mm a')
+  const firstSessionLabel = formatSessionFull(firstSession, tutorTimezone)
   ;(async () => {
     let inviteUrl: string | undefined
     if (authUserId) {
