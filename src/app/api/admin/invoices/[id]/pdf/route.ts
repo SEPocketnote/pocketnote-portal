@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { createElement } from 'react'
+import React, { createElement } from 'react'
 import { InvoicePDF } from '@/components/pdf/InvoicePDF'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -44,12 +44,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const buffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice, tutor, sessions })
+    createElement(InvoicePDF, { invoice, tutor, sessions }) as React.ReactElement<any>
   )
 
   const shortId = invoice.id.slice(0, 8).toUpperCase()
 
-  return new Response(buffer, {
+  return new Response(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="pocketnote-invoice-${shortId}.pdf"`,

@@ -43,7 +43,7 @@ export default async function UsersPage() {
       null
     const banned = u.banned_until ? new Date(u.banned_until) > new Date() : false
     const confirmed = !!u.email_confirmed_at
-    return { ...u, role, name, detailHref, banned, confirmed }
+    return { ...u, email: u.email ?? '', last_sign_in_at: u.last_sign_in_at ?? null, role, name, detailHref, banned, confirmed }
   })
 
   const adminUsers = users.filter(u => u.role === 'admin')
