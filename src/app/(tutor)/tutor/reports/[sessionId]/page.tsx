@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
+import { stateToTimezone, formatSessionDateFullYear } from '@/lib/timezone'
 import ReportForm from './ReportForm'
 
 export default async function ReportPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -9,7 +9,7 @@ export default async function ReportPage({ params }: { params: Promise<{ session
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data: tutor } = await supabase
-    .from('tutors').select('id').eq('user_id', user!.id).single()
+    .from('tutors').select('id, state').eq('user_id', user!.id).single()
   if (!tutor) notFound()
 
   const { data: session } = await supabase
@@ -42,7 +42,7 @@ export default async function ReportPage({ params }: { params: Promise<{ session
         <p className="text-sm text-muted-foreground mt-1">
           {student?.name}
           {student?.year_level ? ` · ${student.year_level}` : ''}
-          {session.scheduled_at ? ` · ${format(new Date(session.scheduled_at), 'EEE d MMM yyyy')}` : ''}
+          {session.scheduled_at ? ` · ${formatSessionDateFullYear(session.scheduled_at, stateToTimezone(tutor.state))}` : ''}
         </p>
       </div>
 

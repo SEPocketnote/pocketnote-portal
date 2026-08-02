@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { format } from 'date-fns'
+import { formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 
 type Session = {
   id: string
@@ -13,9 +13,11 @@ type Session = {
 export default function InvoiceForm({
   sessions,
   hourlyRateCents,
+  timezone,
 }: {
   sessions: Session[]
   hourlyRateCents: number
+  timezone: string
 }) {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -58,7 +60,7 @@ export default function InvoiceForm({
               <div>
                 <p className="text-sm font-medium">{s.student_name ?? '—'}</p>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                  {formatSessionDateFullYear(s.scheduled_at, timezone)} · {formatTime(s.scheduled_at, timezone)}
                 </p>
               </div>
               <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>

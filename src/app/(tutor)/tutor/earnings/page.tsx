@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
+import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,7 @@ export default async function TutorEarningsPage() {
   // Get tutor with rate info
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, rate_tier_id, hourly_rate_override_cents')
+    .select('id, state, rate_tier_id, hourly_rate_override_cents')
     .eq('user_id', user!.id)
     .single()
 
@@ -32,6 +33,7 @@ export default async function TutorEarningsPage() {
   }
 
   const admin = createAdminClient()
+  const tz = stateToTimezone(tutor.state)
 
   // Get effective rate
   let hourly_rate_cents: number | null = tutor.hourly_rate_override_cents ?? null
@@ -136,7 +138,7 @@ export default async function TutorEarningsPage() {
                     <div>
                       <p className="text-sm font-medium">{student?.name ?? '—'}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                        {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)}
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>

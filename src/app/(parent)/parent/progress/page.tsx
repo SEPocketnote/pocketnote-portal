@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
+import { stateToTimezone, formatSessionDateFullYear } from '@/lib/timezone'
 
 export default async function ProgressPage() {
   const supabase = await createClient()
@@ -16,7 +17,7 @@ export default async function ProgressPage() {
         .from('progress_reports')
         .select(`
           id, covered, went_well, needs_work, next_session_plan, notes, internal_rating, submitted_at,
-          sessions ( scheduled_at, bookings ( students ( name ), tutors ( legal_name ) ) )
+          sessions ( scheduled_at, bookings ( students ( name ), tutors ( legal_name, state ) ) )
         `)
         .eq('sessions.bookings.parent_id', parent.id)
         .order('submitted_at', { ascending: false })
@@ -47,7 +48,7 @@ export default async function ProgressPage() {
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {session?.scheduled_at
-                        ? format(new Date(session.scheduled_at), 'EEE d MMM yyyy')
+                        ? formatSessionDateFullYear(session.scheduled_at, stateToTimezone(booking?.tutors?.state))
                         : ''}
                       {booking?.tutors?.legal_name
                         ? ` · with ${booking.tutors.legal_name}`

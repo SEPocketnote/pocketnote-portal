@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { stateToTimezone } from '@/lib/timezone'
 import InvoiceForm from './InvoiceForm'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ export default async function NewInvoicePage() {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, rate_tier_id, hourly_rate_override_cents')
+    .select('id, state, rate_tier_id, hourly_rate_override_cents')
     .eq('user_id', user!.id)
     .single()
 
@@ -75,7 +76,7 @@ export default async function NewInvoicePage() {
         Review your uninvoiced sessions below, then submit for admin approval.
       </p>
 
-      <InvoiceForm sessions={sessions} hourlyRateCents={hourly_rate_cents} />
+      <InvoiceForm sessions={sessions} hourlyRateCents={hourly_rate_cents} timezone={stateToTimezone(tutor.state)} />
     </div>
   )
 }

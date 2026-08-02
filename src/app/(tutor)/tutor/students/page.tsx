@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
+import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 import MarkCompleteButton from './MarkCompleteButton'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,7 @@ export default async function TutorStudentsPage() {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id')
+    .select('id, state')
     .eq('user_id', user!.id)
     .single()
 
@@ -55,6 +55,7 @@ export default async function TutorStudentsPage() {
   }
 
   const now = new Date()
+  const tz = stateToTimezone(tutor?.state)
 
   return (
     <div className="space-y-6">
@@ -112,7 +113,7 @@ export default async function TutorStudentsPage() {
                         return (
                           <div key={s.id} className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">
-                              {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                              {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)}
                               {' · '}{s.duration_minutes ?? 60} min
                             </span>
                             {!isPast ? (
