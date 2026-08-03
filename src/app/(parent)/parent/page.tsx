@@ -41,7 +41,7 @@ export default async function ParentDashboard() {
   const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
   const admin = createAdminClient()
   const { data: tutorRows } = tutorIds.length
-    ? await admin.from('tutors').select('id, legal_name, bio, photo_url, subjects, location, state').in('id', tutorIds)
+    ? await admin.from('tutors').select('id, slug, legal_name, bio, photo_url, subjects, location, state').in('id', tutorIds)
     : { data: [] }
   const tutorMap: Record<string, any> = {}
   for (const t of tutorRows ?? []) tutorMap[t.id] = t
@@ -141,7 +141,7 @@ export default async function ParentDashboard() {
                 {(tutorRows ?? []).map((t: any) => (
                   <a
                     key={t.id}
-                    href={`/parent/tutor/${t.id}`}
+                    href={`/parent/tutor/${t.slug ?? t.id}`}
                     className="bg-white rounded-xl border border-border p-5 flex items-start gap-4 hover:border-primary/40 transition-colors block"
                   >
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">

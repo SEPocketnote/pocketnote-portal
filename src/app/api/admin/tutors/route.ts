@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTutorInvite } from '@/lib/brevo'
+import { uniqueSlug } from '@/lib/slug'
 import { z } from 'zod'
 
 const Schema = z.object({
@@ -34,10 +35,16 @@ export async function POST(request: Request) {
   const { legalName, email, phone, location, state, postcode, subjects, yearLevels, wwccNumber, wwccExpiry, credentials } = parsed.data
   const admin = createAdminClient()
 
+  const slug = await uniqueSlug(legalName, async (s) => {
+    const { data } = await admin.from('tutors').select('id').eq('slug', s).maybeSingle()
+    return !!data
+  })
+
   // Upsert tutor record — if email already exists, update details rather than duplicate
   const { data: tutor, error: tutorError } = await admin.from('tutors').upsert({
     legal_name: legalName,
     email: email.toLowerCase().trim(),
+    slug,
     phone,
     location,
     state,
