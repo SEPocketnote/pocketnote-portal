@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 import { formatSessionDateFullYear, formatTime, toZonedDatetimeInput, toUtcFromZoned } from '@/lib/timezone'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -22,9 +23,23 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelConfirm, setCancelConfirm] = useState(false)
   const [datetimeValue, setDatetimeValue] = useState(toZonedDatetimeInput(scheduledAt, timezone))
   const [statusValue, setStatusValue] = useState(status)
   const [durationValue, setDurationValue] = useState(String(durationMinutes ?? 60))
+
+  async function confirmCancel() {
+    setCancelling(true)
+    await fetch(`/api/admin/sessions/${sessionId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' }),
+    })
+    setCancelConfirm(false)
+    setCancelling(false)
+    router.refresh()
+  }
 
   async function save() {
     setLoading(true)
@@ -123,6 +138,31 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
         >
           Edit
         </button>
+        {status === 'scheduled' && (
+          cancelConfirm ? (
+            <span className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Cancel session?</span>
+              <button
+                onClick={confirmCancel}
+                disabled={cancelling}
+                className="text-destructive font-medium hover:underline disabled:opacity-50"
+              >
+                {cancelling ? '…' : 'Yes'}
+              </button>
+              <button onClick={() => setCancelConfirm(false)} className="text-muted-foreground hover:underline">
+                No
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setCancelConfirm(true)}
+              title="Cancel session"
+              className="text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )
+        )}
       </div>
     </div>
   )
