@@ -141,7 +141,7 @@ export default async function ParentDashboard() {
                 {(tutorRows ?? []).map((t: any) => (
                   <a
                     key={t.id}
-                    href={`/parent/tutor/${t.slug ?? t.id}`}
+                    href={`/profile/${t.slug ?? t.id}`}
                     className="bg-white rounded-xl border border-border p-5 flex items-start gap-4 hover:border-primary/40 transition-colors block"
                   >
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
