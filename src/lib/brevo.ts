@@ -467,6 +467,116 @@ export async function sendSessionReminder({
   })
 }
 
+export async function sendCancellationNotification({
+  recipientName,
+  recipientEmail,
+  studentName,
+  tutorName,
+  sessionDatetime,
+  mode,
+  location,
+  portalPath,
+}: {
+  recipientName: string
+  recipientEmail: string
+  studentName: string
+  tutorName: string
+  sessionDatetime: string
+  mode: string
+  location?: string | null
+  portalPath: string
+}) {
+  const firstName = recipientName.split(' ')[0]
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}${portalPath}`
+  const modeLabel = mode === 'online' ? 'Online' : location ?? 'In-person'
+
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote' },
+    to: [{ email: recipientEmail, name: recipientName }],
+    subject: `Session cancelled — ${studentName}`,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;letter-spacing:-0.5px;">Pocketnote</span>
+        </td></tr>
+
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px 40px 36px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+            <tr><td style="padding-bottom:12px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#111827;line-height:1.3;">Session cancelled, ${firstName}</h1>
+            </td></tr>
+
+            <tr><td style="padding-bottom:28px;text-align:center;">
+              <p style="margin:0;font-size:15px;color:#6b7280;line-height:1.6;">
+                The following session has been cancelled. Please contact us if you have any questions.
+              </p>
+            </td></tr>
+
+            <tr><td style="padding-bottom:28px;">
+              <div style="background-color:#f9f8f6;border-radius:12px;padding:20px 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="font-size:13px;color:#6b7280;padding-bottom:6px;">Student</td>
+                    <td style="font-size:13px;font-weight:600;color:#111827;text-align:right;padding-bottom:6px;">${studentName}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#6b7280;padding-bottom:6px;">Tutor</td>
+                    <td style="font-size:13px;font-weight:600;color:#111827;text-align:right;padding-bottom:6px;">${tutorName}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#6b7280;padding-bottom:6px;">When</td>
+                    <td style="font-size:13px;font-weight:600;color:#111827;text-align:right;padding-bottom:6px;">${sessionDatetime}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#6b7280;">Where</td>
+                    <td style="font-size:13px;font-weight:600;color:#111827;text-align:right;">${modeLabel}</td>
+                  </tr>
+                </table>
+              </div>
+            </td></tr>
+
+            <tr><td align="center" style="padding-bottom:32px;">
+              <a href="${url}" style="display:inline-block;background-color:#E26F6F;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
+                View in portal
+              </a>
+            </td></tr>
+
+            <tr><td style="padding-bottom:24px;">
+              <div style="height:1px;background-color:#f0eeeb;"></div>
+            </td></tr>
+
+            <tr><td style="text-align:center;">
+              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
+                If you have any questions, reply to this email and we'll get back to you.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0 0 8px;font-size:12px;">
+            <a href="https://pocketnote.com.au/privacy/" style="color:#9ca3af;text-decoration:underline;margin:0 12px;">Privacy Policy</a>
+            <a href="https://pocketnote.com.au/terms-service/" style="color:#9ca3af;text-decoration:underline;margin:0 12px;">Terms of Service</a>
+          </p>
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.<br />Sydney, NSW, Australia</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  })
+}
+
 export async function sendEnquiryNotification(data: {
   parentName: string
   email: string

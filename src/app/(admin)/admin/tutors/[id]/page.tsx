@@ -47,7 +47,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
             <p className="text-sm text-muted-foreground mt-0.5">{tutor.email}</p>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end">
+        <div className="flex gap-2 flex-wrap justify-end items-center">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
             tutor.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
           }`}>
@@ -57,6 +57,16 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               Verified
             </span>
+          )}
+          {tutor.slug && (
+            <a
+              href={`/profile/${tutor.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:border-primary/40 hover:text-primary transition-colors"
+            >
+              Public profile ↗
+            </a>
           )}
         </div>
       </div>

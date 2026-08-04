@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendCancellationNotification } from '@/lib/brevo'
+import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 import { z } from 'zod'
 
 const Schema = z.object({
@@ -32,10 +34,54 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .from('sessions')
     .update(updates)
     .eq('id', id)
-    .select('booking_id')
+    .select('booking_id, scheduled_at')
     .single()
 
   if (error || !session) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 500 })
+
+  // Send cancellation emails to tutor and parent
+  if (parsed.data.status === 'cancelled') {
+    try {
+      const { data: booking } = await admin
+        .from('bookings')
+        .select('mode, location, tutors(legal_name, email, state), students(name), parents(name, email)')
+        .eq('id', session.booking_id)
+        .single()
+
+      if (booking) {
+        const tutor = booking.tutors as any
+        const parent = booking.parents as any
+        const student = booking.students as any
+        const tz = stateToTimezone(tutor?.state)
+        const sessionDatetime = `${formatSessionDateFullYear(session.scheduled_at, tz)} at ${formatTime(session.scheduled_at, tz)}`
+
+        await Promise.all([
+          tutor?.email && sendCancellationNotification({
+            recipientName: tutor.legal_name,
+            recipientEmail: tutor.email,
+            studentName: student?.name ?? 'your student',
+            tutorName: tutor.legal_name,
+            sessionDatetime,
+            mode: booking.mode,
+            location: booking.location,
+            portalPath: '/tutor/students',
+          }),
+          parent?.email && sendCancellationNotification({
+            recipientName: parent.name,
+            recipientEmail: parent.email,
+            studentName: student?.name ?? 'your student',
+            tutorName: tutor?.legal_name ?? 'your tutor',
+            sessionDatetime,
+            mode: booking.mode,
+            location: booking.location,
+            portalPath: '/parent',
+          }),
+        ])
+      }
+    } catch (emailErr) {
+      console.error('[sessions] cancellation email failed:', emailErr)
+    }
+  }
 
   // Recount completed sessions and sync to booking
   const { count } = await admin
