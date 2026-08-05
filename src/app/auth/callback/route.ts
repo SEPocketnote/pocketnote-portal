@@ -1,19 +1,36 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
+type CookieEntry = { name: string; value: string; options?: Record<string, unknown> }
+
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
   if (code) {
-    const supabase = await createClient()
+    const cookiesToSet: CookieEntry[] = []
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(incoming: CookieEntry[]) {
+            incoming.forEach((c) => cookiesToSet.push(c))
+          },
+        },
+      },
+    )
+
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
       const email = data.user.email?.toLowerCase().trim() ?? ''
 
-      // Determine correct role for this email
       const adminEmails = (process.env.ADMIN_EMAILS ?? '')
         .split(',')
         .map((e) => e.toLowerCase().trim())
@@ -28,27 +45,32 @@ export async function GET(request: Request) {
           admin.from('profiles').select('role').eq('id', data.user.id).maybeSingle(),
           admin.from('tutors').select('id, user_id').eq('email', email).maybeSingle(),
         ])
-        // Preserve role if admin already pre-assigned the profile (e.g. UI invite)
         if (existingProfile?.role === 'admin') {
           role = 'admin'
         } else if (tutor) {
           role = 'tutor'
-          // Backfill user_id if the tutor record isn't linked yet
           if (!tutor.user_id) {
             await admin.from('tutors').update({ user_id: data.user.id }).eq('id', tutor.id)
           }
         }
       }
 
-      // Upsert profile with correct role (trigger sets 'parent' by default)
       const admin = createAdminClient()
       await admin
         .from('profiles')
         .upsert({ id: data.user.id, role }, { onConflict: 'id' })
 
-      if (role === 'admin') return NextResponse.redirect(`${origin}/admin`)
-      if (role === 'tutor') return NextResponse.redirect(`${origin}/tutor`)
-      return NextResponse.redirect(`${origin}/parent`)
+      const destination =
+        role === 'admin' ? `${origin}/admin` :
+        role === 'tutor' ? `${origin}/tutor` :
+        `${origin}/parent`
+
+      const response = NextResponse.redirect(destination)
+      cookiesToSet.forEach(({ name, value, options }) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        response.cookies.set(name, value, options as any),
+      )
+      return response
     }
   }
 
