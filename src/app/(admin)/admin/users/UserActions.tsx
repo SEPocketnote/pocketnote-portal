@@ -31,6 +31,28 @@ export function RemoveAdminButton({ userId, isSelf }: { userId: string; isSelf: 
   )
 }
 
+export function ResendAdminInviteButton({ userId }: { userId: string }) {
+  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  async function resend() {
+    setState('sending')
+    await fetch(`/api/admin/users/${userId}/resend-invite`, { method: 'POST' })
+    setState('sent')
+    setTimeout(() => setState('idle'), 3000)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={resend}
+      disabled={state !== 'idle'}
+      className="text-xs text-primary hover:underline disabled:opacity-40"
+    >
+      {state === 'sending' ? 'Sending…' : state === 'sent' ? 'Sent ✓' : 'Resend invite'}
+    </button>
+  )
+}
+
 export function BanButton({ userId, banned }: { userId: string; banned: boolean }) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()

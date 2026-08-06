@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import AddAdminForm from './AddAdminForm'
-import { RemoveAdminButton, BanButton } from './UserActions'
+import { RemoveAdminButton, BanButton, ResendAdminInviteButton } from './UserActions'
 import UsersSearch from './UsersSearch'
 
 export const dynamic = 'force-dynamic'
@@ -141,6 +141,7 @@ function UserTable({ users, meId, showAdminActions }: {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-3">
+                    {showAdminActions && !u.confirmed && <ResendAdminInviteButton userId={u.id} />}
                     {showAdminActions && <RemoveAdminButton userId={u.id} isSelf={isSelf} />}
                     <BanButton userId={u.id} banned={u.banned} />
                   </div>
