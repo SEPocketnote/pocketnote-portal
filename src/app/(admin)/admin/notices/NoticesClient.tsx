@@ -22,7 +22,7 @@ const TYPE_META = {
 export default function NoticesClient({ notices: initial }: { notices: Notice[] }) {
   const router = useRouter()
   const [notices, setNotices] = useState(initial)
-  const [form, setForm] = useState({ message: '', type: 'info' as Notice['type'] })
+  const [form, setForm] = useState({ message: '', type: 'info' as Notice['type'], notify: true })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,7 +34,7 @@ export default function NoticesClient({ notices: initial }: { notices: Notice[] 
     const res = await fetch('/api/admin/notices', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ message: form.message, type: form.type, notify: form.notify }),
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error ?? 'Failed'); setSaving(false); return }
@@ -104,6 +104,20 @@ export default function NoticesClient({ notices: initial }: { notices: Notice[] 
                 )
               })}
             </div>
+          </div>
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-primary"
+                checked={form.notify}
+                onChange={e => setForm(f => ({ ...f, notify: e.target.checked }))}
+              />
+              <span className="text-sm font-medium">Email active tutors</span>
+            </label>
+            <p className="text-xs text-muted-foreground mt-1 ml-6">
+              Sends a notification email to all tutors with active accounts.
+            </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <button

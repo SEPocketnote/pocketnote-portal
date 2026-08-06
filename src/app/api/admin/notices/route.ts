@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
+import { sendNoticeEmail } from '@/lib/brevo'
 
 const Schema = z.object({
   message: z.string().min(1).max(500),
   type: z.enum(['info', 'warning', 'action']),
+  notify: z.boolean().optional(),
   expires_at: z.string().datetime().optional().nullable(),
 })
 
@@ -32,8 +34,31 @@ export async function POST(request: Request) {
   const body = await request.json()
   const parsed = Schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+
+  const { notify, ...noticeData } = parsed.data
   const admin = createAdminClient()
-  const { data, error } = await admin.from('tutor_notices').insert(parsed.data).select().single()
+  const { data, error } = await admin.from('tutor_notices').insert(noticeData).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (notify) {
+    const { data: tutors } = await admin
+      .from('tutors')
+      .select('legal_name, email')
+      .eq('active', true)
+
+    if (tutors?.length) {
+      await Promise.allSettled(
+        tutors.map(t =>
+          sendNoticeEmail({
+            recipientName: t.legal_name,
+            recipientEmail: t.email,
+            message: noticeData.message,
+            type: noticeData.type,
+          })
+        )
+      )
+    }
+  }
+
   return NextResponse.json(data)
 }
