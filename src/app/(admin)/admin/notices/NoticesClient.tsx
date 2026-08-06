@@ -39,7 +39,7 @@ export default function NoticesClient({ notices: initial }: { notices: Notice[] 
     const data = await res.json()
     if (!res.ok) { setError(data.error ?? 'Failed'); setSaving(false); return }
     setNotices(prev => [{ ...data, dismissCount: 0 }, ...prev])
-    setForm({ message: '', type: 'info' })
+    setForm({ message: '', type: 'info', notify: true })
     setSaving(false)
     router.refresh()
   }

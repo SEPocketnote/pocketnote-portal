@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendParentWelcome, upsertBrevoContact } from '@/lib/brevo'
+import { sendParentWelcome, sendBookingConfirmation, upsertBrevoContact } from '@/lib/brevo'
 import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
 import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
   // 2. Resolve parent
   let parent: { id: string; user_id: string | null; name: string; email: string } | null = null
   let authUserId: string | undefined
+  let isNewParent = false
 
   if (d.parentId) {
     // Existing parent selected from search
@@ -79,11 +80,13 @@ export async function POST(request: Request) {
       }
     }
   } else {
-    // New parent
+    // New parent details entered — check if they already exist by email
     const email = d.parentEmail!.toLowerCase().trim()
-    let { data: existingParent } = await admin.from('parents').select('id, name, email, user_id').eq('email', email).maybeSingle()
+    const { data: existingParent } = await admin.from('parents').select('id, name, email, user_id').eq('email', email).maybeSingle()
 
     if (!existingParent) {
+      isNewParent = true
+
       const { data: authData, error: authError } = await admin.auth.admin.createUser({
         email,
         email_confirm: true,
@@ -131,6 +134,7 @@ export async function POST(request: Request) {
         lastName: d.parentName!.split(' ').slice(1).join(' '),
       })
     } else {
+      // Email typed matches an existing parent record
       parent = existingParent
       authUserId = existingParent.user_id ?? undefined
 
@@ -221,27 +225,34 @@ export async function POST(request: Request) {
     }))
   )
 
-  // 10. Generate magic link and send welcome email (non-blocking)
+  // 10. Send email — welcome + magic link for new parents, booking confirmation for existing
   const firstSessionLabel = formatSessionFull(firstSession, tutorTimezone)
-  ;(async () => {
-    let inviteUrl: string | undefined
-    if (authUserId) {
+  try {
+    if (isNewParent && authUserId) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
       const { data: linkData } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email: parent!.email,
         options: { redirectTo: `${siteUrl}/auth/confirm` },
       })
-      inviteUrl = linkData?.properties?.action_link
+      await sendParentWelcome({
+        name: parent!.name,
+        email: parent!.email,
+        tutorName: tutor.legal_name,
+        firstSession: firstSessionLabel,
+        inviteUrl: linkData?.properties?.action_link,
+      })
+    } else {
+      await sendBookingConfirmation({
+        name: parent!.name,
+        email: parent!.email,
+        tutorName: tutor.legal_name,
+        firstSession: firstSessionLabel,
+      })
     }
-    await sendParentWelcome({
-      name: parent!.name,
-      email: parent!.email,
-      tutorName: tutor.legal_name,
-      firstSession: firstSessionLabel,
-      inviteUrl,
-    })
-  })().catch(err => console.error('[bookings] welcome email failed:', err))
+  } catch (err) {
+    console.error('[bookings] email failed:', err)
+  }
 
   return NextResponse.json({ id: booking.id })
 }
