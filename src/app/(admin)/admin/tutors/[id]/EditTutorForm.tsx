@@ -20,7 +20,8 @@ function isValidABN(abn: string): boolean {
 type RateTier = {
   id: string
   name: string
-  hourly_rate_cents: number
+  online_rate_cents: number
+  inperson_rate_cents: number
 }
 
 type TutorValues = {
@@ -40,7 +41,8 @@ type TutorValues = {
   year_levels: string[]
   credentials: string[]
   rate_tier_id: string | null
-  hourly_rate_override_cents: number | null
+  online_rate_override_cents: number | null
+  inperson_rate_override_cents: number | null
   mode: string
 }
 
@@ -59,8 +61,11 @@ export default function EditTutorForm({
   const [subjectsText, setSubjectsText] = useState(tutor.subjects.join(', '))
   const [yearLevelsText, setYearLevelsText] = useState(tutor.year_levels.join(', '))
   const [credentialsText, setCredentialsText] = useState(tutor.credentials.join(', '))
-  const [rateOverrideDollars, setRateOverrideDollars] = useState(
-    tutor.hourly_rate_override_cents ? (tutor.hourly_rate_override_cents / 100).toFixed(2) : ''
+  const [onlineOverrideDollars, setOnlineOverrideDollars] = useState(
+    tutor.online_rate_override_cents ? (tutor.online_rate_override_cents / 100).toFixed(2) : ''
+  )
+  const [inpersonOverrideDollars, setInpersonOverrideDollars] = useState(
+    tutor.inperson_rate_override_cents ? (tutor.inperson_rate_override_cents / 100).toFixed(2) : ''
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -93,10 +98,13 @@ export default function EditTutorForm({
   // Run lookup on mount if ABN is already populated
   useEffect(() => { if (tutor.abn) lookupABN(tutor.abn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Compute effective rate for display
-  const effectiveRateCents = rateOverrideDollars
-    ? Math.round(parseFloat(rateOverrideDollars) * 100)
-    : (rateTiers.find(t => t.id === values.rate_tier_id)?.hourly_rate_cents ?? null)
+  const tier = rateTiers.find(t => t.id === values.rate_tier_id)
+  const effectiveOnlineCents = onlineOverrideDollars
+    ? Math.round(parseFloat(onlineOverrideDollars) * 100)
+    : (tier?.online_rate_cents ?? null)
+  const effectiveInpersonCents = inpersonOverrideDollars
+    ? Math.round(parseFloat(inpersonOverrideDollars) * 100)
+    : (tier?.inperson_rate_cents ?? null)
 
   async function save() {
     setSaving(true)
@@ -104,8 +112,11 @@ export default function EditTutorForm({
     const subjects = subjectsText.split(',').map(s => s.trim()).filter(Boolean)
     const year_levels = yearLevelsText.split(',').map(s => s.trim()).filter(Boolean)
     const credentials = credentialsText.split(',').map(s => s.trim()).filter(Boolean)
-    const hourly_rate_override_cents = rateOverrideDollars
-      ? Math.round(parseFloat(rateOverrideDollars) * 100)
+    const online_rate_override_cents = onlineOverrideDollars
+      ? Math.round(parseFloat(onlineOverrideDollars) * 100)
+      : null
+    const inperson_rate_override_cents = inpersonOverrideDollars
+      ? Math.round(parseFloat(inpersonOverrideDollars) * 100)
       : null
     const res = await fetch(`/api/admin/tutors/${tutorId}`, {
       method: 'PATCH',
@@ -115,7 +126,8 @@ export default function EditTutorForm({
         subjects,
         year_levels,
         credentials,
-        hourly_rate_override_cents,
+        online_rate_override_cents,
+        inperson_rate_override_cents,
       }),
     })
     setSaving(false)
@@ -133,7 +145,8 @@ export default function EditTutorForm({
     setSubjectsText(tutor.subjects.join(', '))
     setYearLevelsText(tutor.year_levels.join(', '))
     setCredentialsText(tutor.credentials.join(', '))
-    setRateOverrideDollars(tutor.hourly_rate_override_cents ? (tutor.hourly_rate_override_cents / 100).toFixed(2) : '')
+    setOnlineOverrideDollars(tutor.online_rate_override_cents ? (tutor.online_rate_override_cents / 100).toFixed(2) : '')
+    setInpersonOverrideDollars(tutor.inperson_rate_override_cents ? (tutor.inperson_rate_override_cents / 100).toFixed(2) : '')
     setError(null)
     setEditing(false)
   }
@@ -266,33 +279,46 @@ export default function EditTutorForm({
                   onChange={e => setValues(v => ({ ...v, rate_tier_id: e.target.value || null }))}
                 >
                   <option value="">No tier assigned</option>
-                  {rateTiers.map(tier => (
-                    <option key={tier.id} value={tier.id}>
-                      {tier.name} — ${(tier.hourly_rate_cents / 100).toFixed(2)}/hr
+                  {rateTiers.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} — ${(t.online_rate_cents / 100).toFixed(2)} online / ${(t.inperson_rate_cents / 100).toFixed(2)} in-person
                     </option>
                   ))}
                 </select>
               </Field>
-              <Field label="Rate override ($/hr)">
+              <div className="sm:col-span-1" />
+              <Field label="Online rate override ($/hr)">
                 <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Leave blank to use tier rate"
+                  type="number" step="0.01" placeholder="Leave blank to use tier rate"
                   className="input"
-                  value={rateOverrideDollars}
-                  onChange={e => setRateOverrideDollars(e.target.value)}
+                  value={onlineOverrideDollars}
+                  onChange={e => setOnlineOverrideDollars(e.target.value)}
                 />
-                {effectiveRateCents !== null && !isNaN(effectiveRateCents) && (
+                {effectiveOnlineCents !== null && !isNaN(effectiveOnlineCents) && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Effective rate: ${(effectiveRateCents / 100).toFixed(2)}/hr
-                    {rateOverrideDollars ? ' (custom override)' : ' (from tier)'}
+                    Effective: ${(effectiveOnlineCents / 100).toFixed(2)}/hr
+                    {onlineOverrideDollars ? ' (custom)' : ' (tier)'}
                   </p>
                 )}
-                {!effectiveRateCents && !values.rate_tier_id && (
-                  <p className="text-xs text-amber-600 mt-1">No rate set — tutor cannot submit invoices.</p>
+              </Field>
+              <Field label="In-person rate override ($/hr)">
+                <input
+                  type="number" step="0.01" placeholder="Leave blank to use tier rate"
+                  className="input"
+                  value={inpersonOverrideDollars}
+                  onChange={e => setInpersonOverrideDollars(e.target.value)}
+                />
+                {effectiveInpersonCents !== null && !isNaN(effectiveInpersonCents) && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Effective: ${(effectiveInpersonCents / 100).toFixed(2)}/hr
+                    {inpersonOverrideDollars ? ' (custom)' : ' (tier)'}
+                  </p>
                 )}
               </Field>
             </div>
+            {!effectiveOnlineCents && !effectiveInpersonCents && !values.rate_tier_id && (
+              <p className="text-xs text-amber-600 mt-2">No rate set — tutor cannot submit invoices.</p>
+            )}
           </div>
 
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -320,18 +346,23 @@ export default function EditTutorForm({
           {/* Pay rate display */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-medium text-muted-foreground mb-1">Pay rate</p>
-            {tutor.hourly_rate_override_cents ? (
-              <p className="text-sm font-medium">${(tutor.hourly_rate_override_cents / 100).toFixed(2)}/hr <span className="text-xs font-normal text-muted-foreground">(custom override)</span></p>
-            ) : tutor.rate_tier_id ? (
-              (() => {
-                const tier = rateTiers.find(t => t.id === tutor.rate_tier_id)
-                return tier ? (
-                  <p className="text-sm font-medium">${(tier.hourly_rate_cents / 100).toFixed(2)}/hr <span className="text-xs font-normal text-muted-foreground">({tier.name} tier)</span></p>
-                ) : <p className="text-sm text-muted-foreground">—</p>
-              })()
-            ) : (
-              <p className="text-sm text-amber-600">No rate assigned</p>
-            )}
+            {(() => {
+              const t = rateTiers.find(rt => rt.id === tutor.rate_tier_id)
+              const onlineCents = tutor.online_rate_override_cents ?? t?.online_rate_cents ?? null
+              const inpersonCents = tutor.inperson_rate_override_cents ?? t?.inperson_rate_cents ?? null
+              if (!onlineCents && !inpersonCents) {
+                return <p className="text-sm text-amber-600">No rate assigned</p>
+              }
+              const label = (tutor.online_rate_override_cents || tutor.inperson_rate_override_cents)
+                ? 'custom override'
+                : t ? `${t.name} tier` : ''
+              return (
+                <div className="text-sm space-y-0.5">
+                  {onlineCents && <p className="font-medium">Online: ${(onlineCents / 100).toFixed(2)}/hr <span className="text-xs font-normal text-muted-foreground">({label})</span></p>}
+                  {inpersonCents && <p className="font-medium">In-person: ${(inpersonCents / 100).toFixed(2)}/hr <span className="text-xs font-normal text-muted-foreground">({label})</span></p>}
+                </div>
+              )
+            })()}
           </div>
 
           {tutor.bio && (

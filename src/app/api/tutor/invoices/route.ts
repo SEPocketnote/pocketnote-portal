@@ -13,10 +13,9 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  // Get tutor with rate info
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, rate_tier_id, hourly_rate_override_cents')
+    .select('id, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents')
     .eq('user_id', user.id)
     .single()
 
@@ -29,25 +28,10 @@ export async function POST(request: Request) {
   const { session_ids, notes } = parsed.data
   const admin = createAdminClient()
 
-  // Get effective rate
-  let hourly_rate_cents: number | null = tutor.hourly_rate_override_cents ?? null
-  if (!hourly_rate_cents && tutor.rate_tier_id) {
-    const { data: tier } = await admin
-      .from('rate_tiers')
-      .select('hourly_rate_cents')
-      .eq('id', tutor.rate_tier_id)
-      .single()
-    hourly_rate_cents = tier?.hourly_rate_cents ?? null
-  }
-
-  if (!hourly_rate_cents) {
-    return NextResponse.json({ error: 'No rate assigned. Contact admin.' }, { status: 400 })
-  }
-
-  // Verify sessions belong to this tutor's bookings and are 'completed'
+  // Verify sessions belong to this tutor and are completed; fetch booking rate snapshot
   const { data: sessions } = await admin
     .from('sessions')
-    .select('id, scheduled_at, status, duration_minutes, bookings!inner(tutor_id)')
+    .select('id, scheduled_at, status, duration_minutes, bookings!inner(tutor_id, student_id, mode, rate_cents_snapshot)')
     .in('id', session_ids)
 
   if (!sessions || sessions.length !== session_ids.length) {
@@ -64,7 +48,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Check none of those sessions are already in invoice_sessions
+  // Check none are already invoiced
   const { data: existingLinks } = await admin
     .from('invoice_sessions')
     .select('session_id')
@@ -74,14 +58,55 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'One or more sessions are already included in an invoice.' }, { status: 400 })
   }
 
+  // Build per-session rate map, falling back through the rate hierarchy if snapshot is missing
+  const sessionRates: { id: string; minutes: number; rate_cents: number }[] = []
+
+  for (const s of sessions) {
+    const booking = s.bookings as any
+    const minutes = s.duration_minutes ?? 60
+    let rate_cents: number | null = booking?.rate_cents_snapshot ?? null
+
+    // Fallback: resolve fresh if snapshot was not set (legacy bookings)
+    if (!rate_cents) {
+      const mode: 'online' | 'in-person' = booking?.mode === 'in-person' ? 'in-person' : 'online'
+      const modeOverride = mode === 'online'
+        ? tutor.online_rate_override_cents
+        : tutor.inperson_rate_override_cents
+
+      if (modeOverride) {
+        rate_cents = modeOverride
+      } else if (tutor.rate_tier_id) {
+        const { data: tier } = await admin
+          .from('rate_tiers')
+          .select('online_rate_cents, inperson_rate_cents')
+          .eq('id', tutor.rate_tier_id)
+          .single()
+        rate_cents = tier ? (mode === 'online' ? tier.online_rate_cents : tier.inperson_rate_cents) : null
+      }
+    }
+
+    if (!rate_cents) {
+      return NextResponse.json({ error: 'No pay rate set for one or more sessions. Contact admin.' }, { status: 400 })
+    }
+
+    sessionRates.push({ id: s.id, minutes, rate_cents })
+  }
+
   // Calculate totals
-  const total_minutes = sessions.reduce((sum, s) => sum + (s.duration_minutes ?? 60), 0)
-  const total_cents = Math.round((total_minutes / 60) * hourly_rate_cents)
+  const total_minutes = sessionRates.reduce((sum, s) => sum + s.minutes, 0)
+  const total_cents = sessionRates.reduce((sum, s) => sum + Math.round((s.minutes / 60) * s.rate_cents), 0)
   const sessions_count = sessions.length
 
   const scheduledDates = sessions.map(s => s.scheduled_at).sort()
   const period_start = scheduledDates[0].split('T')[0]
   const period_end = scheduledDates[scheduledDates.length - 1].split('T')[0]
+
+  // For the invoice header rate: use the most common rate across sessions (for display)
+  const rateCounts = new Map<number, number>()
+  for (const s of sessionRates) {
+    rateCounts.set(s.rate_cents, (rateCounts.get(s.rate_cents) ?? 0) + 1)
+  }
+  const primaryRate = [...rateCounts.entries()].sort((a, b) => b[1] - a[1])[0][0]
 
   // Insert invoice
   const { data: invoice, error: invoiceError } = await admin
@@ -93,7 +118,7 @@ export async function POST(request: Request) {
       sessions_count,
       amount: total_cents,
       total_minutes,
-      hourly_rate_cents,
+      hourly_rate_cents: primaryRate,
       total_cents,
       notes: notes ?? null,
     })
@@ -104,10 +129,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: invoiceError?.message ?? 'Failed to create invoice' }, { status: 500 })
   }
 
-  // Insert invoice_sessions
+  // Insert invoice_sessions with per-session rate
   const { error: linksError } = await admin
     .from('invoice_sessions')
-    .insert(session_ids.map(session_id => ({ invoice_id: invoice.id, session_id })))
+    .insert(sessionRates.map(s => ({
+      invoice_id: invoice.id,
+      session_id: s.id,
+      rate_cents: s.rate_cents,
+    })))
 
   if (linksError) {
     return NextResponse.json({ error: linksError.message }, { status: 500 })

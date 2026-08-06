@@ -5,7 +5,8 @@ import { z } from 'zod'
 
 const UpdateSchema = z.object({
   name: z.string().min(1).optional(),
-  hourly_rate_cents: z.number().int().min(1).optional(),
+  online_rate_cents: z.number().int().min(1).optional(),
+  inperson_rate_cents: z.number().int().min(1).optional(),
   description: z.string().optional(),
   sort_order: z.number().int().optional(),
 })

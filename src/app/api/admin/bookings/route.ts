@@ -6,6 +6,7 @@ import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
 import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
 import { stateToTimezone, toUtcFromZoned, formatSessionFull } from '@/lib/timezone'
+import { resolveRateCents } from '@/lib/rates'
 
 const Schema = z.object({
   // Parent — either existing ID or new details
@@ -55,6 +56,8 @@ export async function POST(request: Request) {
   // 1. Get tutor
   const { data: tutor } = await admin.from('tutors').select('legal_name, state').eq('id', d.tutorId).single()
   if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 400 })
+
+  // Resolve rate now — we need student ID first, so we do this after student resolution below
 
   // 2. Resolve parent
   let parent: { id: string; user_id: string | null; name: string; email: string } | null = null
@@ -162,7 +165,15 @@ export async function POST(request: Request) {
 
   if (!student) return NextResponse.json({ error: 'Failed to resolve student' }, { status: 500 })
 
-  // 5. Generate session dates
+  // 5. Resolve rate for this booking
+  const rate_cents_snapshot = await resolveRateCents({
+    tutorId: d.tutorId,
+    studentId: student.id,
+    mode: d.mode,
+    admin,
+  })
+
+  // 7. Generate session dates
   const intervalWeeks = d.scheduleType === 'fortnightly' ? 2 : 1
   const tutorTimezone = stateToTimezone(tutor.state)
   // Interpret the admin's entered date+time in the tutor's local timezone
@@ -184,7 +195,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // 6. Create booking
+  // 8. Create booking
   const { data: booking } = await admin.from('bookings').insert({
     parent_id: parent.id,
     student_id: student.id,
@@ -196,11 +207,12 @@ export async function POST(request: Request) {
     schedule_type: d.scheduleType,
     sessions_count: sessionDates.length,
     recurrence_end_date: d.recurrenceEndDate ?? null,
+    rate_cents_snapshot: rate_cents_snapshot ?? null,
   }).select('id').single()
 
   if (!booking) return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
 
-  // 7. Insert sessions
+  // 9. Insert sessions
   await admin.from('sessions').insert(
     sessionDates.map(dt => ({
       booking_id: booking.id,
@@ -209,7 +221,7 @@ export async function POST(request: Request) {
     }))
   )
 
-  // 8. Generate magic link and send welcome email (non-blocking)
+  // 10. Generate magic link and send welcome email (non-blocking)
   const firstSessionLabel = formatSessionFull(firstSession, tutorTimezone)
   ;(async () => {
     let inviteUrl: string | undefined

@@ -35,6 +35,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     year_levels: (tutor.year_levels ?? []) as string[],
     credentials: (tutor.credentials ?? []) as string[],
     photo_url: tutor.photo_url ?? '',
+    mode: (tutor.mode ?? 'either') as string,
   })
 
   function togglePill(field: 'subjects' | 'year_levels', value: string) {
@@ -234,6 +235,18 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
               onChange={e => setForm({ ...form, date_of_birth: e.target.value })} />
           </Field>
         </div>
+      </section>
+
+      {/* Session mode */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session mode</h2>
+        <Field label="How do you offer sessions?">
+          <select className="input" value={form.mode} onChange={e => setForm({ ...form, mode: e.target.value })}>
+            <option value="either">Online & in-person</option>
+            <option value="online">Online only</option>
+            <option value="in-person">In-person only</option>
+          </select>
+        </Field>
       </section>
 
       {/* Subjects, year levels & credentials */}

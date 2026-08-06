@@ -18,6 +18,7 @@ const Schema = z.object({
   year_levels: z.array(z.string()).optional(),
   credentials: z.array(z.string()).optional(),
   photo_url: z.string().optional(),
+  mode: z.enum(['online', 'in-person', 'either']).optional(),
 })
 
 export async function PATCH(request: Request) {

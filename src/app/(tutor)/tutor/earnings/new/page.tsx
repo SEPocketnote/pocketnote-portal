@@ -12,7 +12,7 @@ export default async function NewInvoicePage() {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, state, rate_tier_id, hourly_rate_override_cents')
+    .select('id, state, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents')
     .eq('user_id', user!.id)
     .single()
 
@@ -20,25 +20,33 @@ export default async function NewInvoicePage() {
 
   const admin = createAdminClient()
 
-  // Get effective rate
-  let hourly_rate_cents: number | null = tutor.hourly_rate_override_cents ?? null
-  if (!hourly_rate_cents && tutor.rate_tier_id) {
+  // Resolve tier rates as fallback
+  let tierOnlineCents: number | null = null
+  let tierInpersonCents: number | null = null
+  if (tutor.rate_tier_id) {
     const { data: tier } = await admin
       .from('rate_tiers')
-      .select('hourly_rate_cents')
+      .select('online_rate_cents, inperson_rate_cents')
       .eq('id', tutor.rate_tier_id)
       .single()
-    if (tier) hourly_rate_cents = tier.hourly_rate_cents
+    if (tier) {
+      tierOnlineCents = tier.online_rate_cents
+      tierInpersonCents = tier.inperson_rate_cents
+    }
   }
 
-  if (!hourly_rate_cents) redirect('/tutor/earnings')
+  const hasAnyRate = !!(
+    tutor.online_rate_override_cents || tutor.inperson_rate_override_cents ||
+    tierOnlineCents || tierInpersonCents
+  )
+  if (!hasAnyRate) redirect('/tutor/earnings')
 
-  // Get all completed sessions for this tutor
+  // Get all completed sessions with their booking mode and rate snapshot
   const { data: allCompletedSessions } = await supabase
     .from('sessions')
     .select(`
       id, scheduled_at, duration_minutes,
-      bookings!inner ( tutor_id, students ( name ) )
+      bookings!inner ( tutor_id, mode, rate_cents_snapshot, students ( name ) )
     `)
     .eq('status', 'completed')
     .eq('bookings.tutor_id', tutor.id)
@@ -59,12 +67,27 @@ export default async function NewInvoicePage() {
 
   if (uninvoiced.length === 0) redirect('/tutor/earnings')
 
-  const sessions = uninvoiced.map(s => ({
-    id: s.id,
-    scheduled_at: s.scheduled_at,
-    duration_minutes: s.duration_minutes,
-    student_name: (s.bookings as any)?.students?.name ?? null,
-  }))
+  const sessions = uninvoiced.map(s => {
+    const booking = s.bookings as any
+    const bookingMode: 'online' | 'in-person' = booking?.mode === 'in-person' ? 'in-person' : 'online'
+
+    // Resolve rate: snapshot → tutor override → tier
+    let rate_cents: number | null = booking?.rate_cents_snapshot ?? null
+    if (!rate_cents) {
+      const override = bookingMode === 'online'
+        ? tutor.online_rate_override_cents
+        : tutor.inperson_rate_override_cents
+      rate_cents = override ?? (bookingMode === 'online' ? tierOnlineCents : tierInpersonCents)
+    }
+
+    return {
+      id: s.id,
+      scheduled_at: s.scheduled_at,
+      duration_minutes: s.duration_minutes,
+      student_name: booking?.students?.name ?? null,
+      rate_cents: rate_cents ?? 0,
+    }
+  })
 
   return (
     <div className="max-w-2xl">
@@ -76,7 +99,7 @@ export default async function NewInvoicePage() {
         Review your uninvoiced sessions below, then submit for admin approval.
       </p>
 
-      <InvoiceForm sessions={sessions} hourlyRateCents={hourly_rate_cents} timezone={stateToTimezone(tutor.state)} />
+      <InvoiceForm sessions={sessions} timezone={stateToTimezone(tutor.state)} />
     </div>
   )
 }

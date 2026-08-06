@@ -22,7 +22,8 @@ const Schema = z.object({
   active: z.boolean().optional(),
   verified: z.boolean().optional(),
   rate_tier_id: z.string().uuid().nullable().optional(),
-  hourly_rate_override_cents: z.number().int().min(1).nullable().optional(),
+  online_rate_override_cents: z.number().int().min(1).nullable().optional(),
+  inperson_rate_override_cents: z.number().int().min(1).nullable().optional(),
   mode: z.enum(['online', 'in-person', 'either']).optional(),
 })
 

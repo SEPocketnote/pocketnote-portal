@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import StatusToggle from './StatusToggle'
 import EditTutorForm from './EditTutorForm'
+import StudentRateOverrides from './StudentRateOverrides'
 import DeleteAccountButton from '@/components/DeleteAccountButton'
 
 
@@ -12,14 +13,15 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  const [{ data: tutor }, { data: bookings }, { data: rateTiers }] = await Promise.all([
+  const [{ data: tutor }, { data: bookings }, { data: rateTiers }, { data: rateOverrides }] = await Promise.all([
     supabase.from('tutors').select('*').eq('id', id).single(),
     supabase
       .from('bookings')
-      .select('id, status, mode, start_date, students(name, year_level), packages(type, sessions_total), parents(name)')
+      .select('id, status, mode, start_date, students(id, name, year_level), packages(type, sessions_total), parents(name)')
       .eq('tutor_id', id)
       .order('start_date', { ascending: false }),
-    admin.from('rate_tiers').select('id, name, hourly_rate_cents').order('sort_order', { ascending: true }),
+    admin.from('rate_tiers').select('id, name, online_rate_cents, inperson_rate_cents').order('sort_order', { ascending: true }),
+    admin.from('student_rate_overrides').select('id, student_id, rate_cents, students(name)').eq('tutor_id', id),
   ])
 
   if (!tutor) notFound()
@@ -100,11 +102,37 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           year_levels: tutor.year_levels ?? [],
           credentials: tutor.credentials ?? [],
           rate_tier_id: tutor.rate_tier_id ?? null,
-          hourly_rate_override_cents: tutor.hourly_rate_override_cents ?? null,
+          online_rate_override_cents: tutor.online_rate_override_cents ?? null,
+          inperson_rate_override_cents: tutor.inperson_rate_override_cents ?? null,
           mode: tutor.mode ?? 'either',
         }}
         rateTiers={rateTiers ?? []}
       />
+
+      {/* Student rate overrides */}
+      {(() => {
+        // Unique students from bookings
+        const seen = new Set<string>()
+        const students = (bookings ?? [])
+          .map((b: any) => b.students)
+          .filter((s: any) => s && !seen.has(s.id) && seen.add(s.id))
+          .map((s: any) => ({ id: s.id, name: s.name }))
+
+        const overridesList = (rateOverrides ?? []).map((o: any) => ({
+          id: o.id,
+          student_id: o.student_id,
+          student_name: o.students?.name ?? 'Unknown',
+          rate_cents: o.rate_cents,
+        }))
+
+        return (
+          <StudentRateOverrides
+            tutorId={id}
+            overrides={overridesList}
+            students={students}
+          />
+        )
+      })()}
 
       {/* Bookings */}
       {bookings && bookings.length > 0 && (

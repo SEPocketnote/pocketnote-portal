@@ -32,7 +32,7 @@ export default async function RateTiersPage() {
         <a href="/admin/settings" className="text-sm text-muted-foreground hover:text-primary">← Back to settings</a>
       </div>
       <h1 className="text-2xl font-semibold mb-2">Rate Tiers</h1>
-      <p className="text-muted-foreground text-sm mb-8">Manage tutor pay tiers and hourly rates.</p>
+      <p className="text-muted-foreground text-sm mb-8">Manage tutor pay tiers. Each tier has separate online and in-person rates.</p>
 
       <RateTiersList tiers={tiersWithCounts} />
     </div>

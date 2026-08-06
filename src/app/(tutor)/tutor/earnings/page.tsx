@@ -20,7 +20,7 @@ export default async function TutorEarningsPage() {
   // Get tutor with rate info
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, state, rate_tier_id, hourly_rate_override_cents')
+    .select('id, state, mode, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents')
     .eq('user_id', user!.id)
     .single()
 
@@ -35,20 +35,30 @@ export default async function TutorEarningsPage() {
   const admin = createAdminClient()
   const tz = stateToTimezone(tutor.state)
 
-  // Get effective rate
-  let hourly_rate_cents: number | null = tutor.hourly_rate_override_cents ?? null
+  // Get effective rates
+  let onlineRateCents: number | null = tutor.online_rate_override_cents ?? null
+  let inpersonRateCents: number | null = tutor.inperson_rate_override_cents ?? null
   let rateLabel = 'Custom rate'
-  if (!hourly_rate_cents && tutor.rate_tier_id) {
+
+  if ((!onlineRateCents || !inpersonRateCents) && tutor.rate_tier_id) {
     const { data: tier } = await admin
       .from('rate_tiers')
-      .select('hourly_rate_cents, name')
+      .select('online_rate_cents, inperson_rate_cents, name')
       .eq('id', tutor.rate_tier_id)
       .single()
     if (tier) {
-      hourly_rate_cents = tier.hourly_rate_cents
+      if (!onlineRateCents) onlineRateCents = tier.online_rate_cents
+      if (!inpersonRateCents) inpersonRateCents = tier.inperson_rate_cents
       rateLabel = tier.name
     }
   }
+
+  // For estimating uninvoiced earnings, use the tutor's primary mode rate
+  const tutorMode = tutor.mode ?? 'either'
+  const primaryRate = tutorMode === 'in-person'
+    ? inpersonRateCents
+    : onlineRateCents  // online or either → use online rate for estimate
+  const hasAnyRate = !!(onlineRateCents || inpersonRateCents)
 
   // Get all completed sessions for this tutor
   const { data: allCompletedSessions } = await supabase
@@ -84,10 +94,10 @@ export default async function TutorEarningsPage() {
   const totalPaid = (invoices ?? []).filter(i => i.status === 'paid').reduce((sum, i) => sum + i.total_cents, 0)
   const totalPending = (invoices ?? []).filter(i => i.status !== 'paid' && i.status !== 'rejected').reduce((sum, i) => sum + i.total_cents, 0)
 
-  // Estimate for uninvoiced
+  // Estimate for uninvoiced (best-effort using primary rate)
   const uninvoicedMinutes = uninvoiced.reduce((sum, s) => sum + (s.duration_minutes ?? 60), 0)
-  const uninvoicedEstimate = hourly_rate_cents
-    ? Math.round((uninvoicedMinutes / 60) * hourly_rate_cents)
+  const uninvoicedEstimate = primaryRate
+    ? Math.round((uninvoicedMinutes / 60) * primaryRate)
     : null
 
   return (
@@ -95,14 +105,18 @@ export default async function TutorEarningsPage() {
       <h1 className="text-2xl font-semibold">Earnings</h1>
 
       {/* Rate banner or no-rate warning */}
-      {!hourly_rate_cents ? (
+      {!hasAnyRate ? (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-800">
           No pay rate has been assigned to your account yet. Contact your admin to set up your rate before submitting invoices.
         </div>
       ) : (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Rate:</span>
-          <span className="font-semibold text-foreground">${(hourly_rate_cents / 100).toFixed(2)}/hr</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          {onlineRateCents && (
+            <span>Online: <span className="font-semibold text-foreground">${(onlineRateCents / 100).toFixed(2)}/hr</span></span>
+          )}
+          {inpersonRateCents && (
+            <span>In-person: <span className="font-semibold text-foreground">${(inpersonRateCents / 100).toFixed(2)}/hr</span></span>
+          )}
           <span className="px-2 py-0.5 rounded-full bg-muted text-xs">{rateLabel}</span>
         </div>
       )}
@@ -154,7 +168,7 @@ export default async function TutorEarningsPage() {
                   <span className="text-muted-foreground"> · ~${(uninvoicedEstimate / 100).toFixed(2)} estimated</span>
                 )}
               </div>
-              {hourly_rate_cents && (
+              {hasAnyRate && (
                 <Link href="/tutor/earnings/new" className="btn btn-primary text-sm px-4 py-2">
                   Create Invoice
                 </Link>

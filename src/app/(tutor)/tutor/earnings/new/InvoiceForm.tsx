@@ -8,23 +8,34 @@ type Session = {
   scheduled_at: string
   duration_minutes: number | null
   student_name: string | null
+  rate_cents: number
 }
 
 export default function InvoiceForm({
   sessions,
-  hourlyRateCents,
   timezone,
 }: {
   sessions: Session[]
-  hourlyRateCents: number
   timezone: string
 }) {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Group sessions by rate to detect mixed-rate invoices
+  const rateGroups = sessions.reduce<Map<number, Session[]>>((map, s) => {
+    const list = map.get(s.rate_cents) ?? []
+    list.push(s)
+    map.set(s.rate_cents, list)
+    return map
+  }, new Map())
+
+  const isMixedRate = rateGroups.size > 1
+  const totalCents = sessions.reduce(
+    (sum, s) => sum + Math.round(((s.duration_minutes ?? 60) / 60) * s.rate_cents),
+    0
+  )
   const totalMinutes = sessions.reduce((sum, s) => sum + (s.duration_minutes ?? 60), 0)
-  const totalCents = Math.round((totalMinutes / 60) * hourlyRateCents)
   const hoursDisplay = `${Math.floor(totalMinutes / 60)}h${totalMinutes % 60 > 0 ? ` ${totalMinutes % 60}m` : ''}`
 
   async function submit() {
@@ -63,7 +74,12 @@ export default function InvoiceForm({
                   {formatSessionDateFullYear(s.scheduled_at, timezone)} · {formatTime(s.scheduled_at, timezone)}
                 </p>
               </div>
-              <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>
+              <div className="text-right">
+                <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>
+                {isMixedRate && (
+                  <p className="text-xs text-muted-foreground">${(s.rate_cents / 100).toFixed(2)}/hr</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -80,10 +96,24 @@ export default function InvoiceForm({
             <span className="text-muted-foreground">Total time</span>
             <span className="font-medium">{hoursDisplay}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Rate</span>
-            <span className="font-medium">${(hourlyRateCents / 100).toFixed(2)}/hr</span>
-          </div>
+          {!isMixedRate && sessions[0] && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Rate</span>
+              <span className="font-medium">${(sessions[0].rate_cents / 100).toFixed(2)}/hr</span>
+            </div>
+          )}
+          {isMixedRate && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Rates</span>
+              <div className="text-right">
+                {[...rateGroups.entries()].map(([rate, list]) => (
+                  <p key={rate} className="font-medium">
+                    ${(rate / 100).toFixed(2)}/hr × {list.length} session{list.length !== 1 ? 's' : ''}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex justify-between border-t border-border pt-2 mt-2">
             <span className="font-semibold">Total</span>
             <span className="font-semibold text-lg">${(totalCents / 100).toFixed(2)}</span>
@@ -109,16 +139,10 @@ export default function InvoiceForm({
       )}
 
       <div className="flex gap-3">
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="btn btn-primary disabled:opacity-50"
-        >
+        <button onClick={submit} disabled={submitting} className="btn btn-primary disabled:opacity-50">
           {submitting ? 'Submitting…' : 'Submit Invoice'}
         </button>
-        <a href="/tutor/earnings" className="btn">
-          Cancel
-        </a>
+        <a href="/tutor/earnings" className="btn">Cancel</a>
       </div>
     </div>
   )
