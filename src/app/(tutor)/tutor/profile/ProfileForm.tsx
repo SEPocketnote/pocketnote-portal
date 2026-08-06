@@ -234,6 +234,20 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
             <input type="date" className="input" value={form.date_of_birth}
               onChange={e => setForm({ ...form, date_of_birth: e.target.value })} />
           </Field>
+          <Field label="GST registered">
+            <label className="flex items-center gap-2 cursor-pointer mt-1">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-primary"
+                checked={form.gst_registered}
+                onChange={e => setForm({ ...form, gst_registered: e.target.checked })}
+              />
+              <span className="text-sm">I am registered for GST</span>
+            </label>
+            <p className="text-xs text-muted-foreground mt-1">
+              Auto-detected from ABN lookup — you can override this if needed.
+            </p>
+          </Field>
         </div>
       </section>
 
