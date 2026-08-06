@@ -10,7 +10,7 @@ export default async function NewBookingPage({
   const supabase = await createClient()
 
   const [{ data: tutors }, { data: availability }] = await Promise.all([
-    supabase.from('tutors').select('id, legal_name, subjects, year_levels, location, state, postcode').eq('active', true).order('legal_name'),
+    supabase.from('tutors').select('id, legal_name, subjects, year_levels, location, state, postcode, mode').eq('active', true).order('legal_name'),
     supabase.from('tutor_availability').select('tutor_id, day_of_week').order('day_of_week'),
   ])
 

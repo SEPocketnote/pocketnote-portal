@@ -283,7 +283,12 @@ export default function NewBookingForm({
                         : 'bg-white border-border hover:border-primary'
                     }`}
                   >
-                    {s.name}{s.year_level ? ` · ${s.year_level}` : ''}
+                    <span>{s.name}{s.year_level ? ` · ${s.year_level}` : ''}</span>
+                    {s.subjects?.length > 0 && (
+                      <span className="text-[10px] opacity-70 block leading-tight">
+                        {s.subjects.slice(0, 3).join(', ')}{s.subjects.length > 3 ? '…' : ''}
+                      </span>
+                    )}
                   </button>
                 ))}
                 <button
@@ -331,17 +336,18 @@ export default function NewBookingForm({
                 availability={availability}
                 value={form.tutorId}
                 onChange={id => setForm(f => ({ ...f, tutorId: id }))}
+                bookingMode={form.mode}
               />
             </Field>
             <Field label="Mode" required>
               <select required className="input" value={form.mode}
-                onChange={e => setForm(f => ({ ...f, mode: e.target.value as any }))}>
+                onChange={e => setForm(f => ({ ...f, mode: e.target.value as any, tutorId: '' }))}>
                 <option value="online">Online</option>
                 <option value="in-person">In-person</option>
               </select>
             </Field>
             {form.mode === 'in-person' && (
-              <Field label="Location">
+              <Field label="Session address">
                 <input type="text" className="input" placeholder="Address or suburb"
                   value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
               </Field>

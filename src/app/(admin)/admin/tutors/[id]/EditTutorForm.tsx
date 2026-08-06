@@ -41,6 +41,7 @@ type TutorValues = {
   credentials: string[]
   rate_tier_id: string | null
   hourly_rate_override_cents: number | null
+  mode: string
 }
 
 export default function EditTutorForm({
@@ -245,6 +246,14 @@ export default function EditTutorForm({
             <input className="input" value={credentialsText}
               onChange={e => setCredentialsText(e.target.value)} />
           </Field>
+          <Field label="Session mode">
+            <select className="input" value={values.mode}
+              onChange={e => set('mode', e.target.value)}>
+              <option value="either">Online & in-person</option>
+              <option value="online">Online only</option>
+              <option value="in-person">In-person only</option>
+            </select>
+          </Field>
 
           {/* Pay Rate section */}
           <div className="border-t border-border pt-4">
@@ -297,6 +306,7 @@ export default function EditTutorForm({
           )}
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <Info label="Phone" value={tutor.phone} />
+            <Info label="Session mode" value={tutor.mode === 'either' ? 'Online & in-person' : tutor.mode === 'online' ? 'Online only' : 'In-person only'} />
             <Info label="Suburb" value={tutor.location} />
             <Info label="State" value={tutor.state} />
             <Info label="Postcode" value={tutor.postcode} />

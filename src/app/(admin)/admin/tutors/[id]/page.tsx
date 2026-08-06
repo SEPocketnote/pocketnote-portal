@@ -101,6 +101,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           credentials: tutor.credentials ?? [],
           rate_tier_id: tutor.rate_tier_id ?? null,
           hourly_rate_override_cents: tutor.hourly_rate_override_cents ?? null,
+          mode: tutor.mode ?? 'either',
         }}
         rateTiers={rateTiers ?? []}
       />
