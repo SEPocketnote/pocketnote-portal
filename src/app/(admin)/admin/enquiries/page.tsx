@@ -101,52 +101,82 @@ export default async function EnquiriesPage({
       {!enquiries?.length ? (
         <p className="text-muted-foreground text-sm">No enquiries found.</p>
       ) : (
-        <div className="bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[520px]">
-            <thead className="border-b border-border bg-muted/40">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parent</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Subjects</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
-                <th className="text-left px-4 py-3">
-                  <SortableHeader column="status" label="Status" currentSort={sort} currentDir={dir} baseParams={sortBase} />
-                </th>
-                <th className="text-left px-4 py-3">
-                  <SortableHeader column="received" label="Received" currentSort={sort} currentDir={dir} baseParams={sortBase} />
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {enquiries.map((e) => (
-                <tr key={e.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/enquiries/${e.id}`} className="font-medium hover:text-primary">
-                      {e.parent_name}
-                    </Link>
-                    <div className="text-muted-foreground text-xs">{e.email}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {e.student_name}
-                    <div className="text-muted-foreground text-xs">{e.year_level}</div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {e.subjects?.join(', ') || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.location || '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[e.status] ?? ''}`}>
-                      {e.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {enquiries.map((e) => (
+              <Link
+                key={e.id}
+                href={`/admin/enquiries/${e.id}`}
+                className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{e.parent_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{e.email}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {e.student_name}{e.year_level ? ` · ${e.year_level}` : ''}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[e.status] ?? ''}`}>
+                    {e.status}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}
-                  </td>
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
+              <thead className="border-b border-border bg-muted/40">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parent</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Subjects</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
+                  <th className="text-left px-4 py-3">
+                    <SortableHeader column="status" label="Status" currentSort={sort} currentDir={dir} baseParams={sortBase} />
+                  </th>
+                  <th className="text-left px-4 py-3">
+                    <SortableHeader column="received" label="Received" currentSort={sort} currentDir={dir} baseParams={sortBase} />
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {enquiries.map((e) => (
+                  <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <Link href={`/admin/enquiries/${e.id}`} className="font-medium hover:text-primary">
+                        {e.parent_name}
+                      </Link>
+                      <div className="text-muted-foreground text-xs">{e.email}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {e.student_name}
+                      <div className="text-muted-foreground text-xs">{e.year_level}</div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {e.subjects?.join(', ') || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{e.location || '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[e.status] ?? ''}`}>
+                        {e.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

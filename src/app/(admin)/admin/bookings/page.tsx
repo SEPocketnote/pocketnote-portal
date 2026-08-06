@@ -54,46 +54,77 @@ export default async function BookingsPage() {
           <p className="text-sm text-muted-foreground">Create your first booking to get started.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[560px]">
-            <thead className="border-b border-border bg-muted/40">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parent</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tutor</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Package</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Sessions completed</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {bookings.map((b) => {
-                const pkg = b.packages as any
-                return (
-                  <tr key={b.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3">
-                      <Link href={`/admin/bookings/${b.id}`} className="font-medium hover:text-primary">
-                        {(b.parents as any)?.name}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">{(b.parents as any)?.email}</div>
-                    </td>
-                    <td className="px-4 py-3">{(b.students as any)?.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{(b.tutors as any)?.legal_name}</td>
-                    <td className="px-4 py-3 text-muted-foreground capitalize">{pkg?.type}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {lifetimeByStudent[b.student_id] ?? 0}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ''}`}>
-                        {b.status}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {bookings.map((b) => {
+              const pkg = b.packages as any
+              return (
+                <Link
+                  key={b.id}
+                  href={`/admin/bookings/${b.id}`}
+                  className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{(b.parents as any)?.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{(b.parents as any)?.email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {(b.students as any)?.name} · {(b.tutors as any)?.legal_name}
+                    </p>
+                    {pkg?.type && (
+                      <p className="text-xs text-muted-foreground capitalize">{pkg.type} package</p>
+                    )}
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize shrink-0 ${STATUS_STYLES[b.status] ?? ''}`}>
+                    {b.status}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[560px]">
+              <thead className="border-b border-border bg-muted/40">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parent</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tutor</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Package</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Sessions completed</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {bookings.map((b) => {
+                  const pkg = b.packages as any
+                  return (
+                    <tr key={b.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3">
+                        <Link href={`/admin/bookings/${b.id}`} className="font-medium hover:text-primary">
+                          {(b.parents as any)?.name}
+                        </Link>
+                        <div className="text-xs text-muted-foreground">{(b.parents as any)?.email}</div>
+                      </td>
+                      <td className="px-4 py-3">{(b.students as any)?.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{(b.tutors as any)?.legal_name}</td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize">{pkg?.type}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {lifetimeByStudent[b.student_id] ?? 0}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[b.status] ?? ''}`}>
+                          {b.status}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

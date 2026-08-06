@@ -32,43 +32,72 @@ export default async function TutorsPage() {
           <p className="text-sm text-muted-foreground">Add your first tutor to get started.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[480px]">
-            <thead className="border-b border-border bg-muted/40">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Subjects</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tutors.map((t) => (
-                <tr key={t.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/tutors/${t.id}`} className="font-medium hover:text-primary">
-                      {t.legal_name}
-                    </Link>
-                    <div className="text-muted-foreground text-xs">{t.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {t.subjects?.slice(0, 3).join(', ')}{(t.subjects?.length ?? 0) > 3 ? '…' : ''}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {formatLocation(t.location, (t as any).state, (t as any).postcode)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      t.active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {t.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {tutors.map((t) => (
+              <Link
+                key={t.id}
+                href={`/admin/tutors/${t.id}`}
+                className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{t.legal_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{t.email}</p>
+                  {(t.subjects?.length ?? 0) > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t.subjects?.slice(0, 3).join(', ')}{(t.subjects?.length ?? 0) > 3 ? '…' : ''}
+                    </p>
+                  )}
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                  t.active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {t.active ? 'Active' : 'Inactive'}
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
+              <thead className="border-b border-border bg-muted/40">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Subjects</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {tutors.map((t) => (
+                  <tr key={t.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <Link href={`/admin/tutors/${t.id}`} className="font-medium hover:text-primary">
+                        {t.legal_name}
+                      </Link>
+                      <div className="text-muted-foreground text-xs">{t.email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {t.subjects?.slice(0, 3).join(', ')}{(t.subjects?.length ?? 0) > 3 ? '…' : ''}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatLocation(t.location, (t as any).state, (t as any).postcode)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        t.active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {t.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

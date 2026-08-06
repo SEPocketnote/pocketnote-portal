@@ -43,54 +43,84 @@ export default async function AdminInvoicesPage() {
           No invoices submitted yet.
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Period</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Hours</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Submitted</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {invoices.map((inv) => {
-                  const hrs = Math.floor(inv.total_minutes / 60)
-                  const mins = inv.total_minutes % 60
-                  return (
-                    <tr key={inv.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 font-medium">{tutorNames[inv.tutor_id] ?? '—'}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yy')}
-                      </td>
-                      <td className="px-4 py-3">{inv.sessions_count}</td>
-                      <td className="px-4 py-3">{hrs}h{mins > 0 ? ` ${mins}m` : ''}</td>
-                      <td className="px-4 py-3 font-medium">${(inv.total_cents / 100).toFixed(2)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status] ?? 'bg-muted text-muted-foreground'}`}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {format(new Date(inv.submitted_at), 'd MMM yyyy')}
-                      </td>
-                      <td className="px-4 py-3">
-                        <a href={`/admin/invoices/${inv.id}`} className="text-xs text-primary hover:underline">
-                          View
-                        </a>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {invoices.map((inv) => {
+              const hrs = Math.floor(inv.total_minutes / 60)
+              const mins = inv.total_minutes % 60
+              return (
+                <a
+                  key={inv.id}
+                  href={`/admin/invoices/${inv.id}`}
+                  className="block bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-1">
+                    <p className="font-medium truncate">{tutorNames[inv.tutor_id] ?? '—'}</p>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize shrink-0 ${STATUS_STYLES[inv.status] ?? 'bg-muted text-muted-foreground'}`}>
+                      {inv.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yy')}
+                    {' · '}{hrs}h{mins > 0 ? ` ${mins}m` : ''}
+                    {' · '}<span className="font-medium text-foreground">${(inv.total_cents / 100).toFixed(2)}</span>
+                  </p>
+                </a>
+              )
+            })}
           </div>
-        </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Period</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Hours</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Submitted</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {invoices.map((inv) => {
+                    const hrs = Math.floor(inv.total_minutes / 60)
+                    const mins = inv.total_minutes % 60
+                    return (
+                      <tr key={inv.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3 font-medium">{tutorNames[inv.tutor_id] ?? '—'}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yy')}
+                        </td>
+                        <td className="px-4 py-3">{inv.sessions_count}</td>
+                        <td className="px-4 py-3">{hrs}h{mins > 0 ? ` ${mins}m` : ''}</td>
+                        <td className="px-4 py-3 font-medium">${(inv.total_cents / 100).toFixed(2)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[inv.status] ?? 'bg-muted text-muted-foreground'}`}>
+                            {inv.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {format(new Date(inv.submitted_at), 'd MMM yyyy')}
+                        </td>
+                        <td className="px-4 py-3">
+                          <a href={`/admin/invoices/${inv.id}`} className="text-xs text-primary hover:underline">
+                            View
+                          </a>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

@@ -92,6 +92,12 @@ export default async function UsersPage() {
   )
 }
 
+function StatusPill({ banned, confirmed }: { banned: boolean; confirmed: boolean }) {
+  if (banned) return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Banned</span>
+  if (!confirmed) return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Invited</span>
+  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
+}
+
 function UserTable({ users, meId, showAdminActions }: {
   users: any[]; meId: string; showAdminActions?: boolean
 }) {
@@ -103,55 +109,81 @@ function UserTable({ users, meId, showAdminActions }: {
     )
   }
   return (
-    <div className="bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
-      <table className="w-full text-sm min-w-[560px]">
-        <thead>
-          <tr className="border-b border-border bg-muted/40">
-            <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Name / Email</th>
-            <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Status</th>
-            <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Joined</th>
-            <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Last sign-in</th>
-            <th className="px-4 py-2.5" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {users.map((u: any) => {
-            const isSelf = u.id === meId
-            return (
-              <tr key={u.id} className="hover:bg-muted/20">
-                <td className="px-4 py-3">
-                  <p className="font-medium">{u.name ?? u.email}</p>
-                  <p className="text-xs text-muted-foreground">{u.email}</p>
+    <>
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-2">
+        {users.map((u: any) => {
+          const isSelf = u.id === meId
+          return (
+            <div key={u.id} className="bg-white rounded-lg border border-border p-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{u.name ?? u.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                   {isSelf && <span className="text-[10px] text-primary font-medium">You</span>}
-                </td>
-                <td className="px-4 py-3">
-                  {u.banned ? (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Banned</span>
-                  ) : !u.confirmed ? (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Invited</span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {u.created_at ? format(new Date(u.created_at), 'd MMM yyyy') : '—'}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {u.last_sign_in_at ? format(new Date(u.last_sign_in_at), 'd MMM yyyy') : 'Never'}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    {showAdminActions && !u.confirmed && <ResendAdminInviteButton userId={u.id} />}
-                    {showAdminActions && <RemoveAdminButton userId={u.id} isSelf={isSelf} />}
-                    <BanButton userId={u.id} banned={u.banned} />
-                  </div>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+                </div>
+                <StatusPill banned={u.banned} confirmed={u.confirmed} />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Joined {u.created_at ? format(new Date(u.created_at), 'd MMM yyyy') : '—'}
+                </p>
+                <div className="flex items-center gap-3">
+                  {showAdminActions && !u.confirmed && <ResendAdminInviteButton userId={u.id} />}
+                  {showAdminActions && <RemoveAdminButton userId={u.id} isSelf={isSelf} />}
+                  <BanButton userId={u.id} banned={u.banned} />
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr className="border-b border-border bg-muted/40">
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Name / Email</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Status</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Joined</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Last sign-in</th>
+              <th className="px-4 py-2.5" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {users.map((u: any) => {
+              const isSelf = u.id === meId
+              return (
+                <tr key={u.id} className="hover:bg-muted/20">
+                  <td className="px-4 py-3">
+                    <p className="font-medium">{u.name ?? u.email}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                    {isSelf && <span className="text-[10px] text-primary font-medium">You</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusPill banned={u.banned} confirmed={u.confirmed} />
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {u.created_at ? format(new Date(u.created_at), 'd MMM yyyy') : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {u.last_sign_in_at ? format(new Date(u.last_sign_in_at), 'd MMM yyyy') : 'Never'}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                      {showAdminActions && !u.confirmed && <ResendAdminInviteButton userId={u.id} />}
+                      {showAdminActions && <RemoveAdminButton userId={u.id} isSelf={isSelf} />}
+                      <BanButton userId={u.id} banned={u.banned} />
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }
 
