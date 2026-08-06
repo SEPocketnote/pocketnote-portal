@@ -46,8 +46,8 @@ export default function RateTiersList({ tiers }: { tiers: RateTier[] }) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         name: editValues.name,
-        online_rate_cents: Math.round(parseFloat(String(editValues.online_rate_cents ?? 0)) * 100),
-        inperson_rate_cents: Math.round(parseFloat(String(editValues.inperson_rate_cents ?? 0)) * 100),
+        online_rate_cents: editValues.online_rate_cents ?? 0,
+        inperson_rate_cents: editValues.inperson_rate_cents ?? 0,
         description: editValues.description || null,
         sort_order: Number(editValues.sort_order ?? 0),
       }),
@@ -133,7 +133,7 @@ export default function RateTiersList({ tiers }: { tiers: RateTier[] }) {
                     </td>
                     <td className="px-4 py-3">
                       <input
-                        type="number" step="0.01" className="input text-sm w-24"
+                        type="text" inputMode="decimal" className="input text-sm w-24"
                         value={editValues.online_rate_cents !== undefined
                           ? (editValues.online_rate_cents / 100).toFixed(2) : ''}
                         onChange={e => setEditValues(v => ({
@@ -143,7 +143,7 @@ export default function RateTiersList({ tiers }: { tiers: RateTier[] }) {
                     </td>
                     <td className="px-4 py-3">
                       <input
-                        type="number" step="0.01" className="input text-sm w-24"
+                        type="text" inputMode="decimal" className="input text-sm w-24"
                         value={editValues.inperson_rate_cents !== undefined
                           ? (editValues.inperson_rate_cents / 100).toFixed(2) : ''}
                         onChange={e => setEditValues(v => ({
@@ -205,12 +205,12 @@ export default function RateTiersList({ tiers }: { tiers: RateTier[] }) {
           </div>
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Online rate ($/hr)</label>
-            <input type="number" step="0.01" placeholder="e.g. 45.00" className="input"
+            <input type="text" inputMode="decimal" placeholder="e.g. 45.00" className="input"
               value={addOnlineRate} onChange={e => setAddOnlineRate(e.target.value)} />
           </div>
           <div>
             <label className="text-xs text-muted-foreground block mb-1">In-person rate ($/hr)</label>
-            <input type="number" step="0.01" placeholder="e.g. 55.00" className="input"
+            <input type="text" inputMode="decimal" placeholder="e.g. 55.00" className="input"
               value={addInpersonRate} onChange={e => setAddInpersonRate(e.target.value)} />
           </div>
           <div>
