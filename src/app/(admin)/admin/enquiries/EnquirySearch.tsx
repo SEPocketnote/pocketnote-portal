@@ -11,7 +11,7 @@ export default function EnquirySearch({
   baseParams: Record<string, string>
 }) {
   const router = useRouter()
-  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     clearTimeout(timer.current)
