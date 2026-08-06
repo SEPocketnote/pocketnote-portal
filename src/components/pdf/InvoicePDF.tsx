@@ -105,9 +105,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
-  colDate: { width: '45%' },
-  colStudent: { width: '35%' },
-  colDuration: { width: '20%', textAlign: 'right' },
+  colDate: { width: '35%' },
+  colStudent: { width: '25%' },
+  colDuration: { width: '15%', textAlign: 'right' },
+  colRate: { width: '12%', textAlign: 'right' },
+  colAmount: { width: '13%', textAlign: 'right' },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -130,6 +132,7 @@ type Session = {
   scheduled_at: string
   duration_minutes: number | null
   student_name: string | null
+  rate_cents: number | null
 }
 
 type Invoice = {
@@ -150,6 +153,9 @@ type Invoice = {
 type Tutor = {
   legal_name: string
   email: string
+  phone?: string | null
+  abn?: string | null
+  gst_registered?: boolean | null
 } | null
 
 export function InvoicePDF({
@@ -163,9 +169,11 @@ export function InvoicePDF({
 }) {
   const hrs = Math.floor(invoice.total_minutes / 60)
   const mins = invoice.total_minutes % 60
-  const totalHours = hrs + (mins > 0 ? ` h ${mins} m` : ' h')
+  const totalHours = `${hrs}h${mins > 0 ? ` ${mins}m` : ''}`
 
   const shortId = invoice.id.slice(0, 8).toUpperCase()
+  const gstRegistered = tutor?.gst_registered === true
+  const invoiceTitle = gstRegistered ? 'Tax Invoice' : 'Invoice'
 
   const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
     approved: { bg: '#dbeafe', text: '#1d4ed8' },
@@ -175,6 +183,11 @@ export function InvoicePDF({
   }
   const statusColor = STATUS_COLOR[invoice.status] ?? { bg: '#f3f4f6', text: '#374151' }
 
+  function sessionAmount(s: Session): number {
+    const rate = s.rate_cents ?? invoice.hourly_rate_cents
+    return Math.round(((s.duration_minutes ?? 60) / 60) * rate)
+  }
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -182,7 +195,7 @@ export function InvoicePDF({
         <View style={styles.header}>
           <Text style={styles.brand}>Pocketnote</Text>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.invoiceTitle}>Invoice #{shortId}</Text>
+            <Text style={styles.invoiceTitle}>{invoiceTitle} #{shortId}</Text>
             <Text style={{ fontSize: 9, color: '#6b7280' }}>
               Submitted {format(new Date(invoice.submitted_at), 'd MMM yyyy')}
             </Text>
@@ -197,10 +210,21 @@ export function InvoicePDF({
         {/* Tutor */}
         <Text style={styles.sectionTitle}>Tutor</Text>
         <View style={styles.card}>
-          <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11, marginBottom: 3 }}>
+          <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11, marginBottom: 4 }}>
             {tutor?.legal_name ?? '—'}
           </Text>
-          <Text style={{ color: '#6b7280', fontSize: 9 }}>{tutor?.email ?? ''}</Text>
+          {tutor?.email ? (
+            <Text style={{ color: '#6b7280', fontSize: 9, marginBottom: 2 }}>{tutor.email}</Text>
+          ) : null}
+          {tutor?.phone ? (
+            <Text style={{ color: '#6b7280', fontSize: 9, marginBottom: 2 }}>{tutor.phone}</Text>
+          ) : null}
+          {tutor?.abn ? (
+            <Text style={{ color: '#6b7280', fontSize: 9, marginBottom: 2 }}>ABN: {tutor.abn}</Text>
+          ) : null}
+          {gstRegistered ? (
+            <Text style={{ color: '#059669', fontSize: 9, marginTop: 2 }}>GST Registered</Text>
+          ) : null}
         </View>
 
         {/* Invoice details */}
@@ -220,32 +244,30 @@ export function InvoicePDF({
             <Text style={styles.label}>Total hours</Text>
             <Text style={styles.value}>{totalHours}</Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Hourly rate</Text>
-            <Text style={styles.value}>${(invoice.hourly_rate_cents / 100).toFixed(2)} / hr</Text>
-          </View>
-          {invoice.paid_at && (
+          {invoice.paid_at ? (
             <View style={styles.row}>
               <Text style={styles.label}>Paid on</Text>
               <Text style={styles.value}>{format(new Date(invoice.paid_at), 'd MMM yyyy')}</Text>
             </View>
-          )}
+          ) : null}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total amount</Text>
+            <Text style={styles.totalLabel}>
+              {gstRegistered ? 'Total amount (GST inclusive)' : 'Total amount'}
+            </Text>
             <Text style={styles.totalValue}>${(invoice.total_cents / 100).toFixed(2)}</Text>
           </View>
         </View>
 
         {/* Tutor notes */}
-        {invoice.notes && (
+        {invoice.notes ? (
           <>
             <Text style={styles.sectionTitle}>Tutor notes</Text>
             <View style={styles.card}>
               <Text style={{ fontSize: 9, color: '#374151' }}>{invoice.notes}</Text>
             </View>
           </>
-        )}
+        ) : null}
 
         {/* Sessions */}
         <Text style={styles.sectionTitle}>Sessions ({sessions.length})</Text>
@@ -253,25 +275,37 @@ export function InvoicePDF({
           <Text style={[styles.tableHeaderCell, styles.colDate]}>Date &amp; time</Text>
           <Text style={[styles.tableHeaderCell, styles.colStudent]}>Student</Text>
           <Text style={[styles.tableHeaderCell, styles.colDuration]}>Duration</Text>
+          <Text style={[styles.tableHeaderCell, styles.colRate]}>Rate</Text>
+          <Text style={[styles.tableHeaderCell, styles.colAmount]}>Amount</Text>
         </View>
-        {sessions.map((s) => (
-          <View key={s.id} style={styles.tableRow}>
-            <Text style={[{ fontSize: 9 }, styles.colDate]}>
-              {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
-            </Text>
-            <Text style={[{ fontSize: 9 }, styles.colStudent]}>
-              {s.student_name ?? '—'}
-            </Text>
-            <Text style={[{ fontSize: 9 }, styles.colDuration]}>
-              {s.duration_minutes ?? 60} min
-            </Text>
-          </View>
-        ))}
+        {sessions.map((s) => {
+          const rateCents = s.rate_cents ?? invoice.hourly_rate_cents
+          const amountCents = sessionAmount(s)
+          return (
+            <View key={s.id} style={styles.tableRow}>
+              <Text style={[{ fontSize: 9 }, styles.colDate]}>
+                {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+              </Text>
+              <Text style={[{ fontSize: 9 }, styles.colStudent]}>
+                {s.student_name ?? '—'}
+              </Text>
+              <Text style={[{ fontSize: 9 }, styles.colDuration]}>
+                {s.duration_minutes ?? 60} min
+              </Text>
+              <Text style={[{ fontSize: 9 }, styles.colRate]}>
+                ${(rateCents / 100).toFixed(2)}
+              </Text>
+              <Text style={[{ fontSize: 9, fontFamily: 'Helvetica-Bold' }, styles.colAmount]}>
+                ${(amountCents / 100).toFixed(2)}
+              </Text>
+            </View>
+          )
+        })}
 
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Pocketnote</Text>
-          <Text style={styles.footerText}>Invoice #{shortId}</Text>
+          <Text style={styles.footerText}>{invoiceTitle} #{shortId}</Text>
           <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

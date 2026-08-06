@@ -20,13 +20,29 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const { data: tutor } = await admin
-    .from('tutors').select('legal_name, email').eq('id', invoice.tutor_id).single()
+    .from('tutors')
+    .select('legal_name, email, phone, abn, gst_registered')
+    .eq('id', invoice.tutor_id)
+    .single()
 
+  // Fetch invoice_sessions with rate_cents, then join session details
   const { data: invoiceSessions } = await admin
-    .from('invoice_sessions').select('session_id').eq('invoice_id', id)
+    .from('invoice_sessions')
+    .select('session_id, rate_cents')
+    .eq('invoice_id', id)
 
   const sessionIds = (invoiceSessions ?? []).map((s: { session_id: string }) => s.session_id)
-  let sessions: Array<{ id: string; scheduled_at: string; duration_minutes: number | null; student_name: string | null }> = []
+  const rateBySesionId = new Map(
+    (invoiceSessions ?? []).map((s: { session_id: string; rate_cents: number | null }) => [s.session_id, s.rate_cents])
+  )
+
+  let sessions: Array<{
+    id: string
+    scheduled_at: string
+    duration_minutes: number | null
+    student_name: string | null
+    rate_cents: number | null
+  }> = []
 
   if (sessionIds.length) {
     const { data: rawSessions } = await admin
@@ -40,6 +56,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       scheduled_at: s.scheduled_at,
       duration_minutes: s.duration_minutes,
       student_name: s.bookings?.students?.name ?? null,
+      rate_cents: rateBySesionId.get(s.id) ?? null,
     }))
   }
 
