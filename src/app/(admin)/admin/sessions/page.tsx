@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { FileText } from 'lucide-react'
 import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -28,6 +28,7 @@ export default async function SessionsPage({
     .from('sessions')
     .select(`
       id, scheduled_at, status, duration_minutes,
+      progress_reports ( id ),
       bookings!inner(
         id, mode,
         parents ( id, name ),
@@ -118,9 +119,12 @@ export default async function SessionsPage({
                       {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)} · {s.duration_minutes} min
                     </p>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${STATUS_STYLES[s.status] ?? 'bg-muted text-muted-foreground'}`}>
-                    {s.status}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {s.progress_reports && <FileText className="w-3.5 h-3.5 text-muted-foreground" aria-label="Progress report submitted" />}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[s.status] ?? 'bg-muted text-muted-foreground'}`}>
+                      {s.status}
+                    </span>
+                  </div>
                 </Link>
               )
             })}
@@ -136,6 +140,7 @@ export default async function SessionsPage({
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Duration</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground w-8"></th>
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
                 </tr>
               </thead>
@@ -166,6 +171,11 @@ export default async function SessionsPage({
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{s.duration_minutes} min</td>
+                      <td className="px-4 py-3">
+                        {s.progress_reports && (
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground" aria-label="Progress report submitted" />
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[s.status] ?? 'bg-muted text-muted-foreground'}`}>
                           {s.status}

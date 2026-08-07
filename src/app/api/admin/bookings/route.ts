@@ -207,6 +207,7 @@ export async function POST(request: Request) {
   }
 
   const durationMinutes = d.durationMinutes ?? 60
+  const isOngoing = d.scheduleType !== 'single' && !d.sessionsCount && !d.recurrenceEndDate
 
   // 8. Create booking
   const { data: booking } = await admin.from('bookings').insert({
@@ -218,7 +219,7 @@ export async function POST(request: Request) {
     location: d.location,
     start_date: d.startDate,
     schedule_type: d.scheduleType,
-    sessions_count: sessionDates.length,
+    sessions_count: isOngoing ? null : sessionDates.length,
     recurrence_end_date: d.recurrenceEndDate ?? null,
     rate_cents_snapshot: rate_cents_snapshot ?? null,
     duration_minutes: durationMinutes,

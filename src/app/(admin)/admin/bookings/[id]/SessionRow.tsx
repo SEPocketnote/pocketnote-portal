@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X } from 'lucide-react'
+import { X, FileText } from 'lucide-react'
 import { formatSessionDateFullYear, formatTime, toZonedDatetimeInput, toUtcFromZoned } from '@/lib/timezone'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -12,16 +12,26 @@ const STATUS_STYLES: Record<string, string> = {
   rescheduled: 'bg-yellow-100 text-yellow-700',
 }
 
-export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone }: {
+type ProgressReport = {
+  covered: string | null
+  went_well: string | null
+  needs_work: string | null
+  next_session_plan: string | null
+  notes: string | null
+}
+
+export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone, report }: {
   sessionId: string
   index: number
   scheduledAt: string
   status: string
   durationMinutes: number
   timezone: string
+  report?: ProgressReport | null
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState(false)
@@ -57,7 +67,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
     setLoading(false)
   }
 
-  function cancel() {
+  function cancelEdit() {
     setDatetimeValue(toZonedDatetimeInput(scheduledAt, timezone))
     setStatusValue(status)
     setDurationValue(String(durationMinutes ?? 60))
@@ -110,7 +120,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
             className="btn btn-primary text-xs px-3 py-1.5 disabled:opacity-50">
             {loading ? 'Saving…' : 'Save'}
           </button>
-          <button onClick={cancel} disabled={loading}
+          <button onClick={cancelEdit} disabled={loading}
             className="btn text-xs px-3 py-1.5">
             Cancel
           </button>
@@ -120,50 +130,82 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3">
-      <div className="flex items-center gap-4">
-        <span className="text-xs text-muted-foreground w-16">Session {index}</span>
-        <div>
-          <p className="text-sm font-medium">{formatSessionDateFullYear(scheduledAt, timezone)}</p>
-          <p className="text-xs text-muted-foreground">{formatTime(scheduledAt, timezone)} · {durationMinutes} min</p>
+    <>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-muted-foreground w-16">Session {index}</span>
+          <div>
+            <p className="text-sm font-medium">{formatSessionDateFullYear(scheduledAt, timezone)}</p>
+            <p className="text-xs text-muted-foreground">{formatTime(scheduledAt, timezone)} · {durationMinutes} min</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {report && (
+            <button
+              onClick={() => setNotesOpen(o => !o)}
+              title="View progress report"
+              className={`transition-colors ${notesOpen ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[status] ?? 'bg-muted text-muted-foreground'}`}>
+            {status}
+          </span>
+          <button
+            onClick={() => setEditing(true)}
+            className="text-xs text-muted-foreground hover:text-primary"
+          >
+            Edit
+          </button>
+          {status === 'scheduled' && (
+            cancelConfirm ? (
+              <span className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Cancel session?</span>
+                <button
+                  onClick={confirmCancel}
+                  disabled={cancelling}
+                  className="text-destructive font-medium hover:underline disabled:opacity-50"
+                >
+                  {cancelling ? '…' : 'Yes'}
+                </button>
+                <button onClick={() => setCancelConfirm(false)} className="text-muted-foreground hover:underline">
+                  No
+                </button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setCancelConfirm(true)}
+                title="Cancel session"
+                className="text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[status] ?? 'bg-muted text-muted-foreground'}`}>
-          {status}
-        </span>
-        <button
-          onClick={() => setEditing(true)}
-          className="text-xs text-muted-foreground hover:text-primary"
-        >
-          Edit
-        </button>
-        {status === 'scheduled' && (
-          cancelConfirm ? (
-            <span className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Cancel session?</span>
-              <button
-                onClick={confirmCancel}
-                disabled={cancelling}
-                className="text-destructive font-medium hover:underline disabled:opacity-50"
-              >
-                {cancelling ? '…' : 'Yes'}
-              </button>
-              <button onClick={() => setCancelConfirm(false)} className="text-muted-foreground hover:underline">
-                No
-              </button>
-            </span>
-          ) : (
-            <button
-              onClick={() => setCancelConfirm(true)}
-              title="Cancel session"
-              className="text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )
-        )}
-      </div>
-    </div>
+
+      {/* Progress report notes */}
+      {report && notesOpen && (
+        <div className="px-4 pb-4 space-y-2 border-t border-border bg-muted/20">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-3 mb-2">Progress report</p>
+          {[
+            ['Covered', report.covered],
+            ['Went well', report.went_well],
+            ['Needs work', report.needs_work],
+            ['Next session plan', report.next_session_plan],
+            ['Notes', report.notes],
+          ].map(([label, value]) =>
+            value ? (
+              <div key={label as string}>
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="text-sm">{value}</p>
+              </div>
+            ) : null
+          )}
+        </div>
+      )}
+    </>
   )
 }
