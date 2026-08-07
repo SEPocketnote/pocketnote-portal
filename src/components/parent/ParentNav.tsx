@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CalendarDays, TrendingUp, MessageSquare, UserCircle, LogOut } from 'lucide-react'
+import { CalendarDays, TrendingUp, MessageSquare, UserCircle, LogOut, BookOpen } from 'lucide-react'
 
 const links = [
   { href: '/parent', label: 'My Sessions', icon: CalendarDays, exact: true },
   { href: '/parent/progress', label: 'Progress Reports', icon: TrendingUp },
   { href: '/parent/messages', label: 'Messages', icon: MessageSquare },
+  { href: '/parent/resources', label: 'Resources', icon: BookOpen },
   { href: '/parent/account', label: 'Account', icon: UserCircle },
 ]
 
