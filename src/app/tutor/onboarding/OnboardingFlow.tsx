@@ -80,6 +80,9 @@ export default function OnboardingFlow({
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [credInput, setCredInput] = useState('')
   const [abnStatus, setAbnStatus] = useState<AbnStatus>({ state: 'idle' })
+  const [otherSubject, setOtherSubject] = useState(
+    (tutor.subjects ?? []).find((s: string) => !SUBJECTS.includes(s)) ?? ''
+  )
 
   const [form, setForm] = useState({
     photo_url: tutor.photo_url ?? '',
@@ -93,7 +96,7 @@ export default function OnboardingFlow({
     state: tutor.state ?? '',
     postcode: tutor.postcode ?? '',
     address: tutor.address ?? '',
-    subjects: (tutor.subjects ?? []) as string[],
+    subjects: (tutor.subjects ?? []).map((s: string) => SUBJECTS.includes(s) ? s : 'Other') as string[],
     year_levels: (tutor.year_levels ?? []) as string[],
     credentials: (tutor.credentials ?? []) as string[],
   })
@@ -187,6 +190,9 @@ export default function OnboardingFlow({
       // Only include gst_registered if ABN was verified this session
       const payload: Record<string, any> = { ...form }
       if (abnStatus.state !== 'valid') delete payload.gst_registered
+      payload.subjects = form.subjects.map(s =>
+        s === 'Other' ? (otherSubject.trim() || 'Other') : s
+      )
 
       const res = await fetch('/api/tutor/profile', {
         method: 'PATCH',
@@ -376,7 +382,10 @@ export default function OnboardingFlow({
               <div className="flex flex-wrap gap-2">
                 {SUBJECTS.map(s => (
                   <button key={s} type="button"
-                    onClick={() => setForm(f => ({ ...f, subjects: toggle(f.subjects, s) }))}
+                    onClick={() => {
+                      if (s === 'Other' && form.subjects.includes('Other')) setOtherSubject('')
+                      setForm(f => ({ ...f, subjects: toggle(f.subjects, s) }))
+                    }}
                     className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                       form.subjects.includes(s)
                         ? 'bg-primary text-primary-foreground border-primary'
@@ -384,6 +393,17 @@ export default function OnboardingFlow({
                     }`}>{s}</button>
                 ))}
               </div>
+              {form.subjects.includes('Other') && (
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    value={otherSubject}
+                    onChange={e => setOtherSubject(e.target.value)}
+                    className="input text-sm max-w-xs"
+                    placeholder="e.g. Music, Drama, Visual Arts"
+                  />
+                </div>
+              )}
             </div>
 
             <div>

@@ -135,6 +135,7 @@ export default function NewTutorPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({ email: '', phone: '' })
+  const [otherSubject, setOtherSubject] = useState('')
   const [form, setForm] = useState({
     legalName: '',
     email: '',
@@ -180,11 +181,15 @@ export default function NewTutorPage() {
     setLoading(true)
     setError('')
     try {
+      const subjects = form.subjects.map(s =>
+        s === 'Other' ? (otherSubject.trim() || 'Other') : s
+      )
       const res = await fetch('/api/admin/tutors', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          subjects,
           credentials: form.credentials.split(',').map(s => s.trim()).filter(Boolean),
         }),
       })
@@ -287,7 +292,10 @@ export default function NewTutorPage() {
           <div className="flex flex-wrap gap-2">
             {SUBJECTS.map(s => (
               <button key={s} type="button"
-                onClick={() => setForm({...form, subjects: toggle(form.subjects, s)})}
+                onClick={() => {
+                  if (s === 'Other' && form.subjects.includes('Other')) setOtherSubject('')
+                  setForm({...form, subjects: toggle(form.subjects, s)})
+                }}
                 className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                   form.subjects.includes(s)
                     ? 'bg-primary text-primary-foreground border-primary'
@@ -295,6 +303,17 @@ export default function NewTutorPage() {
                 }`}>{s}</button>
             ))}
           </div>
+          {form.subjects.includes('Other') && (
+            <div className="mt-3">
+              <input
+                type="text"
+                value={otherSubject}
+                onChange={e => setOtherSubject(e.target.value)}
+                className="input text-sm max-w-xs"
+                placeholder="e.g. Music, Drama, Visual Arts"
+              />
+            </div>
+          )}
         </section>
 
         <section>
