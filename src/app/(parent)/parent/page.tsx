@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isFuture } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
 import { stateToTimezone, formatSessionDate, formatSessionDateShortTime, formatTime } from '@/lib/timezone'
+import SessionChangeForm from './SessionChangeForm'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -36,6 +37,15 @@ export default async function ParentDashboard() {
     .eq('parent_id', parent.id)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
+
+  // Fetch pending change requests for this parent so we can grey out already-requested sessions
+  const { data: pendingRequests } = await supabase
+    .from('session_change_requests')
+    .select('session_id')
+    .eq('parent_id', parent.id)
+    .eq('status', 'pending')
+
+  const pendingSessionIds = new Set((pendingRequests ?? []).map((r: any) => r.session_id))
 
   // Tutors RLS restricts reads to own row — fetch names via admin client
   const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
@@ -92,39 +102,65 @@ export default async function ParentDashboard() {
         <EmptyState />
       ) : (
         <>
-          {/* Package progress */}
+          {/* Bookings */}
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Your packages
+              Your bookings
             </h2>
             <div className="space-y-3">
               {bookings!.map((b) => {
                 const pkg = b.packages as any
                 const sessions = b.sessions as any[]
+                const scheduleType = (b as any).schedule_type as string
+                const sessionsCount = (b as any).sessions_count as number | null
+
+                // Determine enrolment type label
+                const isCasual = scheduleType === 'single' || (!scheduleType && !pkg)
+                const isPackage = !!pkg
+                const typeLabel = isPackage
+                  ? `${pkg.type ? pkg.type.charAt(0).toUpperCase() + pkg.type.slice(1) + ' package' : 'Package'}`
+                  : isCasual
+                  ? 'Casual'
+                  : scheduleType === 'weekly' ? 'Weekly' : 'Fortnightly'
+
                 const completed = sessions.filter(s => s.status === 'completed').length
-                const total = (b as any).sessions_count ?? pkg?.sessions_total ?? 0
-                const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+                const total = sessionsCount ?? pkg?.sessions_total ?? 0
+                const isOngoing = !isCasual && !isPackage && !total
+                const showProgress = !isCasual && total > 0
+
+                const pct = showProgress ? Math.round((completed / total) * 100) : 0
+
                 return (
                   <div key={b.id} className="bg-white rounded-xl border border-border p-5">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-1">
                       <div>
-                        <p className="font-medium capitalize">
-                          {pkg?.type ? `${pkg.type} pack` : (b as any).schedule_type ?? 'Sessions'} — {(b.students as any)?.name}
-                        </p>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {typeLabel}
+                          </span>
+                        </div>
+                        <p className="font-medium">{(b.students as any)?.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          with {tutorNames[(b as any).tutor_id] ?? 'tutor TBC'}
+                          with {tutorNames[(b as any).tutor_id] ?? 'Tutor TBC'}
                         </p>
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {completed}/{total} sessions
-                      </span>
+                      {showProgress && (
+                        <span className="text-sm text-muted-foreground shrink-0">
+                          {completed}/{total} sessions
+                        </span>
+                      )}
+                      {isOngoing && (
+                        <span className="text-sm text-muted-foreground shrink-0">Ongoing</span>
+                      )}
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+                    {showProgress && (
+                      <div className="h-2 bg-muted rounded-full overflow-hidden mt-3">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -182,28 +218,36 @@ export default async function ParentDashboard() {
           )}
 
           {/* Upcoming sessions list */}
-          {upcomingSessions.length > 1 && (
+          {upcomingSessions.length > 0 && (
             <section>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
                 Upcoming sessions
               </h2>
               <div className="bg-white rounded-xl border border-border divide-y divide-border">
-                {upcomingSessions.slice(1).map((s) => (
-                  <div key={s.id} className="px-5 py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">
-                        {formatSessionDateShortTime(s.scheduled_at, stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state))}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(s.booking.mode === 'online') ? 'Online' : s.booking.location}
-                        {' · '}{s.duration_minutes ?? 60} min
-                      </p>
+                {upcomingSessions.map((s) => {
+                  const tz = stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
+                  const sessionLabel = formatSessionDateShortTime(s.scheduled_at, tz)
+                  return (
+                    <div key={s.id} className="px-5 py-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">{sessionLabel}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(s.booking.mode === 'online') ? 'Online' : s.booking.location}
+                            {' · '}{s.duration_minutes ?? 60} min
+                            {' · '}{(s.booking.students as any)?.name}
+                          </p>
+                        </div>
+                      </div>
+                      <SessionChangeForm
+                        sessionId={s.id}
+                        bookingId={(s.booking as any).id}
+                        sessionLabel={sessionLabel}
+                        hasPendingRequest={pendingSessionIds.has(s.id)}
+                      />
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {(s.booking.students as any)?.name}
-                    </span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )}

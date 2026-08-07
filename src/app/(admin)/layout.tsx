@@ -22,16 +22,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const invoicesQuery = supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'submitted')
 
-  const [{ count: unreadMessages }, { count: pendingInvoices }] = await Promise.all([
+  const admin = (await import('@/lib/supabase/admin')).createAdminClient()
+
+  const [{ count: unreadMessages }, { count: pendingInvoices }, { count: pendingRequests }] = await Promise.all([
     supabase.from('messages').select('*', { count: 'exact', head: true }).is('read_at', null),
     lastSeenInvoices ? invoicesQuery.gt('submitted_at', lastSeenInvoices) : invoicesQuery,
+    admin.from('session_change_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
   ])
 
   return (
     <div className="flex min-h-screen bg-muted/30">
       <AdminNav
         email={user.email ?? ''}
-        navCounts={{ messages: unreadMessages ?? 0, invoices: pendingInvoices ?? 0 }}
+        navCounts={{ messages: unreadMessages ?? 0, invoices: pendingInvoices ?? 0, requests: pendingRequests ?? 0 }}
       />
       <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>
     </div>

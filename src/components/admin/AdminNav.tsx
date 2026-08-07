@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, Inbox, CalendarDays, Users2, Users,
   MessageSquare, CreditCard, UserCog, Settings,
-  LogOut, FileText, Megaphone,
+  LogOut, FileText, Megaphone, RefreshCw,
 } from 'lucide-react'
 
 const links = [
@@ -16,6 +16,7 @@ const links = [
   { href: '/admin/parents', label: 'Parents', icon: Users },
   { href: '/admin/tutors', label: 'Tutors', icon: Users2 },
   { href: '/admin/sessions', label: 'Sessions', icon: CalendarDays },
+  { href: '/admin/requests', label: 'Requests', icon: RefreshCw },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/invoices', label: 'Invoices', icon: FileText },
@@ -24,7 +25,7 @@ const links = [
 ]
 
 
-export default function AdminNav({ email, navCounts }: { email?: string; navCounts?: { messages: number; invoices: number } }) {
+export default function AdminNav({ email, navCounts }: { email?: string; navCounts?: { messages: number; invoices: number; requests: number } }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -66,6 +67,7 @@ export default function AdminNav({ email, navCounts }: { email?: string; navCoun
           const badge =
             href === '/admin/messages' ? (navCounts?.messages ?? 0)
             : href === '/admin/invoices' ? (navCounts?.invoices ?? 0)
+            : href === '/admin/requests' ? (navCounts?.requests ?? 0)
             : 0
           return (
             <Link
