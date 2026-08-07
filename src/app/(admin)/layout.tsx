@@ -24,11 +24,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const admin = (await import('@/lib/supabase/admin')).createAdminClient()
 
-  const [{ count: unreadMessages }, { count: pendingInvoices }, { count: pendingRequests }] = await Promise.all([
+  const [
+    { count: unreadMessages },
+    { count: pendingInvoices },
+    { count: pendingSessionRequests },
+    { count: pendingAddressRequests },
+  ] = await Promise.all([
     supabase.from('messages').select('*', { count: 'exact', head: true }).is('read_at', null),
     lastSeenInvoices ? invoicesQuery.gt('submitted_at', lastSeenInvoices) : invoicesQuery,
     admin.from('session_change_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    admin.from('address_change_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
   ])
+  const pendingRequests = (pendingSessionRequests ?? 0) + (pendingAddressRequests ?? 0)
 
   return (
     <div className="flex min-h-screen bg-muted/30">

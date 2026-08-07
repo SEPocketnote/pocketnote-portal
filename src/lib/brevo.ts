@@ -1037,6 +1037,140 @@ export async function sendChangeRequestResolution(data: {
   })
 }
 
+export async function sendAddressChangeAdminAlert(data: {
+  parentName: string
+  currentAddress: string | null
+  proposedAddress: string
+  parentNote: string | null
+}) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Portal' },
+    to: (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || 'tara@pocketnote.com.au')
+      .split(',')
+      .map((e: string) => ({ email: e.trim() }))
+      .filter((e: { email: string }) => e.email),
+    subject: `Address update request — ${data.parentName}`,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;">Pocketnote</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">Address update request</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">${data.parentName} has requested a session address update.</p>
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f9f8f6;border-radius:10px;">
+            ${data.currentAddress ? `<tr><td style="padding:10px 16px;border-bottom:1px solid #f0eeeb;"><strong style="font-size:13px;color:#374151;">Current address</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${data.currentAddress}</td></tr>` : ''}
+            <tr><td style="padding:10px 16px;${data.parentNote ? 'border-bottom:1px solid #f0eeeb;' : ''}"><strong style="font-size:13px;color:#374151;">Proposed address</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${data.proposedAddress}</td></tr>
+            ${data.parentNote ? `<tr><td style="padding:10px 16px;"><strong style="font-size:13px;color:#374151;">Note</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${data.parentNote}</td></tr>` : ''}
+          </table>
+          <div style="margin-top:28px;text-align:center;">
+            <a href="${siteUrl}/admin/requests" style="display:inline-block;background-color:#E26F6F;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">Review request</a>
+          </div>
+        </td></tr>
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  })
+}
+
+export async function sendAddressChangeTutorAlert(data: {
+  tutorName: string
+  tutorEmail: string
+  parentName: string
+  studentName: string
+  newAddress: string
+  adminNote: string | null
+}) {
+  const firstName = data.tutorName.split(' ')[0]
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote' },
+    to: [{ email: data.tutorEmail, name: data.tutorName }],
+    subject: `Session address updated — ${data.studentName}`,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;">Pocketnote</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">Session address updated</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">Hi ${firstName}, the in-person session address for <strong>${data.studentName}</strong> (${data.parentName}) has been updated.</p>
+          <div style="background:#f9f8f6;border-left:3px solid #E26F6F;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:24px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;">New address</p>
+            <p style="margin:0;font-size:15px;color:#111827;font-weight:500;">${data.newAddress}</p>
+          </div>
+          ${data.adminNote ? `<p style="font-size:14px;color:#374151;font-style:italic;margin-bottom:24px;">${data.adminNote}</p>` : ''}
+          <p style="margin:0;font-size:14px;color:#6b7280;">Please make note of this updated address for your upcoming sessions. If you have any questions, reply to this email.</p>
+        </td></tr>
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  })
+}
+
+export async function sendAddressChangeResolution(data: {
+  parentName: string
+  parentEmail: string
+  approved: boolean
+  proposedAddress: string
+  adminNote: string | null
+}) {
+  const firstName = data.parentName.split(' ')[0]
+  const heading = data.approved ? 'Your address has been updated' : 'Address update request — not actioned'
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote' },
+    to: [{ email: data.parentEmail, name: data.parentName }],
+    subject: heading,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;">Pocketnote</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">${heading}</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">Hi ${firstName},${data.approved
+            ? ` your session address has been updated to <strong>${data.proposedAddress}</strong>. Your tutor has been notified.`
+            : " we weren't able to update your session address at this time. Please get in touch if you'd like to discuss further."
+          }</p>
+          ${data.adminNote ? `<div style="background:#f9f8f6;border-left:3px solid #E26F6F;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:24px;"><p style="margin:0;font-size:14px;color:#374151;font-style:italic;">${data.adminNote}</p></div>` : ''}
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/parent/account" style="display:inline-block;background-color:#E26F6F;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">View my account</a>
+        </td></tr>
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  })
+}
+
 export async function sendEnquiryNotification(data: {
   parentName: string
   email: string
