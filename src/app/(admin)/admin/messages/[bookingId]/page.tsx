@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import MessageThread from '@/components/messages/MessageThread'
 
 export default async function AdminThreadPage({ params }: { params: Promise<{ bookingId: string }> }) {
   const { bookingId } = await params
   const supabase = await createClient()
+  const admin = createAdminClient()
 
   const [{ data: booking }, { data: messages }] = await Promise.all([
     supabase.from('bookings')
@@ -16,6 +18,13 @@ export default async function AdminThreadPage({ params }: { params: Promise<{ bo
       .eq('booking_id', bookingId)
       .order('created_at', { ascending: true }),
   ])
+
+  // Mark all unread messages in this thread as read
+  await admin
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+    .is('read_at', null)
 
   if (!booking) notFound()
 
