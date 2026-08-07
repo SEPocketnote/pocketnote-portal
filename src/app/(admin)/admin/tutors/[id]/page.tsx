@@ -134,6 +134,36 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
         )
       })()}
 
+      {/* Bank details */}
+      {(() => {
+        const bd = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
+        return (
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Payment details</h2>
+            {bd?.account_name || bd?.bsb || bd?.account_number ? (
+              <div className="bg-white rounded-lg border border-border px-5 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Account name</p>
+                  <p className="font-medium">{bd.account_name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">BSB</p>
+                  <p className="font-medium">{bd.bsb || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Account number</p>
+                  <p className="font-medium">{bd.account_number || '—'}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-700">
+                No bank details on file — tutor has not added payment information yet.
+              </div>
+            )}
+          </section>
+        )
+      })()}
+
       {/* Bookings */}
       {bookings && bookings.length > 0 && (
         <section className="mt-6">
