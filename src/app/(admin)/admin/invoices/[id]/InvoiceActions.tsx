@@ -9,10 +9,12 @@ export default function InvoiceActions({
   invoiceId,
   status,
   adminNotes: initialAdminNotes,
+  rejectionReason: initialRejectionReason,
 }: {
   invoiceId: string
   status: Status
   adminNotes: string
+  rejectionReason: string | null
 }) {
   const router = useRouter()
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes)
@@ -51,7 +53,7 @@ export default function InvoiceActions({
       setRejectError('A reason is required before rejecting.')
       return
     }
-    const ok = await update({ status: 'rejected', admin_notes: rejectReason.trim() })
+    const ok = await update({ status: 'rejected', rejection_reason: rejectReason.trim() })
     if (ok) {
       setRejectOpen(false)
       setRejectReason('')
@@ -179,15 +181,23 @@ export default function InvoiceActions({
           </div>
         )}
 
-        {/* rejected → reopen */}
+        {/* rejected → show reason + reopen */}
         {status === 'rejected' && (
-          <button
-            onClick={() => update({ status: 'submitted', admin_notes: adminNotes })}
-            disabled={saving}
-            className="btn text-sm px-4 py-2 disabled:opacity-50"
-          >
-            Reopen (set to submitted)
-          </button>
+          <div className="space-y-3">
+            {initialRejectionReason && (
+              <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                <p className="text-xs font-semibold uppercase tracking-wide text-red-600 mb-1">Rejection reason</p>
+                <p className="text-sm text-red-800">{initialRejectionReason}</p>
+              </div>
+            )}
+            <button
+              onClick={() => update({ status: 'submitted', rejection_reason: null })}
+              disabled={saving}
+              className="btn text-sm px-4 py-2 disabled:opacity-50"
+            >
+              Reopen (set to submitted)
+            </button>
+          </div>
         )}
       </div>
 

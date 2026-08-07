@@ -7,6 +7,7 @@ import { z } from 'zod'
 const Schema = z.object({
   status: z.enum(['submitted', 'approved', 'paid', 'rejected']).optional(),
   admin_notes: z.string().nullable().optional(),
+  rejection_reason: z.string().nullable().optional(),
   paid_at: z.string().nullable().optional(),
 })
 
@@ -28,6 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const updates: Record<string, string | null> = {}
   if (parsed.data.status !== undefined) updates.status = parsed.data.status
   if (parsed.data.admin_notes !== undefined) updates.admin_notes = parsed.data.admin_notes
+  if (parsed.data.rejection_reason !== undefined) updates.rejection_reason = parsed.data.rejection_reason
   if (parsed.data.paid_at !== undefined) updates.paid_at = parsed.data.paid_at
 
   const { error } = await admin.from('invoices').update(updates).eq('id', id)
@@ -54,7 +56,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           status: newStatus,
           invoiceRef: shortId,
           totalCents: invoice.total_cents,
-          rejectionReason: newStatus === 'rejected' ? (parsed.data.admin_notes ?? null) : null,
+          rejectionReason: newStatus === 'rejected' ? (parsed.data.rejection_reason ?? null) : null,
         })
       }
     } catch (err) {

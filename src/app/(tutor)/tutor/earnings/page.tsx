@@ -190,23 +190,30 @@ export default async function TutorEarningsPage() {
         ) : (
           <div className="bg-white rounded-lg border border-border divide-y divide-border">
             {invoices.map((inv) => (
-              <div key={inv.id} className="px-5 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">
-                    {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yyyy')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {inv.sessions_count} session{inv.sessions_count !== 1 ? 's' : ''}
-                    {' · '}
-                    {Math.floor(inv.total_minutes / 60)}h{inv.total_minutes % 60 > 0 ? ` ${inv.total_minutes % 60}m` : ''}
-                  </p>
+              <div key={inv.id} className="px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yyyy')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {inv.sessions_count} session{inv.sessions_count !== 1 ? 's' : ''}
+                      {' · '}
+                      {Math.floor(inv.total_minutes / 60)}h{inv.total_minutes % 60 > 0 ? ` ${inv.total_minutes % 60}m` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="font-medium text-sm">${(inv.total_cents / 100).toFixed(2)}</p>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status] ?? 'bg-muted text-muted-foreground'}`}>
+                      {inv.status}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <p className="font-medium text-sm">${(inv.total_cents / 100).toFixed(2)}</p>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[inv.status] ?? 'bg-muted text-muted-foreground'}`}>
-                    {inv.status}
-                  </span>
-                </div>
+                {inv.status === 'rejected' && inv.rejection_reason && (
+                  <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-100 rounded px-3 py-2">
+                    <span className="font-semibold">Reason: </span>{inv.rejection_reason}
+                  </div>
+                )}
               </div>
             ))}
           </div>

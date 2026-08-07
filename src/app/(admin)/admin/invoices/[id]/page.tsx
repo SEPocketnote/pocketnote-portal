@@ -141,6 +141,12 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
             <p className="text-sm">{invoice.notes}</p>
           </div>
         )}
+        {invoice.status === 'rejected' && invoice.rejection_reason && (
+          <div className="border-t border-red-100 pt-3">
+            <p className="text-xs font-semibold text-red-600 mb-1">Rejection reason</p>
+            <p className="text-sm text-red-800">{invoice.rejection_reason}</p>
+          </div>
+        )}
       </section>
 
       {/* Sessions list */}
@@ -168,6 +174,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
         invoiceId={id}
         status={invoice.status}
         adminNotes={invoice.admin_notes ?? ''}
+        rejectionReason={invoice.rejection_reason ?? null}
       />
     </div>
   )
