@@ -78,6 +78,8 @@ export default function OnboardingFlow({
   const [slotCount, setSlotCount] = useState(initialSlots.length)
   const [tosAccepted, setTosAccepted] = useState(false)
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [codeAccepted, setCodeAccepted] = useState(false)
+  const [childSafetyAccepted, setChildSafetyAccepted] = useState(false)
   const [credInput, setCredInput] = useState('')
   const [abnStatus, setAbnStatus] = useState<AbnStatus>({ state: 'idle' })
   const [otherSubject, setOtherSubject] = useState(
@@ -96,6 +98,7 @@ export default function OnboardingFlow({
     state: tutor.state ?? '',
     postcode: tutor.postcode ?? '',
     address: tutor.address ?? '',
+    mode: (tutor.mode ?? '') as '' | 'online' | 'in-person' | 'either',
     subjects: (tutor.subjects ?? []).map((s: string) => SUBJECTS.includes(s) ? s : 'Other') as string[],
     year_levels: (tutor.year_levels ?? []) as string[],
     credentials: (tutor.credentials ?? []) as string[],
@@ -178,8 +181,11 @@ export default function OnboardingFlow({
     if (!form.abn.trim()) missing.push('ABN')
     if (!form.wwcc_number.trim()) missing.push('WWCC number')
     if (!form.wwcc_expiry) missing.push('WWCC expiry')
+    if (!form.address.trim()) missing.push('home address')
+    if (!form.mode) missing.push('session mode')
     if (!form.subjects.length) missing.push('at least one subject')
     if (!form.year_levels.length) missing.push('at least one year level')
+    if (!form.credentials.length) missing.push('at least one credential')
     if (missing.length) {
       setError(`Please complete: ${missing.join(', ')}.`)
       return
@@ -226,8 +232,8 @@ export default function OnboardingFlow({
 
   async function handleComplete() {
     setError('')
-    if (!tosAccepted || !privacyAccepted) {
-      setError('Please accept both the Terms of Service and Privacy Policy to continue.')
+    if (!tosAccepted || !privacyAccepted || !codeAccepted || !childSafetyAccepted) {
+      setError('Please accept all four policies to continue.')
       return
     }
     setSaving(true)
@@ -317,9 +323,31 @@ export default function OnboardingFlow({
                 <input type="text" className="input" placeholder="e.g. 2026" value={form.postcode}
                   onChange={e => setForm(f => ({ ...f, postcode: e.target.value }))} />
               </Field>
-              <Field label="Home address" className="sm:col-span-2">
+              <Field label="Home address" required className="sm:col-span-2">
                 <input type="text" className="input" placeholder="Street address" value={form.address}
                   onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+              </Field>
+              <Field label="Session mode" required className="sm:col-span-2">
+                <div className="flex gap-3">
+                  {([
+                    { value: 'in-person', label: 'In-person only' },
+                    { value: 'online', label: 'Online only' },
+                    { value: 'either', label: 'Both (in-person & online)' },
+                  ] as const).map(({ value, label }) => (
+                    <label key={value} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="mode"
+                        value={value}
+                        checked={form.mode === value}
+                        onChange={() => setForm(f => ({ ...f, mode: value }))}
+                        className="accent-primary"
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">How you prefer to run your tutoring sessions.</p>
               </Field>
             </div>
             <Field label="Bio" required>
@@ -422,8 +450,8 @@ export default function OnboardingFlow({
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-1">Credentials</p>
-              <p className="text-xs text-muted-foreground mb-3">Your degrees, diplomas, or relevant qualifications.</p>
+              <p className="text-sm font-medium mb-1">Credentials <span className="text-destructive">*</span></p>
+              <p className="text-xs text-muted-foreground mb-3">Your degrees, diplomas, or relevant qualifications. These are visible to families.</p>
               <div className="flex gap-2 mb-3">
                 <input type="text" className="input flex-1" placeholder="e.g. Bachelor of Education, UNSW"
                   value={credInput}
@@ -462,7 +490,7 @@ export default function OnboardingFlow({
         <div className="space-y-6">
           <section className="bg-white rounded-lg border border-border p-6">
             <h2 className="text-sm font-semibold mb-1">When are you available to tutor?</h2>
-            <p className="text-xs text-muted-foreground mb-5">Add at least one slot. You can always update this later.</p>
+            <p className="text-xs text-muted-foreground mb-5">Complete your availability. You are able to update this if it changes.</p>
             <AvailabilityGrid initialSlots={initialSlots} onSlotsChange={setSlotCount} />
           </section>
 
@@ -487,8 +515,8 @@ export default function OnboardingFlow({
           <section className="bg-white rounded-lg border border-border p-6 space-y-5">
             <h2 className="text-sm font-semibold">Almost done — please read and accept our policies</h2>
             <p className="text-sm text-muted-foreground">
-              By using the Pocketnote portal you agree to be bound by our terms and privacy policy.
-              Please read them before ticking the boxes below.
+              By joining Pocketnote you agree to be bound by all four policies below.
+              Please read each one before ticking the boxes.
             </p>
 
             <div className="space-y-3">
@@ -515,7 +543,35 @@ export default function OnboardingFlow({
                   </a>
                 </span>
               </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={codeAccepted} onChange={e => setCodeAccepted(e.target.checked)}
+                  className="mt-0.5 accent-primary h-4 w-4 shrink-0" />
+                <span className="text-sm">
+                  I have read and agree to the{' '}
+                  <a href="https://pocketnote.com.au/tutor-code-of-conduct" target="_blank" rel="noopener noreferrer"
+                    className="text-primary underline hover:opacity-80">
+                    Tutor Code of Conduct
+                  </a>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={childSafetyAccepted} onChange={e => setChildSafetyAccepted(e.target.checked)}
+                  className="mt-0.5 accent-primary h-4 w-4 shrink-0" />
+                <span className="text-sm">
+                  I have read and agree to the{' '}
+                  <a href="https://pocketnote.com.au/child-safety" target="_blank" rel="noopener noreferrer"
+                    className="text-primary underline hover:opacity-80">
+                    Child Safety Policy
+                  </a>
+                </span>
+              </label>
             </div>
+
+            <p className="text-xs text-muted-foreground border-t border-border pt-4">
+              Links to all policies are available within your tutor portal — you can access and review them at any time.
+            </p>
           </section>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
