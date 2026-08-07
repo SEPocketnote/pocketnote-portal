@@ -47,8 +47,7 @@ export default function MiniCalendar({ sessions, tz }: { sessions: CalendarSessi
     else setViewMonth(m => m + 1)
   }
 
-  // Days in the viewed month
-  const firstDow = (new Date(viewYear, viewMonth - 1, 1).getDay() + 6) % 7 // Mon=0
+  const firstDow = (new Date(viewYear, viewMonth - 1, 1).getDay() + 6) % 7
   const daysInMonth = new Date(viewYear, viewMonth, 0).getDate()
   const cells: (number | null)[] = [
     ...Array(firstDow).fill(null),
@@ -56,7 +55,6 @@ export default function MiniCalendar({ sessions, tz }: { sessions: CalendarSessi
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
-  // Map: "year-month-day" → sessions
   const sessionMap = useMemo(() => {
     const map = new Map<string, CalendarSession[]>()
     for (const s of sessions) {
@@ -76,107 +74,114 @@ export default function MiniCalendar({ sessions, tz }: { sessions: CalendarSessi
     day === todayLocal.day && viewMonth === todayLocal.month && viewYear === todayLocal.year
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-      {/* Month navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={prevMonth}
-          className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <h3 className="font-semibold text-sm text-foreground">
-          {MONTH_NAMES[viewMonth - 1]} {viewYear}
-        </h3>
-        <button
-          onClick={nextMonth}
-          className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-          aria-label="Next month"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+    <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+
+      {/* Coral gradient header */}
+      <div className="bg-gradient-to-r from-primary to-primary/75 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={prevMonth}
+            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <h3 className="font-semibold text-white text-sm tracking-wide">
+            {MONTH_NAMES[viewMonth - 1]} {viewYear}
+          </h3>
+          <button
+            onClick={nextMonth}
+            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors"
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Day-of-week headers */}
-      <div className="grid grid-cols-7 text-center">
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <div key={i} className="text-[10px] font-medium text-muted-foreground pb-1">{d}</div>
-        ))}
+      {/* Calendar body */}
+      <div className="p-4 space-y-3">
 
-        {/* Day cells */}
-        {cells.map((day, i) => {
-          if (!day) return <div key={i} />
-          const today = isToday(day)
-          const key = `${viewYear}-${viewMonth}-${day}`
-          const hasSessions = sessionMap.has(key)
-          const isSelected = selectedDay === day
+        {/* Day-of-week headers */}
+        <div className="grid grid-cols-7 text-center mb-1">
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+            <div key={i} className="text-[10px] font-semibold text-muted-foreground pb-1 uppercase tracking-wider">{d}</div>
+          ))}
 
-          return (
-            <button
-              key={i}
-              onClick={() => setSelectedDay(isSelected ? null : day)}
-              className="flex flex-col items-center py-0.5 group"
-            >
-              <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium transition-colors ${
-                today
-                  ? 'bg-primary text-white'
-                  : isSelected
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-foreground group-hover:bg-muted'
-              }`}>
-                {day}
-              </div>
-              {hasSessions && (
-                <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                  today ? 'bg-white/80' : isSelected ? 'bg-primary' : 'bg-primary/50'
-                }`} />
-              )}
-            </button>
-          )
-        })}
-      </div>
+          {/* Day cells */}
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} />
+            const today = isToday(day)
+            const key = `${viewYear}-${viewMonth}-${day}`
+            const hasSessions = sessionMap.has(key)
+            const isSelected = selectedDay === day
 
-      {/* Selected day panel */}
-      <div className="pt-3 border-t border-border">
-        {selectedDay ? (
-          <>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {MONTH_NAMES[viewMonth - 1]} {selectedDay}
-              </p>
+            return (
               <button
-                onClick={() => setSelectedDay(null)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Close"
+                key={i}
+                onClick={() => setSelectedDay(isSelected ? null : day)}
+                className="flex flex-col items-center py-0.5 group"
               >
-                <X className="w-3.5 h-3.5" />
+                <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium transition-colors ${
+                  today
+                    ? 'bg-primary text-white shadow-sm'
+                    : isSelected
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'text-foreground group-hover:bg-muted'
+                }`}>
+                  {day}
+                </div>
+                {hasSessions && (
+                  <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                    today ? 'bg-white' : 'bg-primary'
+                  }`} />
+                )}
               </button>
-            </div>
-            {selectedSessions.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-2">No sessions on this day</p>
-            ) : (
-              <div className="space-y-3">
-                {selectedSessions.map((s, i) => (
-                  <div key={i} className="flex items-stretch gap-3">
-                    <div className="w-1 rounded-full bg-primary shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{s.studentName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatTime(s.scheduled_at, tz)} · {s.durationMinutes} min ·{' '}
-                        {s.mode === 'online' ? 'Online' : s.location ?? 'In-person'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            )
+          })}
+        </div>
+
+        {/* Selected day / default panel */}
+        <div className="pt-2 border-t border-border">
+          {selectedDay ? (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-foreground">
+                  {MONTH_NAMES[viewMonth - 1]} {selectedDay}
+                </p>
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-            )}
-          </>
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-1">
-            Select a day to see sessions
-          </p>
-        )}
+              {selectedSessions.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">No sessions on this day</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {selectedSessions.map((s, i) => (
+                    <div key={i} className="flex items-stretch gap-2.5 bg-primary/5 rounded-xl px-3 py-2.5">
+                      <div className="w-1 rounded-full bg-primary shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{s.studentName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatTime(s.scheduled_at, tz)} · {s.durationMinutes} min ·{' '}
+                          {s.mode === 'online' ? 'Online' : s.location ?? 'In-person'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              Select a day to see sessions
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )
