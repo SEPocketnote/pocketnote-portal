@@ -1171,6 +1171,109 @@ export async function sendAddressChangeResolution(data: {
   })
 }
 
+export async function sendAvailabilityConflictAdmin(data: {
+  tutorName: string
+  tutorEmail: string
+  slotLabel: string
+  conflicts: Array<{ studentName: string; sessionDate: string }>
+}) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const rows = data.conflicts.map(c =>
+    `<tr><td style="padding:8px 16px;font-size:13px;color:#374151;border-bottom:1px solid #f0eeeb;">${c.studentName}</td><td style="padding:8px 16px;font-size:13px;color:#374151;border-bottom:1px solid #f0eeeb;">${c.sessionDate}</td></tr>`
+  ).join('')
+
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Portal' },
+    to: (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || 'tara@pocketnote.com.au')
+      .split(',').map((e: string) => ({ email: e.trim() })).filter((e: { email: string }) => e.email),
+    subject: `Availability conflict — ${data.tutorName} removed a slot with upcoming sessions`,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;letter-spacing:-0.5px;">Pocketnote</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">Availability conflict</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">
+            <strong>${data.tutorName}</strong> removed the availability slot <strong>${data.slotLabel}</strong>,
+            which overlaps with the following upcoming session${data.conflicts.length !== 1 ? 's' : ''}:
+          </p>
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f9f8f6;border-radius:10px;">
+            <tr>
+              <th style="padding:8px 16px;font-size:12px;color:#6b7280;text-align:left;border-bottom:1px solid #f0eeeb;">Student</th>
+              <th style="padding:8px 16px;font-size:12px;color:#6b7280;text-align:left;border-bottom:1px solid #f0eeeb;">Session time</th>
+            </tr>
+            ${rows}
+          </table>
+          <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Please follow up with ${data.tutorName} (${data.tutorEmail}) to confirm these sessions are still going ahead.</p>
+          <div style="margin-top:24px;text-align:center;">
+            <a href="${siteUrl}/admin/tutors" style="display:inline-block;background-color:#E26F6F;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">View tutor</a>
+          </div>
+        </td></tr>
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
+  })
+}
+
+export async function sendAvailabilityConflictTutor(data: {
+  tutorName: string
+  tutorEmail: string
+  slotLabel: string
+  conflicts: Array<{ studentName: string; sessionDate: string }>
+}) {
+  const rows = data.conflicts.map(c =>
+    `<tr><td style="padding:8px 16px;font-size:13px;color:#374151;border-bottom:1px solid #f0eeeb;">${c.studentName}</td><td style="padding:8px 16px;font-size:13px;color:#374151;border-bottom:1px solid #f0eeeb;">${c.sessionDate}</td></tr>`
+  ).join('')
+
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Portal' },
+    to: [{ email: data.tutorEmail }],
+    subject: `Heads up — your availability change affects upcoming sessions`,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;letter-spacing:-0.5px;">Pocketnote</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">Availability change notice</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">
+            Hi ${data.tutorName}, you removed the availability slot <strong>${data.slotLabel}</strong>.
+            We noticed this overlaps with the following upcoming session${data.conflicts.length !== 1 ? 's' : ''}:
+          </p>
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f9f8f6;border-radius:10px;">
+            <tr>
+              <th style="padding:8px 16px;font-size:12px;color:#6b7280;text-align:left;border-bottom:1px solid #f0eeeb;">Student</th>
+              <th style="padding:8px 16px;font-size:12px;color:#6b7280;text-align:left;border-bottom:1px solid #f0eeeb;">Session time</th>
+            </tr>
+            ${rows}
+          </table>
+          <p style="margin:24px 0 0;font-size:14px;color:#6b7280;">
+            These sessions are still scheduled. Please contact Pocketnote if you have any concerns about your upcoming commitments.
+          </p>
+        </td></tr>
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
+  })
+}
+
 export async function sendEnquiryNotification(data: {
   parentName: string
   email: string

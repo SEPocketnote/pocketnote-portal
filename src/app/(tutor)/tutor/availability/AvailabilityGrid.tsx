@@ -28,12 +28,15 @@ export default function AvailabilityGrid({
   initialSlots: Slot[]
   onSlotsChange?: (count: number) => void
 }) {
+  type ConflictEntry = { studentName: string; sessionDate: string }
+
   const [slots, setSlots] = useState<Slot[]>(initialSlots)
   const [adding, setAdding] = useState<Record<number, boolean>>({})
   const [form, setForm] = useState<Record<number, { start: string; end: string }>>({})
   const [saving, setSaving] = useState<Record<number, boolean>>({})
   const [deleting, setDeleting] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<Record<number, string>>({})
+  const [conflictWarning, setConflictWarning] = useState<ConflictEntry[] | null>(null)
 
   function openAdd(day: number) {
     setAdding(a => ({ ...a, [day]: true }))
@@ -81,16 +84,49 @@ export default function AvailabilityGrid({
 
   async function handleDelete(slotId: string) {
     setDeleting(d => ({ ...d, [slotId]: true }))
-    await fetch(`/api/tutor/availability/${slotId}`, { method: 'DELETE' })
+    setConflictWarning(null)
+    const res = await fetch(`/api/tutor/availability/${slotId}`, { method: 'DELETE' })
+    const data = await res.json()
     setSlots(s => {
       const next = s.filter(sl => sl.id !== slotId)
       onSlotsChange?.(next.length)
       return next
     })
+    if (data.conflicts?.length > 0) setConflictWarning(data.conflicts)
     setDeleting(d => ({ ...d, [slotId]: false }))
   }
 
   return (
+    <div className="space-y-4">
+    {conflictWarning && (
+      <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              This slot overlapped with upcoming session{conflictWarning.length !== 1 ? 's' : ''}
+            </p>
+            <p className="text-sm text-amber-700 mt-0.5 mb-3">
+              The Pocketnote team has been notified and will follow up. These sessions are still scheduled.
+            </p>
+            <ul className="space-y-1">
+              {conflictWarning.map((c, i) => (
+                <li key={i} className="text-sm text-amber-800">
+                  <span className="font-medium">{c.studentName}</span>
+                  <span className="text-amber-600"> · {c.sessionDate}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <button
+            onClick={() => setConflictWarning(null)}
+            className="text-amber-500 hover:text-amber-700 shrink-0 text-lg leading-none"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    )}
     <div className="bg-white rounded-lg border border-border divide-y divide-border">
       {DAYS.map(({ label, value: day }) => {
         const daySlots = slots.filter(s => s.day_of_week === day)
@@ -177,6 +213,7 @@ export default function AvailabilityGrid({
           </div>
         )
       })}
+    </div>
     </div>
   )
 }
