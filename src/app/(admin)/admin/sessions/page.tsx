@@ -84,17 +84,13 @@ export default async function SessionsPage({
         {tutors && tutors.length > 0 && (
           <form method="GET" action="/admin/sessions" className="flex items-center gap-2">
             <input type="hidden" name="filter" value={filter} />
-            <select
-              name="tutor"
-              defaultValue={tutorParam ?? ''}
-              onChange={e => (e.target.form as HTMLFormElement).submit()}
-              className="input text-sm py-2"
-            >
+            <select name="tutor" defaultValue={tutorParam ?? ''} className="input text-sm py-2">
               <option value="">All tutors</option>
               {tutors.map((t: any) => (
                 <option key={t.id} value={t.id}>{t.legal_name}</option>
               ))}
             </select>
+            <button type="submit" className="btn text-sm px-3 py-2">Filter</button>
           </form>
         )}
       </div>
