@@ -9,17 +9,29 @@ function validateAuPhone(value: string): boolean {
   return /^(\+?61[2-9]\d{8}|0[2-9]\d{8})$/.test(digits)
 }
 
-export default function AccountForm({ name, email, phone }: {
+const AU_STATES = [
+  { value: 'NSW', label: 'New South Wales' },
+  { value: 'VIC', label: 'Victoria' },
+  { value: 'QLD', label: 'Queensland' },
+  { value: 'SA',  label: 'South Australia' },
+  { value: 'WA',  label: 'Western Australia' },
+  { value: 'TAS', label: 'Tasmania' },
+  { value: 'ACT', label: 'Australian Capital Territory' },
+  { value: 'NT',  label: 'Northern Territory' },
+]
+
+export default function AccountForm({ name, email, phone, state }: {
   name: string
   email: string
   phone: string
+  state: string
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
   const [phoneError, setPhoneError] = useState('')
-  const [form, setForm] = useState({ name, phone })
+  const [form, setForm] = useState({ name, phone, state })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -65,6 +77,16 @@ export default function AccountForm({ name, email, phone }: {
         <input type="tel" className="input" placeholder="e.g. 0412 345 678" value={form.phone}
           onChange={e => { setPhoneError(''); setForm({ ...form, phone: e.target.value }) }} />
         {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">State</label>
+        <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}>
+          <option value="">Select state…</option>
+          {AU_STATES.map(s => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground mt-1">Used to show session times in your local timezone</p>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

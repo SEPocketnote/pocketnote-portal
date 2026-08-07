@@ -9,7 +9,7 @@ export default async function AccountPage() {
 
   const { data: parent } = await supabase
     .from('parents')
-    .select('id, name, email, phone, address, students(id, name, year_level, subjects)')
+    .select('id, name, email, phone, address, state, students(id, name, year_level, subjects)')
     .eq('user_id', user!.id)
     .single()
 
@@ -31,6 +31,7 @@ export default async function AccountPage() {
         name={parent?.name ?? ''}
         email={parent?.email ?? user?.email ?? ''}
         phone={parent?.phone ?? ''}
+        state={parent?.state ?? ''}
       />
 
       <AddressForm

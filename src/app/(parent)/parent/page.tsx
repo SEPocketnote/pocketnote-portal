@@ -12,7 +12,7 @@ export default async function ParentDashboard() {
 
   const { data: parent } = await supabase
     .from('parents')
-    .select('id, name')
+    .select('id, name, state')
     .eq('user_id', user!.id)
     .single()
 
@@ -65,10 +65,16 @@ export default async function ParentDashboard() {
 
   const nextSession = upcomingSessions[0]
   const firstName = parent.name.split(' ')[0]
-  const nextTz = nextSession ? stateToTimezone(tutorMap[(nextSession.booking as any).tutor_id]?.state) : 'Australia/Sydney'
+  // Use parent's own state for display timezone; fall back to next session's tutor state
+  const nextTz = parent.state
+    ? stateToTimezone(parent.state)
+    : nextSession ? stateToTimezone(tutorMap[(nextSession.booking as any).tutor_id]?.state) : 'Australia/Sydney'
 
-  // Calendar — use first tutor's timezone as primary
-  const calendarTz = (tutorRows ?? []).length > 0 ? stateToTimezone((tutorRows ?? [])[0].state) : 'Australia/Sydney'
+  // Parent's own timezone takes priority; fall back to first tutor's state
+  const parentTz = parent.state
+    ? stateToTimezone(parent.state)
+    : (tutorRows ?? []).length > 0 ? stateToTimezone((tutorRows ?? [])[0].state) : 'Australia/Sydney'
+  const calendarTz = parentTz
   const calendarSessions = upcomingSessions.map(s => ({
     scheduled_at: s.scheduled_at,
     studentName: (s.booking.students as any)?.name ?? 'Student',
@@ -236,7 +242,9 @@ export default async function ParentDashboard() {
             ) : (
               <div className="divide-y divide-border/50">
                 {upcomingSessions.map((s) => {
-                  const tz = stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
+                  const tz = parent.state
+                    ? stateToTimezone(parent.state)
+                    : stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
                   const sessionLabel = formatSessionDateShortTime(s.scheduled_at, tz)
                   const isToday = isTodayInTz(s.scheduled_at, tz)
                   return (
