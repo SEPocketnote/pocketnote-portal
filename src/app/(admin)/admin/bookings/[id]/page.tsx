@@ -1,24 +1,35 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import Link from 'next/link'
 import { format } from 'date-fns'
-import { stateToTimezone } from '@/lib/timezone'
+import { stateToTimezone, formatTime } from '@/lib/timezone'
 import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
-import ResendParentInviteButton from './ResendParentInviteButton'
+import EnrolmentActions from './EnrolmentActions'
+
+function scheduleLabel(booking: any) {
+  const type = booking.schedule_type
+  if (!type || type === 'single') return 'Single session'
+  const freq = type === 'weekly' ? 'Weekly' : 'Fortnightly'
+  if (booking.sessions_count) return `${freq} · ${booking.sessions_count} sessions`
+  if (booking.recurrence_end_date) return `${freq} · until ${format(new Date(booking.recurrence_end_date), 'd MMM yyyy')}`
+  return `${freq} · ongoing`
+}
 
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const [{ data: booking }, { data: sessions }] = await Promise.all([
+  const [{ data: booking }, { data: sessions }, { data: tutors }] = await Promise.all([
     supabase
       .from('bookings')
       .select(`
-        id, status, mode, location, start_date, sessions_completed,
+        id, status, mode, location, start_date, schedule_type, sessions_count, recurrence_end_date,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
-        tutors ( legal_name, email, state ),
-        packages ( type, sessions_total )
+        tutors ( id, legal_name, email, state )
       `)
       .eq('id', id)
       .single(),
@@ -27,6 +38,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .select('id, scheduled_at, status, duration_minutes')
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
+    admin.from('tutors').select('id, legal_name').eq('active', true).order('legal_name'),
   ])
 
   if (!booking) notFound()
@@ -34,15 +46,20 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const parent = booking.parents as any
   const student = booking.students as any
   const tutor = booking.tutors as any
-  const pkg = booking.packages as any
   const tutorTimezone = stateToTimezone(tutor?.state)
 
-  const completedCount = sessions?.filter(s => s.status === 'completed').length ?? 0
+  const now = new Date().toISOString()
+  const futureSessions = (sessions ?? []).filter(s => s.scheduled_at > now && s.status === 'scheduled')
+  const firstFutureTime = futureSessions.length > 0
+    ? formatTime(futureSessions[0].scheduled_at, tutorTimezone).replace(/\s*(AM|PM)/i, m => m.toLowerCase())
+    : null
 
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <a href="/admin/bookings" className="text-sm text-muted-foreground hover:text-primary">← Back to bookings</a>
+        <Link href={parent?.id ? `/admin/parents/${parent.id}` : '/admin/parents'} className="text-sm text-muted-foreground hover:text-primary">
+          ← {parent?.name ?? 'Parents'}
+        </Link>
       </div>
 
       {/* Header */}
@@ -50,7 +67,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div>
           <h1 className="text-2xl font-semibold">{student?.name}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {parent?.name} · {tutor?.legal_name}
+            <Link href={`/admin/parents/${parent?.id}`} className="hover:text-primary hover:underline">{parent?.name}</Link>
+            {' · '}
+            <Link href={`/admin/tutors/${tutor?.id}`} className="hover:text-primary hover:underline">{tutor?.legal_name}</Link>
           </p>
         </div>
         <BookingStatus bookingId={id} currentStatus={booking.status} />
@@ -58,53 +77,54 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
       {/* Summary */}
       <section className="bg-white rounded-lg border border-border p-6 space-y-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Booking details</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Enrolment details</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <Info label="Package" value={pkg?.type ? pkg.type.charAt(0).toUpperCase() + pkg.type.slice(1) : null} />
           <Info label="Mode" value={booking.mode} />
+          <Info label="Schedule" value={scheduleLabel(booking)} />
           <Info label="Start date" value={booking.start_date ? format(new Date(booking.start_date), 'd MMM yyyy') : null} />
-          <Info label="Location" value={booking.location} />
+          {booking.location && <Info label="Location" value={booking.location} />}
           <Info label="Student year" value={student?.year_level} />
           <Info label="Subjects" value={student?.subjects?.join(', ')} />
         </dl>
-
-        {/* Progress bar */}
-        <div className="pt-2 border-t border-border">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-            <span>Sessions completed</span>
-            <span>{completedCount} / {pkg?.sessions_total}</span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all"
-              style={{ width: `${pkg?.sessions_total ? (completedCount / pkg.sessions_total) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
       </section>
 
       {/* Parent & tutor contact */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <section className="bg-white rounded-lg border border-border p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Parent</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</h2>
+            <Link href={`/admin/parents/${parent?.id}`} className="text-xs text-primary hover:underline">View profile →</Link>
+          </div>
           <p className="text-sm font-medium">{parent?.name}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{parent?.email}</p>
           {parent?.phone && <p className="text-xs text-muted-foreground">{parent.phone}</p>}
-          {parent?.id && (
-            <ResendParentInviteButton parentId={parent.id} name={parent.name} />
-          )}
         </section>
         <section className="bg-white rounded-lg border border-border p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Tutor</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</h2>
+            <Link href={`/admin/tutors/${tutor?.id}`} className="text-xs text-primary hover:underline">View profile →</Link>
+          </div>
           <p className="text-sm font-medium">{tutor?.legal_name}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{tutor?.email}</p>
         </section>
       </div>
 
+      {/* Enrolment actions */}
+      <div className="mt-4">
+        <EnrolmentActions
+          bookingId={id}
+          currentTutorId={tutor?.id ?? ''}
+          tutors={(tutors ?? []) as { id: string; legal_name: string }[]}
+          currentStatus={booking.status}
+          futureSessionTime={firstFutureTime}
+          timezone={tutorTimezone}
+        />
+      </div>
+
       {/* Sessions list */}
       <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Sessions
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+          Sessions ({sessions?.length ?? 0})
         </h2>
         {!sessions?.length ? (
           <div className="bg-white rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">

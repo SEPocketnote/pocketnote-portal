@@ -38,24 +38,26 @@ type ParentMode = 'idle' | 'existing' | 'new'
 type StudentMode = 'existing' | 'new'
 
 type ScheduleType = 'single' | 'weekly' | 'fortnightly'
-type EndCondition = 'count' | 'endDate'
+type EndCondition = 'ongoing' | 'count' | 'endDate'
 
 export default function NewBookingForm({
   tutors,
   availability,
   initialValues,
+  preselectedParent,
 }: {
   tutors: any[]
   availability: any[]
   initialValues?: Record<string, string>
+  preselectedParent?: ParentResult | null
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   // Parent
-  const [parentMode, setParentMode] = useState<ParentMode>('idle')
-  const [selectedParent, setSelectedParent] = useState<ParentResult | null>(null)
+  const [parentMode, setParentMode] = useState<ParentMode>(preselectedParent ? 'existing' : 'idle')
+  const [selectedParent, setSelectedParent] = useState<ParentResult | null>(preselectedParent ?? null)
   const [newParent, setNewParent] = useState({
     name: initialValues?.parentName ?? '',
     email: initialValues?.parentEmail ?? '',
@@ -81,9 +83,10 @@ export default function NewBookingForm({
     sessionTime: '',
   })
   const [scheduleType, setScheduleType] = useState<ScheduleType>('single')
-  const [endCondition, setEndCondition] = useState<EndCondition>('count')
+  const [endCondition, setEndCondition] = useState<EndCondition>('ongoing')
   const [sessionsCount, setSessionsCount] = useState('10')
   const [endDate, setEndDate] = useState('')
+  const [durationMinutes, setDurationMinutes] = useState(60)
 
   function handleSelectExistingParent(parent: ParentResult) {
     setSelectedParent(parent)
@@ -157,6 +160,7 @@ export default function NewBookingForm({
         ? { studentId: selectedStudentId }
         : { studentName: newStudent.name, yearLevel: newStudent.yearLevel, subjects: newStudent.subjects }),
       ...form,
+      durationMinutes,
       scheduleType,
       ...(scheduleType !== 'single' && endCondition === 'count' ? { sessionsCount: parseInt(sessionsCount) } : {}),
       ...(scheduleType !== 'single' && endCondition === 'endDate' ? { recurrenceEndDate: endDate } : {}),
@@ -169,8 +173,8 @@ export default function NewBookingForm({
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create booking')
-      router.push('/admin/bookings')
+      if (!res.ok) throw new Error(data.error || 'Failed to create enrolment')
+      router.push('/admin/sessions')
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -181,11 +185,13 @@ export default function NewBookingForm({
   const parentResolved = parentMode !== 'idle'
 
   function sessionSummary() {
-    if (scheduleType === 'single') return '1 session will be created'
+    if (scheduleType === 'single') return `1 session · ${durationMinutes} min`
     const freq = scheduleType === 'weekly' ? 'weekly' : 'fortnightly'
-    if (endCondition === 'count' && sessionsCount) return `${sessionsCount} sessions, ${freq}`
-    if (endCondition === 'endDate' && endDate) return `${freq} sessions until ${endDate}`
-    return `${freq} recurring`
+    const dur = `${durationMinutes} min`
+    if (endCondition === 'ongoing') return `${freq} · ongoing · ${dur}`
+    if (endCondition === 'count' && sessionsCount) return `${sessionsCount} sessions · ${freq} · ${dur}`
+    if (endCondition === 'endDate' && endDate) return `${freq} until ${endDate} · ${dur}`
+    return `${freq} recurring · ${dur}`
   }
 
   return (
@@ -384,11 +390,40 @@ export default function NewBookingForm({
             </div>
           </div>
 
+          {/* Duration */}
+          <div>
+            <p className="text-sm font-medium mb-2">Session duration</p>
+            <div className="flex gap-2 flex-wrap">
+              {([60, 90, 120] as const).map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDurationMinutes(d)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    durationMinutes === d
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-white border-border hover:border-primary'
+                  }`}
+                >
+                  {d} min{d >= 90 ? ' ★' : ''}
+                </button>
+              ))}
+            </div>
+            {durationMinutes >= 90 && (
+              <p className="text-xs text-muted-foreground mt-1.5">Recommended — better learning outcomes and value</p>
+            )}
+          </div>
+
           {/* End condition — only for recurring */}
           {scheduleType !== 'single' && (
             <div className="space-y-3">
               <p className="text-sm font-medium">End condition</p>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" className="accent-primary" checked={endCondition === 'ongoing'}
+                    onChange={() => setEndCondition('ongoing')} />
+                  <span className="text-sm">Ongoing</span>
+                </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" className="accent-primary" checked={endCondition === 'count'}
                     onChange={() => setEndCondition('count')} />
@@ -400,7 +435,10 @@ export default function NewBookingForm({
                   <span className="text-sm">End date</span>
                 </label>
               </div>
-              {endCondition === 'count' ? (
+              {endCondition === 'ongoing' && (
+                <p className="text-xs text-muted-foreground">Sessions continue until you cancel the enrolment from the parent profile.</p>
+              )}
+              {endCondition === 'count' && (
                 <input
                   type="number"
                   min={1}
@@ -410,14 +448,18 @@ export default function NewBookingForm({
                   onChange={e => setSessionsCount(e.target.value)}
                   placeholder="e.g. 10"
                 />
-              ) : (
-                <input
-                  type="date"
-                  className="input w-48"
-                  value={endDate}
-                  min={form.startDate || undefined}
-                  onChange={e => setEndDate(e.target.value)}
-                />
+              )}
+              {endCondition === 'endDate' && (
+                <div className="space-y-1">
+                  <input
+                    type="date"
+                    className="input w-48"
+                    value={endDate}
+                    min={form.startDate || undefined}
+                    onChange={e => setEndDate(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Last session on or before this date (inclusive).</p>
+                </div>
               )}
             </div>
           )}
@@ -441,7 +483,7 @@ export default function NewBookingForm({
       {parentResolved && (
         <button type="submit" disabled={loading}
           className="w-full bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50">
-          {loading ? 'Creating booking…' : 'Create booking & send welcome email'}
+          {loading ? 'Creating enrolment…' : 'Create enrolment & send welcome email'}
         </button>
       )}
     </form>

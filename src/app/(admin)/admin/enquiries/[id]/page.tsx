@@ -43,7 +43,7 @@ export default async function EnquiryDetailPage({
           href={`/admin/bookings/new?from=${enquiry.id}`}
           className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 shrink-0"
         >
-          Create booking →
+          Create enrolment →
         </Link>
       </div>
 

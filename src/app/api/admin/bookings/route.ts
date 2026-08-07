@@ -28,6 +28,7 @@ const Schema = z.object({
   scheduleType: z.enum(['single', 'weekly', 'fortnightly']),
   sessionsCount: z.number().int().min(1).max(200).optional(),
   recurrenceEndDate: z.string().optional(),
+  durationMinutes: z.number().int().min(15).max(360).optional(),
 })
 
 export async function POST(request: Request) {
@@ -197,7 +198,15 @@ export async function POST(request: Request) {
       sessionDates.push(cur)
       cur = addWeeks(cur, intervalWeeks)
     }
+  } else {
+    // Ongoing — generate 52 weeks (1 year) of sessions upfront
+    const weeksToGenerate = intervalWeeks === 2 ? 26 : 52
+    for (let i = 0; i < weeksToGenerate; i++) {
+      sessionDates.push(addWeeks(firstSession, i * intervalWeeks))
+    }
   }
+
+  const durationMinutes = d.durationMinutes ?? 60
 
   // 8. Create booking
   const { data: booking } = await admin.from('bookings').insert({
@@ -212,9 +221,10 @@ export async function POST(request: Request) {
     sessions_count: sessionDates.length,
     recurrence_end_date: d.recurrenceEndDate ?? null,
     rate_cents_snapshot: rate_cents_snapshot ?? null,
+    duration_minutes: durationMinutes,
   }).select('id').single()
 
-  if (!booking) return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
+  if (!booking) return NextResponse.json({ error: 'Failed to create enrolment' }, { status: 500 })
 
   // 9. Insert sessions
   await admin.from('sessions').insert(
@@ -222,6 +232,7 @@ export async function POST(request: Request) {
       booking_id: booking.id,
       scheduled_at: dt.toISOString(),
       status: 'scheduled',
+      duration_minutes: durationMinutes,
     }))
   )
 

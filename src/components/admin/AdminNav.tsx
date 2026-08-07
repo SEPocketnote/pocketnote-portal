@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  LayoutDashboard, Inbox, CalendarDays, Users2,
+  LayoutDashboard, Inbox, CalendarDays, Users2, Users,
   MessageSquare, CreditCard, UserCog, Settings,
   LogOut, FileText, Megaphone,
 } from 'lucide-react'
@@ -13,8 +13,9 @@ import {
 const links = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/enquiries', label: 'Enquiries', icon: Inbox },
-  { href: '/admin/bookings', label: 'Bookings', icon: CalendarDays },
+  { href: '/admin/parents', label: 'Parents', icon: Users },
   { href: '/admin/tutors', label: 'Tutors', icon: Users2 },
+  { href: '/admin/sessions', label: 'Sessions', icon: CalendarDays },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/invoices', label: 'Invoices', icon: FileText },

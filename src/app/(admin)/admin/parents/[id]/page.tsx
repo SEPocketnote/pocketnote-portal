@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+import Link from 'next/link'
 import { format } from 'date-fns'
+import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 import EditParentForm from './EditParentForm'
 import ResendParentInviteButton from '../../bookings/[id]/ResendParentInviteButton'
 import StudentManager from '@/components/StudentManager'
@@ -8,16 +10,55 @@ import DeleteAccountButton from '@/components/DeleteAccountButton'
 
 export const dynamic = 'force-dynamic'
 
+const STATUS_STYLES: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-700',
+  confirmed: 'bg-green-100 text-green-700',
+  completed: 'bg-muted text-muted-foreground',
+  cancelled: 'bg-red-100 text-red-700',
+}
+
+const SESSION_STATUS_STYLES: Record<string, string> = {
+  scheduled: 'bg-blue-100 text-blue-700',
+  completed: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+  rescheduled: 'bg-yellow-100 text-yellow-700',
+}
+
+function scheduleLabel(booking: any) {
+  const type = booking.schedule_type
+  if (!type || type === 'single') return 'Single session'
+  const freq = type === 'weekly' ? 'Weekly' : 'Fortnightly'
+  if (booking.sessions_count) return `${freq} · ${booking.sessions_count} sessions`
+  if (booking.recurrence_end_date) return `${freq} · until ${format(new Date(booking.recurrence_end_date), 'd MMM yyyy')}`
+  return `${freq} · ongoing`
+}
+
 export default async function ParentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const admin = createAdminClient()
 
-  const [{ data: parent }, { data: bookings }] = await Promise.all([
+  const now = new Date().toISOString()
+
+  const [{ data: parent }, { data: bookings }, { data: upcomingSessions }] = await Promise.all([
     admin.from('parents').select('*, students(id, name, year_level, subjects)').eq('id', id).single(),
     admin.from('bookings')
-      .select('id, status, mode, start_date, students(name), packages(type, sessions_total), tutors(legal_name)')
+      .select(`
+        id, status, mode, schedule_type, sessions_count, recurrence_end_date, start_date,
+        students ( name ),
+        tutors ( id, legal_name, state )
+      `)
       .eq('parent_id', id)
-      .order('start_date', { ascending: false }),
+      .order('created_at', { ascending: false }),
+    admin.from('sessions')
+      .select(`
+        id, scheduled_at, status, duration_minutes,
+        bookings!inner( id, students(name), tutors(legal_name, state) )
+      `)
+      .eq('bookings.parent_id', id)
+      .gte('scheduled_at', now)
+      .eq('status', 'scheduled')
+      .order('scheduled_at', { ascending: true })
+      .limit(5),
   ])
 
   if (!parent) notFound()
@@ -31,10 +72,13 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
   const hasAccount = !!parent.user_id
   const confirmed = !!authUser?.email_confirmed_at
 
+  const activeBookings = (bookings ?? []).filter((b: any) => b.status === 'confirmed')
+  const pastBookings = (bookings ?? []).filter((b: any) => b.status !== 'confirmed')
+
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <a href="/admin/users" className="text-sm text-muted-foreground hover:text-primary">← Back to users</a>
+        <Link href="/admin/parents" className="text-sm text-muted-foreground hover:text-primary">← Parents</Link>
       </div>
 
       {/* Header */}
@@ -86,16 +130,14 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           </dl>
         ) : (
           <p className="text-sm text-muted-foreground">
-            This parent doesn&apos;t have a portal account yet. They&apos;ll receive an invite link when a booking is created.
+            This parent doesn&apos;t have a portal account yet. They&apos;ll receive an invite when an enrolment is created.
           </p>
         )}
       </section>
 
       {/* Students */}
       <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Students
-        </h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Students</h2>
         <StudentManager
           students={(parent.students ?? []).map((s: any) => ({
             id: s.id,
@@ -108,37 +150,98 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
         />
       </section>
 
-      {/* Bookings */}
-      {bookings && bookings.length > 0 && (
+      {/* Upcoming sessions */}
+      {(upcomingSessions ?? []).length > 0 && (
         <section className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Bookings ({bookings.length})
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            Upcoming sessions
           </h2>
           <div className="bg-white rounded-lg border border-border divide-y divide-border">
-            {bookings.map((b: any) => (
-              <a key={b.id} href={`/admin/bookings/${b.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors">
-                <div>
-                  <p className="text-sm font-medium">{b.students?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    with {b.tutors?.legal_name} · {b.packages?.type} ({b.packages?.sessions_total} sessions)
+            {(upcomingSessions ?? []).map((s: any) => {
+              const tz = stateToTimezone(s.bookings?.tutors?.state)
+              return (
+                <Link
+                  key={s.id}
+                  href={`/admin/bookings/${s.bookings?.id}`}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{s.bookings?.students?.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)} · {s.duration_minutes} min
+                    </p>
+                    <p className="text-xs text-muted-foreground">{s.bookings?.tutors?.legal_name}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${SESSION_STATUS_STYLES[s.status] ?? ''}`}>
+                    {s.status}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Active enrolments */}
+      <section className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active enrolments</h2>
+          <Link href={`/admin/bookings/new?parentId=${parent.id}`} className="text-xs text-primary hover:underline font-medium">
+            + Add enrolment
+          </Link>
+        </div>
+        {activeBookings.length === 0 ? (
+          <div className="bg-white rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">
+            No active enrolments.{' '}
+            <Link href={`/admin/bookings/new?parentId=${parent.id}`} className="text-primary hover:underline">
+              Create one →
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-border divide-y divide-border">
+            {activeBookings.map((b: any) => (
+              <Link
+                key={b.id}
+                href={`/admin/bookings/${b.id}`}
+                className="flex items-start justify-between gap-4 px-4 py-4 hover:bg-muted/20 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{(b.students as any)?.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {(b.tutors as any)?.legal_name} · {b.mode}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{scheduleLabel(b)}</p>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 mt-0.5 ${STATUS_STYLES[b.status] ?? ''}`}>
+                  {b.status}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Past enrolments */}
+      {pastBookings.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Past enrolments</h2>
+          <div className="bg-white rounded-lg border border-border divide-y divide-border">
+            {pastBookings.map((b: any) => (
+              <Link
+                key={b.id}
+                href={`/admin/bookings/${b.id}`}
+                className="flex items-start justify-between gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{(b.students as any)?.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {(b.tutors as any)?.legal_name} · {b.mode}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  {b.start_date && (
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(b.start_date), 'd MMM yyyy')}
-                    </span>
-                  )}
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                    b.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    b.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {b.status}
-                  </span>
-                </div>
-              </a>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${STATUS_STYLES[b.status] ?? ''}`}>
+                  {b.status}
+                </span>
+              </Link>
             ))}
           </div>
         </section>
@@ -146,7 +249,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
 
       <DeleteAccountButton
         deleteUrl={`/api/admin/parents/${id}`}
-        redirectTo="/admin/users"
+        redirectTo="/admin/parents"
         name={parent.name}
       />
     </div>
