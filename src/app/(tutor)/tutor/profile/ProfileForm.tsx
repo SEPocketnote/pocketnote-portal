@@ -19,6 +19,8 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
   const [credInput, setCredInput] = useState('')
   const [abnStatus, setAbnStatus] = useState<{ state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; gstRegistered?: boolean }>({ state: 'idle' })
 
+  const bankDetails = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
+
   const [form, setForm] = useState({
     phone: tutor.phone ?? '',
     address: tutor.address ?? '',
@@ -36,6 +38,9 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     credentials: (tutor.credentials ?? []) as string[],
     photo_url: tutor.photo_url ?? '',
     mode: (tutor.mode ?? 'either') as string,
+    bank_account_name: bankDetails?.account_name ?? '',
+    bank_bsb: bankDetails?.bsb ?? '',
+    bank_account_number: bankDetails?.account_number ?? '',
   })
 
   function togglePill(field: 'subjects' | 'year_levels', value: string) {
@@ -96,10 +101,17 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     setError('')
     setSuccess('')
     try {
+      const { bank_account_name, bank_bsb, bank_account_number, ...rest } = form
+      const payload = {
+        ...rest,
+        bank_details: (bank_account_name || bank_bsb || bank_account_number)
+          ? { account_name: bank_account_name, bsb: bank_bsb, account_number: bank_account_number }
+          : null,
+      }
       const res = await fetch('/api/tutor/profile', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
@@ -247,6 +259,31 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
             <p className="text-xs text-muted-foreground mt-1">
               Auto-detected from ABN lookup — you can override this if needed.
             </p>
+          </Field>
+        </div>
+      </section>
+
+      {/* Payment details */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payment details</h2>
+          <p className="text-xs text-muted-foreground mt-1">Your bank account for receiving session payments.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Account name" className="sm:col-span-2">
+            <input type="text" className="input" placeholder="e.g. Jane Smith"
+              value={form.bank_account_name}
+              onChange={e => setForm({ ...form, bank_account_name: e.target.value })} />
+          </Field>
+          <Field label="BSB">
+            <input type="text" className="input" placeholder="e.g. 062-000"
+              value={form.bank_bsb}
+              onChange={e => setForm({ ...form, bank_bsb: e.target.value })} />
+          </Field>
+          <Field label="Account number">
+            <input type="text" className="input" placeholder="e.g. 12345678"
+              value={form.bank_account_number}
+              onChange={e => setForm({ ...form, bank_account_number: e.target.value })} />
           </Field>
         </div>
       </section>

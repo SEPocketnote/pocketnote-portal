@@ -4,6 +4,47 @@ import { format } from 'date-fns'
 import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 import Link from 'next/link'
 
+function getPayCycleBanner() {
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Australia/Sydney',
+    weekday: 'long', hour: 'numeric', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now)
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+
+  const weekday = get('weekday')
+  const hour = parseInt(get('hour'))
+  const year = parseInt(get('year'))
+  const month = parseInt(get('month')) - 1
+  const day = parseInt(get('day'))
+
+  const DAY_NUM: Record<string, number> = {
+    Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,
+  }
+  const dayNum = DAY_NUM[weekday] ?? 0
+
+  // Days to next Tuesday 6pm Sydney
+  let daysToDeadline: number
+  if (dayNum === 2 && hour < 18) daysToDeadline = 0
+  else if (dayNum === 2 && hour >= 18) daysToDeadline = 7
+  else if (dayNum === 1) daysToDeadline = 1
+  else if (dayNum === 0) daysToDeadline = 2
+  else daysToDeadline = (2 - dayNum + 7) % 7 || 7
+
+  // Compute deadline display date (add days to Sydney local date, then format)
+  const deadlineDate = new Date(Date.UTC(year, month, day + daysToDeadline))
+  const deadlineLabel = new Intl.DateTimeFormat('en-AU', {
+    timeZone: 'Australia/Sydney',
+    weekday: 'short', day: 'numeric', month: 'short',
+  }).format(deadlineDate)
+
+  const isUrgent = daysToDeadline <= 1
+  const isPast = dayNum === 2 && hour >= 18
+
+  return { deadlineLabel: `${deadlineLabel}, 6:00 pm`, isUrgent, isPast, daysToDeadline }
+}
+
 export const dynamic = 'force-dynamic'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -20,7 +61,7 @@ export default async function TutorEarningsPage() {
   // Get tutor with rate info
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, state, mode, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents')
+    .select('id, state, mode, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents, bank_details')
     .eq('user_id', user!.id)
     .single()
 
@@ -100,9 +141,53 @@ export default async function TutorEarningsPage() {
     ? Math.round((uninvoicedMinutes / 60) * primaryRate)
     : null
 
+  const payCycle = getPayCycleBanner()
+  const bankDetails = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
+  const hasBankDetails = !!(bankDetails?.account_name && bankDetails?.bsb && bankDetails?.account_number)
+
   return (
     <div className="max-w-3xl space-y-8">
       <h1 className="text-2xl font-semibold">Earnings</h1>
+
+      {/* No bank details warning */}
+      {!hasBankDetails && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Bank details required</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              We don&apos;t have your bank account on file yet. Add your details in your profile so we can pay you.
+            </p>
+          </div>
+          <Link href="/tutor/profile" className="shrink-0 text-sm font-medium text-amber-800 underline hover:opacity-80">
+            Add now →
+          </Link>
+        </div>
+      )}
+
+      {/* Pay cycle banner */}
+      <div className={`rounded-lg border px-5 py-4 ${payCycle.isUrgent ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className={`text-sm font-semibold ${payCycle.isUrgent ? 'text-orange-800' : 'text-blue-800'}`}>
+              {payCycle.isPast
+                ? 'Invoice window closed for this week'
+                : payCycle.isUrgent
+                  ? 'Invoice due today!'
+                  : 'Invoice submission reminder'}
+            </p>
+            <p className={`text-sm mt-0.5 ${payCycle.isUrgent ? 'text-orange-700' : 'text-blue-700'}`}>
+              {payCycle.isPast
+                ? `The Tuesday 6:00 pm deadline has passed. Any uninvoiced sessions will roll into next week's payment run.`
+                : `Submit your invoice by ${payCycle.deadlineLabel} (Sydney time) to be included in this week's payment run. Pay week runs Monday to Sunday.`}
+            </p>
+          </div>
+          {uninvoiced.length > 0 && hasAnyRate && !payCycle.isPast && (
+            <Link href="/tutor/earnings/new" className="shrink-0 btn btn-primary text-sm px-4 py-2 whitespace-nowrap">
+              Submit now
+            </Link>
+          )}
+        </div>
+      </div>
 
       {/* Rate banner or no-rate warning */}
       {!hasAnyRate ? (

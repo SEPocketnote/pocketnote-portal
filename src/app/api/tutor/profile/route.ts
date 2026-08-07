@@ -19,6 +19,11 @@ const Schema = z.object({
   credentials: z.array(z.string()).optional(),
   photo_url: z.string().optional(),
   mode: z.enum(['online', 'in-person', 'either']).optional(),
+  bank_details: z.object({
+    account_name: z.string(),
+    bsb: z.string(),
+    account_number: z.string(),
+  }).nullable().optional(),
 })
 
 export async function PATCH(request: Request) {
