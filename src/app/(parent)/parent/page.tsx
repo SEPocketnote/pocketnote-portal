@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFuture } from 'date-fns'
-import { CalendarDays } from 'lucide-react'
-import { stateToTimezone, formatSessionDate, formatSessionDateShortTime, formatTime } from '@/lib/timezone'
+import { CalendarDays, BookOpen, UserCircle } from 'lucide-react'
+import MiniCalendar from '@/components/tutor/MiniCalendar'
+import { stateToTimezone, formatSessionDate, formatSessionDateShortTime, formatTime, isTodayInTz } from '@/lib/timezone'
 import SessionChangeForm from './SessionChangeForm'
 
 export default async function ParentDashboard() {
@@ -38,7 +39,6 @@ export default async function ParentDashboard() {
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
 
-  // Fetch pending change requests for this parent so we can grey out already-requested sessions
   const { data: pendingRequests } = await supabase
     .from('session_change_requests')
     .select('session_id')
@@ -47,7 +47,6 @@ export default async function ParentDashboard() {
 
   const pendingSessionIds = new Set((pendingRequests ?? []).map((r: any) => r.session_id))
 
-  // Tutors RLS restricts reads to own row — fetch names via admin client
   const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
   const admin = createAdminClient()
   const { data: tutorRows } = tutorIds.length
@@ -68,8 +67,27 @@ export default async function ParentDashboard() {
   const firstName = parent.name.split(' ')[0]
   const nextTz = nextSession ? stateToTimezone(tutorMap[(nextSession.booking as any).tutor_id]?.state) : 'Australia/Sydney'
 
+  // Calendar — use first tutor's timezone as primary
+  const calendarTz = (tutorRows ?? []).length > 0 ? stateToTimezone((tutorRows ?? [])[0].state) : 'Australia/Sydney'
+  const calendarSessions = upcomingSessions.map(s => ({
+    scheduled_at: s.scheduled_at,
+    studentName: (s.booking.students as any)?.name ?? 'Student',
+    durationMinutes: s.duration_minutes ?? 60,
+    mode: s.booking.mode,
+    location: (s.booking as any).location ?? null,
+  }))
+
+  function bookingTypeLabel(b: any): string {
+    const pkg = b.packages as any
+    const scheduleType = b.schedule_type as string
+    const isCasual = scheduleType === 'single' || (!scheduleType && !pkg)
+    if (b.packages) return `${pkg?.type ? pkg.type.charAt(0).toUpperCase() + pkg.type.slice(1) : 'Package'}`
+    if (isCasual) return 'Casual'
+    return scheduleType === 'weekly' ? 'Weekly' : 'Fortnightly'
+  }
+
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-5xl space-y-5">
 
       {/* Hero */}
       <div className="bg-gradient-to-r from-primary to-primary/75 rounded-2xl p-6 text-white relative overflow-hidden">
@@ -98,172 +116,168 @@ export default async function ParentDashboard() {
         )}
       </div>
 
-      {!bookings?.length ? (
-        <EmptyState />
-      ) : (
-        <>
-          {/* Bookings */}
-          <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Your bookings
-            </h2>
-            <div className="space-y-3">
-              {bookings!.map((b) => {
-                const pkg = b.packages as any
-                const sessions = b.sessions as any[]
-                const scheduleType = (b as any).schedule_type as string
-                const sessionsCount = (b as any).sessions_count as number | null
+      {/* Two-column grid: left content | calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
 
-                // Determine enrolment type label
-                const isCasual = scheduleType === 'single' || (!scheduleType && !pkg)
-                const isPackage = !!pkg
-                const typeLabel = isPackage
-                  ? `${pkg.type ? pkg.type.charAt(0).toUpperCase() + pkg.type.slice(1) + ' package' : 'Package'}`
-                  : isCasual
-                  ? 'Casual'
-                  : scheduleType === 'weekly' ? 'Weekly' : 'Fortnightly'
+        {/* Left column */}
+        <div className="space-y-5 min-w-0">
 
-                const completed = sessions.filter(s => s.status === 'completed').length
-                const total = sessionsCount ?? pkg?.sessions_total ?? 0
-                const isOngoing = !isCasual && !isPackage && !total
-                const showProgress = !isCasual && total > 0
+          {/* My Bookings + My Tutors — side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-                const pct = showProgress ? Math.round((completed / total) * 100) : 0
-
-                return (
-                  <div key={b.id} className="bg-white rounded-xl border border-border p-5">
-                    <div className="flex items-center justify-between mb-1">
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            {typeLabel}
-                          </span>
-                        </div>
-                        <p className="font-medium">{(b.students as any)?.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          with {tutorNames[(b as any).tutor_id] ?? 'Tutor TBC'}
-                        </p>
-                      </div>
-                      {showProgress && (
-                        <span className="text-sm text-muted-foreground shrink-0">
-                          {completed}/{total} sessions
-                        </span>
-                      )}
-                      {isOngoing && (
-                        <span className="text-sm text-muted-foreground shrink-0">Ongoing</span>
-                      )}
-                    </div>
-                    {showProgress && (
-                      <div className="h-2 bg-muted rounded-full overflow-hidden mt-3">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
-          {/* Tutor cards */}
-          {(tutorRows ?? []).length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                {(tutorRows ?? []).length === 1 ? 'Your tutor' : 'Your tutors'}
-              </h2>
-              <div className="space-y-3">
-                {(tutorRows ?? []).map((t: any) => (
-                  <a
-                    key={t.id}
-                    href={`/profile/${t.slug ?? t.id}`}
-                    className="bg-white rounded-xl border border-border p-5 flex items-start gap-4 hover:border-primary/40 transition-colors block"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                      {t.photo_url ? (
-                        <img src={t.photo_url} alt={t.legal_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xl font-medium text-muted-foreground">
-                          {t.legal_name?.[0]?.toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold">{t.legal_name}</p>
-                        <span className="text-xs text-primary shrink-0">View profile →</span>
-                      </div>
-                      {(t.location || t.state) && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{[t.location, t.state].filter(Boolean).join(', ')}</p>
-                      )}
-                      {t.bio && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{t.bio}</p>
-                      )}
-                      {(t.subjects as string[] | null)?.length ? (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {(t.subjects as string[]).slice(0, 4).map((s: string) => (
-                            <span key={s} className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">{s}</span>
-                          ))}
-                          {(t.subjects as string[]).length > 4 && (
-                            <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">+{(t.subjects as string[]).length - 4} more</span>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  </a>
-                ))}
+            {/* My Bookings */}
+            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm leading-tight">My bookings</h2>
+                  <p className="text-[11px] text-muted-foreground">{bookings?.length ?? 0} active</p>
+                </div>
               </div>
-            </section>
-          )}
 
-          {/* Upcoming sessions list */}
-          {upcomingSessions.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Upcoming sessions
-              </h2>
-              <div className="bg-white rounded-xl border border-border divide-y divide-border">
+              {!bookings?.length ? (
+                <div className="px-5 pb-5 text-center">
+                  <p className="text-sm text-muted-foreground">No bookings yet.</p>
+                </div>
+              ) : (
+                <div className="px-5 pb-4 space-y-3">
+                  {bookings.map((b) => {
+                    const student = b.students as any
+                    const pkg = b.packages as any
+                    const sessions = b.sessions as any[]
+                    const completed = sessions.filter(s => s.status === 'completed').length
+                    const total = (b as any).sessions_count ?? pkg?.sessions_total ?? 0
+                    const showProgress = total > 0
+
+                    return (
+                      <div key={b.id} className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                          {student?.name?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{student?.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {tutorNames[(b as any).tutor_id] ?? 'Tutor TBC'}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {showProgress ? `${completed}/${total}` : bookingTypeLabel(b)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* My Tutors */}
+            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <UserCircle className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm leading-tight">
+                    {(tutorRows ?? []).length === 1 ? 'My tutor' : 'My tutors'}
+                  </h2>
+                  <p className="text-[11px] text-muted-foreground">{(tutorRows ?? []).length} assigned</p>
+                </div>
+              </div>
+
+              {!(tutorRows ?? []).length ? (
+                <div className="px-5 pb-5 text-center">
+                  <p className="text-sm text-muted-foreground">No tutor assigned yet.</p>
+                </div>
+              ) : (
+                <div className="px-5 pb-4 space-y-3">
+                  {(tutorRows ?? []).map((t: any) => (
+                    <a key={t.id} href={`/profile/${t.slug ?? t.id}`} className="flex items-center gap-2.5 group">
+                      <div className="w-8 h-8 rounded-full bg-muted overflow-hidden shrink-0">
+                        {t.photo_url
+                          ? <img src={t.photo_url} alt={t.legal_name} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-muted-foreground">{t.legal_name?.[0]?.toUpperCase()}</div>
+                        }
+                      </div>
+                      <p className="text-sm font-medium flex-1 truncate group-hover:text-primary transition-colors">{t.legal_name}</p>
+                      <span className="text-xs text-muted-foreground shrink-0 truncate max-w-[80px]">
+                        {t.location ?? t.state ?? ''}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Upcoming Sessions */}
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <CalendarDays className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-sm leading-tight">Upcoming sessions</h2>
+                <p className="text-[11px] text-muted-foreground">
+                  {upcomingSessions.length > 0 ? `${upcomingSessions.length} scheduled` : 'None scheduled'}
+                </p>
+              </div>
+            </div>
+
+            {upcomingSessions.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="font-medium mb-1">No upcoming sessions</p>
+                <p className="text-sm text-muted-foreground">
+                  We&apos;re finding the right tutor for you. We&apos;ll be in touch soon.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/50">
                 {upcomingSessions.map((s) => {
                   const tz = stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
                   const sessionLabel = formatSessionDateShortTime(s.scheduled_at, tz)
+                  const isToday = isTodayInTz(s.scheduled_at, tz)
                   return (
-                    <div key={s.id} className="px-5 py-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{sessionLabel}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(s.booking.mode === 'online') ? 'Online' : s.booking.location}
-                            {' · '}{s.duration_minutes ?? 60} min
-                            {' · '}{(s.booking.students as any)?.name}
+                    <div key={s.id} className="flex items-stretch gap-3.5 px-5 py-3.5 hover:bg-muted/30 transition-colors">
+                      <div className={`w-1 rounded-full shrink-0 ${isToday ? 'bg-primary' : 'bg-primary/25'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3 mb-1">
+                          <div>
+                            <p className="text-sm font-semibold">{sessionLabel}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {s.booking.mode === 'online' ? 'Online' : s.booking.location}
+                              {' · '}{s.duration_minutes ?? 60} min
+                              {' · '}{(s.booking.students as any)?.name}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground shrink-0">
+                            {tutorNames[(s.booking as any).tutor_id] ?? 'TBC'}
                           </p>
                         </div>
+                        <SessionChangeForm
+                          sessionId={s.id}
+                          bookingId={(s.booking as any).id}
+                          sessionLabel={sessionLabel}
+                          hasPendingRequest={pendingSessionIds.has(s.id)}
+                        />
                       </div>
-                      <SessionChangeForm
-                        sessionId={s.id}
-                        bookingId={(s.booking as any).id}
-                        sessionLabel={sessionLabel}
-                        hasPendingRequest={pendingSessionIds.has(s.id)}
-                      />
                     </div>
                   )
                 })}
               </div>
-            </section>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
+            )}
+          </div>
 
-function EmptyState() {
-  return (
-    <div className="bg-white rounded-xl border border-border p-10 text-center">
-      <p className="font-medium mb-1">No sessions booked yet</p>
-      <p className="text-sm text-muted-foreground">
-        We&apos;re finding the right tutor for you. We&apos;ll be in touch soon.
-      </p>
+        </div>
+
+        {/* Right column — calendar */}
+        <div className="lg:sticky lg:top-6">
+          <MiniCalendar sessions={calendarSessions} tz={calendarTz} />
+        </div>
+
+      </div>
     </div>
   )
 }
