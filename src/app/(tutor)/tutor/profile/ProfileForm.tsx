@@ -18,6 +18,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
   const [photoUploading, setPhotoUploading] = useState(false)
   const [credInput, setCredInput] = useState('')
   const [abnStatus, setAbnStatus] = useState<{ state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; gstRegistered?: boolean }>({ state: 'idle' })
+  const [bankTouched, setBankTouched] = useState({ bsb: false, account_number: false, account_name: false })
 
   const bankDetails = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
 
@@ -42,6 +43,15 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     bank_bsb: bankDetails?.bsb ?? '',
     bank_account_number: bankDetails?.account_number ?? '',
   })
+
+  function formatBsb(raw: string) {
+    const digits = raw.replace(/\D/g, '').slice(0, 6)
+    return digits.length > 3 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : digits
+  }
+
+  const bsbValid = /^\d{3}-\d{3}$/.test(form.bank_bsb)
+  const accountNumberValid = /^\d{6,10}$/.test(form.bank_account_number.replace(/\s/g, ''))
+  const anyBankField = !!(form.bank_account_name || form.bank_bsb || form.bank_account_number)
 
   function togglePill(field: 'subjects' | 'year_levels', value: string) {
     setForm(f => ({
@@ -96,6 +106,11 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     if (form.bio.trim().length < 50) {
       setError('Bio must be at least 50 characters.')
       return
+    }
+    if (anyBankField) {
+      if (!form.bank_account_name.trim()) { setError('Please enter the account name for your bank account.'); return }
+      if (!bsbValid) { setError('BSB must be in the format XXX-XXX (6 digits).'); return }
+      if (!accountNumberValid) { setError('Account number must be 6–10 digits.'); return }
     }
     setSaving(true)
     setError('')
@@ -270,21 +285,58 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
           <p className="text-xs text-muted-foreground mt-1">Your bank account for receiving session payments.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Account name" className="sm:col-span-2">
-            <input type="text" className="input" placeholder="e.g. Jane Smith"
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium mb-1">Account name</label>
+            <input
+              type="text"
+              className={`input ${bankTouched.account_name && !form.bank_account_name.trim() ? 'border-destructive' : ''}`}
+              placeholder="e.g. Jane Smith"
               value={form.bank_account_name}
-              onChange={e => setForm({ ...form, bank_account_name: e.target.value })} />
-          </Field>
-          <Field label="BSB">
-            <input type="text" className="input" placeholder="e.g. 062-000"
+              onChange={e => setForm({ ...form, bank_account_name: e.target.value })}
+              onBlur={() => setBankTouched(t => ({ ...t, account_name: true }))}
+            />
+            {bankTouched.account_name && !form.bank_account_name.trim() && (
+              <p className="text-xs text-destructive mt-1">Account name is required.</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">BSB</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              className={`input ${bankTouched.bsb && form.bank_bsb && !bsbValid ? 'border-destructive' : ''}`}
+              placeholder="e.g. 062-000"
               value={form.bank_bsb}
-              onChange={e => setForm({ ...form, bank_bsb: e.target.value })} />
-          </Field>
-          <Field label="Account number">
-            <input type="text" className="input" placeholder="e.g. 12345678"
+              onChange={e => setForm({ ...form, bank_bsb: formatBsb(e.target.value) })}
+              onBlur={() => setBankTouched(t => ({ ...t, bsb: true }))}
+              maxLength={7}
+            />
+            {bankTouched.bsb && form.bank_bsb && !bsbValid && (
+              <p className="text-xs text-destructive mt-1">Must be 6 digits (e.g. 062-000).</p>
+            )}
+            {bsbValid && (
+              <p className="text-xs text-green-600 mt-1">✓ Valid format</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Account number</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              className={`input ${bankTouched.account_number && form.bank_account_number && !accountNumberValid ? 'border-destructive' : ''}`}
+              placeholder="e.g. 12345678"
               value={form.bank_account_number}
-              onChange={e => setForm({ ...form, bank_account_number: e.target.value })} />
-          </Field>
+              onChange={e => setForm({ ...form, bank_account_number: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+              onBlur={() => setBankTouched(t => ({ ...t, account_number: true }))}
+              maxLength={10}
+            />
+            {bankTouched.account_number && form.bank_account_number && !accountNumberValid && (
+              <p className="text-xs text-destructive mt-1">Must be 6–10 digits.</p>
+            )}
+            {accountNumberValid && (
+              <p className="text-xs text-green-600 mt-1">✓ Valid format</p>
+            )}
+          </div>
         </div>
       </section>
 
