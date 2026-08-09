@@ -94,7 +94,7 @@ function CardForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement options={{ layout: 'tabs' }} />
+      <PaymentElement options={{ layout: 'tabs', terms: { card: 'never' }, wallets: { applePay: 'never', googlePay: 'never' } }} />
       {error && <p className="text-sm text-destructive">{error}</p>}
       <button
         type="submit"
