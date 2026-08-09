@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { UserPlus } from 'lucide-react'
 
 export default async function ParentsPage() {
   const supabase = await createClient()
@@ -18,6 +19,13 @@ export default async function ParentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">Parents</h1>
+        <Link
+          href="/admin/parents/new"
+          className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          <UserPlus className="w-4 h-4" />
+          New parent
+        </Link>
       </div>
 
       {!parents?.length ? (

@@ -28,6 +28,16 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     }
   }
 
+  // Create auth user if they don't have one yet (portal-less parents created without invite)
+  if (!authUserId) {
+    const { data: authData } = await admin.auth.admin.createUser({ email, email_confirm: true })
+    if (authData?.user) {
+      authUserId = authData.user.id
+      await admin.from('profiles').upsert({ id: authUserId, role: 'parent' }, { onConflict: 'id' })
+      await admin.from('parents').update({ user_id: authUserId }).eq('id', id)
+    }
+  }
+
   let inviteUrl: string | undefined
   if (authUserId) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'

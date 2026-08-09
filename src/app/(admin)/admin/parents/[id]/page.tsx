@@ -119,9 +119,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
       <section className="bg-white rounded-lg border border-border p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Account</h2>
-          {hasAccount && (
-            <ResendParentInviteButton parentId={id} name={parent.name} />
-          )}
+          <ResendParentInviteButton parentId={id} name={parent.name} hasAccount={hasAccount} />
         </div>
         {hasAccount ? (
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -130,7 +128,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           </dl>
         ) : (
           <p className="text-sm text-muted-foreground">
-            This parent doesn&apos;t have a portal account yet. They&apos;ll receive an invite when an enrolment is created.
+            No portal access. Click <strong>Send invite</strong> to create an account and send them a login link.
           </p>
         )}
       </section>
