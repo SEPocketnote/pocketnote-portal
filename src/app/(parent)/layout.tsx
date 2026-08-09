@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ParentNav from '@/components/parent/ParentNav'
-import TosModal from '@/components/parent/TosModal'
+import SetupGateModal from '@/components/parent/SetupGateModal'
 
 export default async function ParentLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,7 +19,7 @@ export default async function ParentLayout({ children }: { children: React.React
 
   const { data: parent } = await supabase
     .from('parents')
-    .select('name')
+    .select('name, default_payment_method_id')
     .eq('user_id', user.id)
     .single()
 
@@ -29,7 +29,7 @@ export default async function ParentLayout({ children }: { children: React.React
     .eq('sender_role', 'tutor')
     .is('read_at', null)
 
-  const needsTos = profile.role !== 'admin' && !profile.tos_accepted_at
+  const needsSetup = profile.role !== 'admin' && (!profile.tos_accepted_at || !parent?.default_payment_method_id)
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -39,7 +39,7 @@ export default async function ParentLayout({ children }: { children: React.React
           <a href="/admin" className="underline font-medium">Back to admin</a>
         </div>
       )}
-      {needsTos && <TosModal />}
+      {needsSetup && <SetupGateModal />}
       <div className="flex min-h-screen">
         <ParentNav name={parent?.name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
         <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>

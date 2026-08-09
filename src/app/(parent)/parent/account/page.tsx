@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import AccountForm from './AccountForm'
 import AddressForm from './AddressForm'
 import StudentManager from '@/components/StudentManager'
+import PaymentMethodsSection from '@/components/parent/PaymentMethodsSection'
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -38,6 +39,8 @@ export default async function AccountPage() {
         currentAddress={parent?.address ?? null}
         hasPendingRequest={(pendingAddressCount ?? 0) > 0}
       />
+
+      <PaymentMethodsSection />
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
