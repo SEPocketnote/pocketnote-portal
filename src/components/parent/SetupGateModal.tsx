@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -135,14 +135,35 @@ function TosOnlyForm() {
   )
 }
 
-export default function SetupGateModal({
-  hasCard,
-  setupClientSecret,
-}: {
-  hasCard: boolean
-  setupClientSecret: string | null
-}) {
+function CardSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse">
+      <div className="h-4 w-24 bg-muted rounded" />
+      <div className="h-11 bg-muted rounded-lg" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="h-11 bg-muted rounded-lg" />
+        <div className="h-11 bg-muted rounded-lg" />
+      </div>
+      <div className="h-11 bg-primary/20 rounded-xl mt-2" />
+    </div>
+  )
+}
+
+export default function SetupGateModal({ hasCard }: { hasCard: boolean }) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [fetchError, setFetchError] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    if (hasCard) return
+    fetch('/api/parent/setup-intent', { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.clientSecret) setClientSecret(d.clientSecret)
+        else setFetchError('Could not load payment form. Please refresh.')
+      })
+      .catch(() => setFetchError('Could not load payment form. Please refresh.'))
+  }, [hasCard])
 
   async function handleDecline() {
     const { createClient } = await import('@/lib/supabase/client')
@@ -168,20 +189,20 @@ export default function SetupGateModal({
 
         {hasCard ? (
           <TosOnlyForm />
-        ) : setupClientSecret ? (
+        ) : fetchError ? (
+          <p className="text-sm text-destructive mb-4">{fetchError}</p>
+        ) : !clientSecret ? (
+          <CardSkeleton />
+        ) : (
           <Elements
             stripe={stripePromise}
             options={{
-              clientSecret: setupClientSecret,
+              clientSecret,
               appearance: { theme: 'stripe', variables: { colorPrimary: '#E05A4B' } },
             }}
           >
             <CardForm />
           </Elements>
-        ) : (
-          <div className="text-center py-6">
-            <p className="text-sm text-destructive">Could not load payment form. Please refresh.</p>
-          </div>
         )}
 
         {/* Stripe trust badge */}
