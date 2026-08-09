@@ -55,6 +55,30 @@ export default async function ParentLayout({ children }: { children: React.React
   const hasCard = !!resolvedPaymentMethodId
   const needsSetup = profile.role !== 'admin' && (!hasTos || !hasCard)
 
+  // Pre-create the SetupIntent server-side so the card form renders immediately
+  // (no client-side loading delay). Only needed when a card is required.
+  let setupClientSecret: string | null = null
+  if (needsSetup && !hasCard && parent) {
+    try {
+      const admin = createAdminClient()
+      let customerId = parent.stripe_customer_id
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          name: parent.name ?? undefined,
+          email: undefined,
+        })
+        customerId = customer.id
+        await admin.from('parents').update({ stripe_customer_id: customerId }).eq('id', parent.id)
+      }
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+      })
+      setupClientSecret = setupIntent.client_secret
+    } catch { /* non-fatal — modal will show error if this fails */ }
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       {profile.role === 'admin' && (
@@ -63,7 +87,7 @@ export default async function ParentLayout({ children }: { children: React.React
           <a href="/admin" className="underline font-medium">Back to admin</a>
         </div>
       )}
-      {needsSetup && <SetupGateModal hasCard={hasCard} />}
+      {needsSetup && <SetupGateModal hasCard={hasCard} setupClientSecret={setupClientSecret} />}
       <div className="flex min-h-screen">
         <ParentNav name={parent?.name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
         <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>

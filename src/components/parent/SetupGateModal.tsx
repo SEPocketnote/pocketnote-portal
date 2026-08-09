@@ -1,11 +1,44 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
+// Stripe wordmark as inline SVG (official colours, no external fetch)
+function StripeLogo() {
+  return (
+    <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg" className="h-5 inline-block align-middle">
+      <path
+        d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.45.94V6.27h3.94l.23 1.06c.52-.72 1.55-1.3 3.19-1.3 3.39 0 6.56 2.96 6.56 7.51 0 5.3-3.1 6.76-6.55 6.76zm-.5-10.19c-.96 0-1.54.38-1.93.9l.02 6.44c.35.44.91.84 1.91.84 1.76 0 2.6-1.84 2.6-4.09 0-2.26-.85-4.09-2.6-4.09zM28.24 5.07c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.45.94V6.27h3.94l.23 1.06c.52-.72 1.55-1.3 3.19-1.3 3.39 0 6.56 2.96 6.56 7.51 0 5.3-3.1 6.76-6.55 6.76zm-.5-10.19c-.96 0-1.54.38-1.93.9l.02 6.44c.35.44.91.84 1.91.84 1.76 0 2.6-1.84 2.6-4.09 0-2.26-.85-4.09-2.6-4.09zM12.95 20.3c-2.83 0-5.1-1.15-6.4-3.4L9.77 15c.58 1.15 1.64 2.03 3.26 2.03 1.32 0 2.14-.6 2.14-1.7 0-1.1-.74-1.67-2.7-2.35-2.74-.96-4.76-2.23-4.76-5.2 0-2.8 2.1-4.77 5.46-4.77 2.5 0 4.37 1.03 5.6 2.85l-2.96 2.18c-.61-.94-1.5-1.64-2.72-1.64-1.08 0-1.78.54-1.78 1.47 0 .97.74 1.45 2.8 2.16 2.88 1.01 4.66 2.35 4.66 5.35 0 3.14-2.38 4.92-5.82 4.92zM1.36 20.3C.6 20.3 0 19.7 0 18.94V5.06c0-.76.6-1.36 1.36-1.36h3.33c.76 0 1.36.6 1.36 1.36v13.88c0 .76-.6 1.36-1.36 1.36H1.36z"
+        fill="#635BFF"
+      />
+    </svg>
+  )
+}
+
+function TosText({ showCardNote }: { showCardNote: boolean }) {
+  return (
+    <div className="bg-muted/40 rounded-xl p-4 mb-5 text-sm text-foreground/80 leading-relaxed space-y-2">
+      <p>
+        By continuing you agree to our{' '}
+        <a href="https://pocketnote.com.au/terms-service/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+          Terms of Service
+        </a>{' '}
+        and{' '}
+        <a href="https://pocketnote.com.au/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+          Privacy Policy
+        </a>
+        .
+      </p>
+      {showCardNote && (
+        <p>Your card details are stored securely with Stripe — never on Pocketnote&apos;s servers. You won&apos;t be charged today.</p>
+      )}
+    </div>
+  )
+}
 
 function CardForm() {
   const stripe = useStripe()
@@ -20,7 +53,6 @@ function CardForm() {
     setLoading(true)
     setError('')
 
-    // Confirm the SetupIntent — redirect: 'if_required' means no redirect for standard cards
     const { error: stripeError, setupIntent } = await stripe.confirmSetup({
       elements,
       redirect: 'if_required',
@@ -42,7 +74,6 @@ function CardForm() {
       return
     }
 
-    // Save payment method + accept ToS atomically
     const res = await fetch('/api/parent/complete-setup', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -62,9 +93,7 @@ function CardForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <PaymentElement options={{ layout: 'tabs' }} />
-
       {error && <p className="text-sm text-destructive">{error}</p>}
-
       <button
         type="submit"
         disabled={!stripe || loading}
@@ -76,7 +105,6 @@ function CardForm() {
   )
 }
 
-// ToS-only mode — for parents who already have a card saved in Stripe
 function TosOnlyForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -107,21 +135,14 @@ function TosOnlyForm() {
   )
 }
 
-export default function SetupGateModal({ hasCard }: { hasCard: boolean }) {
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [fetchError, setFetchError] = useState('')
+export default function SetupGateModal({
+  hasCard,
+  setupClientSecret,
+}: {
+  hasCard: boolean
+  setupClientSecret: string | null
+}) {
   const router = useRouter()
-
-  useEffect(() => {
-    if (hasCard) return // no SetupIntent needed for ToS-only mode
-    fetch('/api/parent/setup-intent', { method: 'POST' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.clientSecret) setClientSecret(d.clientSecret)
-        else setFetchError('Could not initialise payment setup. Please refresh.')
-      })
-      .catch(() => setFetchError('Could not initialise payment setup. Please refresh.'))
-  }, [hasCard])
 
   async function handleDecline() {
     const { createClient } = await import('@/lib/supabase/client')
@@ -135,7 +156,7 @@ export default function SetupGateModal({ hasCard }: { hasCard: boolean }) {
 
         <div className="text-center mb-6">
           <span className="text-2xl font-bold text-primary tracking-tight">Pocketnote</span>
-          <h2 className="text-xl font-bold mt-4 mb-2">Welcome to your parent portal</h2>
+          <h2 className="text-xl font-bold mt-4 mb-2">Welcome to the Pocketnote portal</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             {hasCard
               ? 'Before you continue, please read and accept our Terms of Service and Privacy Policy.'
@@ -143,43 +164,32 @@ export default function SetupGateModal({ hasCard }: { hasCard: boolean }) {
           </p>
         </div>
 
-        {/* ToS summary */}
-        <div className="bg-muted/40 rounded-xl p-4 mb-6 text-sm text-foreground/80 leading-relaxed space-y-2">
-          <p>
-            By continuing you agree to our{' '}
-            <a href="https://pocketnote.com.au/terms-service/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a href="https://pocketnote.com.au/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-              Privacy Policy
-            </a>
-            .
-          </p>
-          {!hasCard && (
-            <p>Your card will be saved securely for session billing. You won&apos;t be charged today.</p>
-          )}
-        </div>
+        <TosText showCardNote={!hasCard} />
 
-        {/* Card element — only shown when no card is on file yet */}
         {hasCard ? (
           <TosOnlyForm />
-        ) : fetchError ? (
-          <p className="text-sm text-destructive mb-4">{fetchError}</p>
-        ) : !clientSecret ? (
-          <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
-            Loading payment form…
-          </div>
-        ) : (
+        ) : setupClientSecret ? (
           <Elements
             stripe={stripePromise}
             options={{
-              clientSecret,
+              clientSecret: setupClientSecret,
               appearance: { theme: 'stripe', variables: { colorPrimary: '#E05A4B' } },
             }}
           >
             <CardForm />
           </Elements>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-sm text-destructive">Could not load payment form. Please refresh.</p>
+          </div>
+        )}
+
+        {/* Stripe trust badge */}
+        {!hasCard && (
+          <div className="flex items-center justify-center gap-1.5 mt-5 text-xs text-muted-foreground">
+            <span>Secured by</span>
+            <StripeLogo />
+          </div>
         )}
 
         <button
