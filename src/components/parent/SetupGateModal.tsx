@@ -76,12 +76,44 @@ function CardForm() {
   )
 }
 
-export default function SetupGateModal() {
+// ToS-only mode — for parents who already have a card saved in Stripe
+function TosOnlyForm() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleAccept() {
+    setLoading(true)
+    const res = await fetch('/api/parent/accept-tos', { method: 'POST' })
+    if (res.ok) {
+      router.refresh()
+    } else {
+      setError('Failed to save. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      {error && <p className="text-sm text-destructive mb-3">{error}</p>}
+      <button
+        onClick={handleAccept}
+        disabled={loading}
+        className="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm"
+      >
+        {loading ? 'Saving…' : 'Accept terms & continue'}
+      </button>
+    </>
+  )
+}
+
+export default function SetupGateModal({ hasCard }: { hasCard: boolean }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [fetchError, setFetchError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
+    if (hasCard) return // no SetupIntent needed for ToS-only mode
     fetch('/api/parent/setup-intent', { method: 'POST' })
       .then(r => r.json())
       .then(d => {
@@ -89,7 +121,7 @@ export default function SetupGateModal() {
         else setFetchError('Could not initialise payment setup. Please refresh.')
       })
       .catch(() => setFetchError('Could not initialise payment setup. Please refresh.'))
-  }, [])
+  }, [hasCard])
 
   async function handleDecline() {
     const { createClient } = await import('@/lib/supabase/client')
@@ -105,7 +137,9 @@ export default function SetupGateModal() {
           <span className="text-2xl font-bold text-primary tracking-tight">Pocketnote</span>
           <h2 className="text-xl font-bold mt-4 mb-2">Welcome to your parent portal</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            To get started, please accept our Terms of Service and save a payment method for your sessions.
+            {hasCard
+              ? 'Before you continue, please read and accept our Terms of Service and Privacy Policy.'
+              : 'To get started, please accept our Terms of Service and save a payment method for your sessions.'}
           </p>
         </div>
 
@@ -122,13 +156,15 @@ export default function SetupGateModal() {
             </a>
             .
           </p>
-          <p>
-            Your card will be saved securely for session billing. You won&apos;t be charged today.
-          </p>
+          {!hasCard && (
+            <p>Your card will be saved securely for session billing. You won&apos;t be charged today.</p>
+          )}
         </div>
 
-        {/* Stripe card element */}
-        {fetchError ? (
+        {/* Card element — only shown when no card is on file yet */}
+        {hasCard ? (
+          <TosOnlyForm />
+        ) : fetchError ? (
           <p className="text-sm text-destructive mb-4">{fetchError}</p>
         ) : !clientSecret ? (
           <div className="h-24 flex items-center justify-center text-sm text-muted-foreground">
@@ -139,10 +175,7 @@ export default function SetupGateModal() {
             stripe={stripePromise}
             options={{
               clientSecret,
-              appearance: {
-                theme: 'stripe',
-                variables: { colorPrimary: '#E05A4B' },
-              },
+              appearance: { theme: 'stripe', variables: { colorPrimary: '#E05A4B' } },
             }}
           >
             <CardForm />

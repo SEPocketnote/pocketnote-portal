@@ -51,7 +51,9 @@ export default async function ParentLayout({ children }: { children: React.React
     .eq('sender_role', 'tutor')
     .is('read_at', null)
 
-  const needsSetup = profile.role !== 'admin' && (!profile.tos_accepted_at || !resolvedPaymentMethodId)
+  const hasTos = !!profile.tos_accepted_at
+  const hasCard = !!resolvedPaymentMethodId
+  const needsSetup = profile.role !== 'admin' && (!hasTos || !hasCard)
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -61,7 +63,7 @@ export default async function ParentLayout({ children }: { children: React.React
           <a href="/admin" className="underline font-medium">Back to admin</a>
         </div>
       )}
-      {needsSetup && <SetupGateModal />}
+      {needsSetup && <SetupGateModal hasCard={hasCard} />}
       <div className="flex min-h-screen">
         <ParentNav name={parent?.name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
         <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>
