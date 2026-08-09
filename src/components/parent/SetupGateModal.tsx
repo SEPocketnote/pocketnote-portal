@@ -36,7 +36,7 @@ function TosText({ showCardNote }: { showCardNote: boolean }) {
         .
       </p>
       {showCardNote && (
-        <p>Your card details are stored securely with Stripe — never on Pocketnote&apos;s servers. You won&apos;t be charged today.</p>
+        <p>Your card details are stored securely with Stripe. You won&apos;t be charged today.</p>
       )}
     </div>
   )
