@@ -223,14 +223,21 @@ export default function PaymentMethodsSection() {
                       <Star className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <button
-                    onClick={() => handleRemove(pm.id)}
-                    disabled={methods.length <= 1}
-                    title={methods.length <= 1 ? 'Add another card before removing this one' : 'Remove card'}
-                    className="p-1.5 rounded hover:bg-red-50 transition-colors text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="relative group/del">
+                    <button
+                      onClick={() => handleRemove(pm.id)}
+                      disabled={methods.length <= 1}
+                      className="p-1.5 rounded hover:bg-red-50 transition-colors text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    {methods.length <= 1 && (
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-52 rounded-lg bg-foreground px-3 py-2 text-xs text-background leading-snug opacity-0 group-hover/del:opacity-100 transition-opacity z-10">
+                        You need to add another card before you can remove this one.
+                        <div className="absolute top-full right-2.5 border-4 border-transparent border-t-foreground" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
