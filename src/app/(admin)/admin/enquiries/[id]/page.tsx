@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import EnquiryNotes from './EnquiryNotes'
 import EnquiryDetails from './EnquiryDetails'
+import DeleteAccountButton from '@/components/DeleteAccountButton'
 
 export default async function EnquiryDetailPage({
   params,
@@ -53,6 +54,12 @@ export default async function EnquiryDetailPage({
         <h2 className="font-medium mb-4">Notes</h2>
         <EnquiryNotes enquiryId={id} initialNotes={notes ?? []} />
       </div>
+
+      <DeleteAccountButton
+        deleteUrl={`/api/admin/enquiries/${id}`}
+        redirectTo="/admin/enquiries"
+        name={enquiry.parent_name}
+      />
     </div>
   )
 }
