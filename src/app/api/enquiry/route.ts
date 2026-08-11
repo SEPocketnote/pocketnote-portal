@@ -48,7 +48,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save enquiry' }, { status: 500 })
   }
 
-  // Add to Brevo CRM as a contact, create a deal, and notify the team (non-blocking)
+  // Notify admin — awaited so it completes before the function returns
+  try {
+    await sendEnquiryNotification(data)
+  } catch (err) {
+    console.error('[enquiry] notification email failed:', err)
+  }
+
+  // CRM sync — fire-and-forget, non-critical
   ;(async () => {
     await upsertBrevoContact({
       email: data.email,
@@ -64,15 +71,8 @@ export async function POST(request: Request) {
         MODE_PREFERENCE: data.modePreference,
       },
     })
-
-    await Promise.allSettled([
-      createBrevoDeal({
-        name: data.parentName,
-        email: data.email,
-      }),
-      sendEnquiryNotification(data),
-    ])
-  })().catch(err => console.error('[enquiry] brevo error:', err))
+    await createBrevoDeal({ name: data.parentName, email: data.email })
+  })().catch(err => console.error('[enquiry] crm sync failed:', err))
 
   return NextResponse.json({ ok: true })
 }
