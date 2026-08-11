@@ -10,6 +10,7 @@ const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 type Tutor = {
   id: string
   legal_name: string
+  preferred_name?: string | null
   location: string | null
   state: string | null
   postcode: string | null
@@ -244,7 +245,7 @@ function TutorRow({
       }`}
     >
       <div className="min-w-0">
-        <p className="text-sm font-medium">{tutor.legal_name}</p>
+        <p className="text-sm font-medium">{tutor.preferred_name?.trim() || tutor.legal_name}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
           {(tutor.location || tutor.state || tutor.postcode) && (
             <span className="text-xs text-muted-foreground">

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import TutorNav from '@/components/tutor/TutorNav'
+import { tutorDisplayName } from '@/lib/tutor-display'
 
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -18,7 +19,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('legal_name, photo_url, onboarding_completed_at')
+    .select('legal_name, preferred_name, photo_url, onboarding_completed_at')
     .eq('user_id', user.id)
     .single()
 
@@ -42,7 +43,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
         </div>
       )}
       <div className="flex min-h-screen">
-        <TutorNav name={tutor?.legal_name ?? user.email ?? ''} photoUrl={tutor?.photo_url} unreadMessages={unreadMessages ?? 0} />
+        <TutorNav name={tutor ? tutorDisplayName(tutor) : user.email ?? ''} photoUrl={tutor?.photo_url} unreadMessages={unreadMessages ?? 0} />
         <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto flex flex-col">
           <div className="flex-1">{children}</div>
           <footer className="mt-12 pt-4 border-t border-border text-xs text-muted-foreground text-center">

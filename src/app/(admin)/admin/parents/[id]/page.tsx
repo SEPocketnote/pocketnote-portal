@@ -45,14 +45,14 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
       .select(`
         id, status, mode, schedule_type, sessions_count, recurrence_end_date, start_date,
         students ( name ),
-        tutors ( id, legal_name, state )
+        tutors ( id, legal_name, preferred_name, state )
       `)
       .eq('parent_id', id)
       .order('created_at', { ascending: false }),
     admin.from('sessions')
       .select(`
         id, scheduled_at, status, duration_minutes,
-        bookings!inner( id, students(name), tutors(legal_name, state) )
+        bookings!inner( id, students(name), tutors(legal_name, preferred_name, state) )
       `)
       .eq('bookings.parent_id', id)
       .gte('scheduled_at', now)
@@ -168,7 +168,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                     <p className="text-xs text-muted-foreground">
                       {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)} · {s.duration_minutes} min
                     </p>
-                    <p className="text-xs text-muted-foreground">{s.bookings?.tutors?.legal_name}</p>
+                    <p className="text-xs text-muted-foreground">{(s.bookings?.tutors as any)?.preferred_name?.trim() || s.bookings?.tutors?.legal_name}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${SESSION_STATUS_STYLES[s.status] ?? ''}`}>
                     {s.status}
@@ -206,7 +206,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{(b.students as any)?.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {(b.tutors as any)?.legal_name} · {b.mode}
+                    {(b.tutors as any)?.preferred_name?.trim() || (b.tutors as any)?.legal_name} · {b.mode}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{scheduleLabel(b)}</p>
                 </div>
@@ -233,7 +233,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{(b.students as any)?.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {(b.tutors as any)?.legal_name} · {b.mode}
+                    {(b.tutors as any)?.preferred_name?.trim() || (b.tutors as any)?.legal_name} · {b.mode}
                   </p>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${STATUS_STYLES[b.status] ?? ''}`}>

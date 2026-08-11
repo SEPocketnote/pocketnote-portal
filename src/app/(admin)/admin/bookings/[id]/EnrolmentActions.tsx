@@ -13,7 +13,7 @@ export default function EnrolmentActions({
 }: {
   bookingId: string
   currentTutorId: string
-  tutors: { id: string; legal_name: string }[]
+  tutors: { id: string; legal_name: string; preferred_name?: string | null }[]
   currentStatus: string
   futureSessionTime: string | null
   timezone: string
@@ -123,7 +123,7 @@ export default function EnrolmentActions({
               onChange={e => setNewTutorId(e.target.value)}
             >
               {tutors.map(t => (
-                <option key={t.id} value={t.id}>{t.legal_name}</option>
+                <option key={t.id} value={t.id}>{t.preferred_name?.trim() || t.legal_name}</option>
               ))}
             </select>
             <div className="flex gap-2">

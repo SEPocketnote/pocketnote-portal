@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient()
 
   // 1. Get tutor
-  const { data: tutor } = await admin.from('tutors').select('legal_name, state').eq('id', d.tutorId).single()
+  const { data: tutor } = await admin.from('tutors').select('legal_name, preferred_name, state').eq('id', d.tutorId).single()
   if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 400 })
 
   // Resolve rate now — we need student ID first, so we do this after student resolution below
@@ -247,18 +247,20 @@ export async function POST(request: Request) {
         email: parent!.email,
         options: { redirectTo: `${siteUrl}/auth/confirm` },
       })
+      const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
       await sendParentWelcome({
         name: parent!.name,
         email: parent!.email,
-        tutorName: tutor.legal_name,
+        tutorName: tutorDisplayName,
         firstSession: firstSessionLabel,
         inviteUrl: linkData?.properties?.action_link,
       })
     } else {
+      const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
       await sendBookingConfirmation({
         name: parent!.name,
         email: parent!.email,
-        tutorName: tutor.legal_name,
+        tutorName: tutorDisplayName,
         firstSession: firstSessionLabel,
       })
     }

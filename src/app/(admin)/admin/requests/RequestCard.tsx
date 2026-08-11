@@ -28,7 +28,8 @@ export default function RequestCard({
   const isReschedule = req.request_type === 'reschedule'
   const parent = req.parents as any
   const student = req.sessions?.bookings?.students?.name ?? '—'
-  const tutor = req.sessions?.bookings?.tutors?.legal_name ?? '—'
+  const tutorRaw = req.sessions?.bookings?.tutors
+  const tutor = (tutorRaw as any)?.preferred_name?.trim() || (tutorRaw as any)?.legal_name ?? '—'
   const bookingId = req.sessions?.bookings?.id
 
   async function resolve(action: 'approve' | 'reject') {

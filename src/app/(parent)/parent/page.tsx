@@ -50,12 +50,12 @@ export default async function ParentDashboard() {
   const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
   const admin = createAdminClient()
   const { data: tutorRows } = tutorIds.length
-    ? await admin.from('tutors').select('id, slug, legal_name, bio, photo_url, subjects, location, state').in('id', tutorIds)
+    ? await admin.from('tutors').select('id, slug, legal_name, preferred_name, bio, photo_url, subjects, location, state').in('id', tutorIds)
     : { data: [] }
   const tutorMap: Record<string, any> = {}
   for (const t of tutorRows ?? []) tutorMap[t.id] = t
   const tutorNames: Record<string, string> = {}
-  for (const t of tutorRows ?? []) tutorNames[t.id] = t.legal_name
+  for (const t of tutorRows ?? []) tutorNames[t.id] = t.preferred_name?.trim() || t.legal_name
 
   const upcomingSessions = bookings?.flatMap((b) =>
     (b.sessions as any[])
@@ -202,11 +202,11 @@ export default async function ParentDashboard() {
                     <a key={t.id} href={`/profile/${t.slug ?? t.id}`} className="flex items-center gap-2.5 group">
                       <div className="w-8 h-8 rounded-full bg-muted overflow-hidden shrink-0">
                         {t.photo_url
-                          ? <img src={t.photo_url} alt={t.legal_name} className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-muted-foreground">{t.legal_name?.[0]?.toUpperCase()}</div>
+                          ? <img src={t.photo_url} alt={t.preferred_name?.trim() || t.legal_name} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center text-xs font-bold text-muted-foreground">{(t.preferred_name?.trim() || t.legal_name)?.[0]?.toUpperCase()}</div>
                         }
                       </div>
-                      <p className="text-sm font-medium flex-1 truncate group-hover:text-primary transition-colors">{t.legal_name}</p>
+                      <p className="text-sm font-medium flex-1 truncate group-hover:text-primary transition-colors">{t.preferred_name?.trim() || t.legal_name}</p>
                       <span className="text-xs text-muted-foreground shrink-0 truncate max-w-[80px]">
                         {t.location ?? t.state ?? ''}
                       </span>

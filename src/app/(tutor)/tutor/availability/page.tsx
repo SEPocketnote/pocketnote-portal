@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import AvailabilityGrid from './AvailabilityGrid'
+import UnavailabilitySection from './UnavailabilitySection'
 
 export default async function TutorAvailabilityPage() {
   const supabase = await createClient()
@@ -36,6 +37,7 @@ export default async function TutorAvailabilityPage() {
         </p>
       </div>
       <AvailabilityGrid initialSlots={slots ?? []} />
+      <UnavailabilitySection />
     </div>
   )
 }

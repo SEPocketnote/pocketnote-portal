@@ -7,7 +7,7 @@ export default async function AdminMessagesPage() {
 
   const [{ data: bookings }, { data: messages }] = await Promise.all([
     supabase.from('bookings')
-      .select('id, students(name), parents(name), tutors(legal_name)')
+      .select('id, students(name), parents(name), tutors(legal_name, preferred_name)')
       .in('status', ['confirmed', 'completed'])
       .order('created_at', { ascending: false }),
     supabase.from('messages')
@@ -57,11 +57,11 @@ export default async function AdminMessagesPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">{b.students?.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {b.parents?.name} ↔ {b.tutors?.legal_name}
+                          {b.parents?.name} ↔ {(b.tutors as any)?.preferred_name?.trim() || b.tutors?.legal_name}
                         </p>
                         {last && (
                           <p className="text-xs text-muted-foreground mt-1 truncate">
-                            {last.sender_role === 'parent' ? b.parents?.name : b.tutors?.legal_name}: {last.body}
+                            {last.sender_role === 'parent' ? b.parents?.name : (b.tutors as any)?.preferred_name?.trim() || b.tutors?.legal_name}: {last.body}
                           </p>
                         )}
                       </div>
@@ -89,7 +89,7 @@ export default async function AdminMessagesPage() {
                   >
                     <div>
                       <p className="text-sm font-medium">{b.students?.name}</p>
-                      <p className="text-xs text-muted-foreground">{b.parents?.name} ↔ {b.tutors?.legal_name}</p>
+                      <p className="text-xs text-muted-foreground">{b.parents?.name} ↔ {(b.tutors as any)?.preferred_name?.trim() || b.tutors?.legal_name}</p>
                     </div>
                     <span className="text-xs text-muted-foreground italic">No messages</span>
                   </Link>

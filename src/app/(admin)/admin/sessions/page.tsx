@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { FileText } from 'lucide-react'
 import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
+import { tutorDisplayName } from '@/lib/tutor-display'
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-700',
@@ -33,7 +34,7 @@ export default async function SessionsPage({
         id, mode,
         parents ( id, name ),
         students ( name ),
-        tutors ( id, legal_name, state )
+        tutors ( id, legal_name, preferred_name, state )
       )
     `)
     .order('scheduled_at', { ascending: filter !== 'past' })
@@ -46,7 +47,7 @@ export default async function SessionsPage({
 
   const { data: tutors } = await supabase
     .from('tutors')
-    .select('id, legal_name')
+    .select('id, legal_name, preferred_name')
     .eq('active', true)
     .order('legal_name')
 
@@ -88,7 +89,7 @@ export default async function SessionsPage({
             <select name="tutor" defaultValue={tutorParam ?? ''} className="input text-sm py-2">
               <option value="">All tutors</option>
               {tutors.map((t: any) => (
-                <option key={t.id} value={t.id}>{t.legal_name}</option>
+                <option key={t.id} value={t.id}>{tutorDisplayName(t)}</option>
               ))}
             </select>
             <button type="submit" className="btn text-sm px-3 py-2">Filter</button>
@@ -114,7 +115,7 @@ export default async function SessionsPage({
                 >
                   <div className="min-w-0">
                     <p className="font-medium text-sm">{s.bookings?.students?.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.bookings?.parents?.name} · {s.bookings?.tutors?.legal_name}</p>
+                    <p className="text-xs text-muted-foreground">{s.bookings?.parents?.name} · {tutorDisplayName(s.bookings?.tutors)}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)} · {s.duration_minutes} min
                     </p>
@@ -167,7 +168,7 @@ export default async function SessionsPage({
                           href={`/admin/tutors/${s.bookings?.tutors?.id}`}
                           className="hover:text-primary hover:underline"
                         >
-                          {s.bookings?.tutors?.legal_name ?? '—'}
+                          {tutorDisplayName(s.bookings?.tutors) || '—'}
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{s.duration_minutes} min</td>

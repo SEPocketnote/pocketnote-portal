@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       id, scheduled_at, duration_minutes,
       bookings (
         mode, location,
-        tutors ( legal_name, email, state ),
+        tutors ( legal_name, preferred_name, email, state ),
         parents ( name, email ),
         students ( name )
       )
@@ -55,12 +55,13 @@ export async function GET(request: Request) {
     const location = booking.location ?? null
 
     try {
+      const tutorDisplayName = tutor.preferred_name?.trim() || tutor.legal_name
       await Promise.all([
         sendSessionReminder({
           recipientName: tutor.legal_name,
           recipientEmail: tutor.email,
           studentName: student?.name ?? 'your student',
-          tutorName: tutor.legal_name,
+          tutorName: tutorDisplayName,
           sessionDatetime,
           mode,
           location,
@@ -70,7 +71,7 @@ export async function GET(request: Request) {
           recipientName: parent.name,
           recipientEmail: parent.email,
           studentName: student?.name ?? 'your child',
-          tutorName: tutor.legal_name,
+          tutorName: tutorDisplayName,
           sessionDatetime,
           mode,
           location,

@@ -28,7 +28,7 @@ export default async function RequestsPage() {
       .select(`
         id, request_type, parent_note, proposed_datetime, status, created_at,
         parents ( id, name, email ),
-        sessions ( id, scheduled_at, duration_minutes, bookings ( id, students ( name ), tutors ( id, legal_name, state ) ) )
+        sessions ( id, scheduled_at, duration_minutes, bookings ( id, students ( name ), tutors ( id, legal_name, preferred_name, state ) ) )
       `)
       .eq('status', 'pending')
       .order('created_at', { ascending: true }),

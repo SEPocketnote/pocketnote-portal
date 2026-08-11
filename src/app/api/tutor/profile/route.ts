@@ -9,6 +9,7 @@ const Schema = z.object({
   state: z.string().optional(),
   postcode: z.string().optional(),
   bio: z.string().optional(),
+  preferred_name: z.string().optional(),
   abn: z.string().optional(),
   gst_registered: z.boolean().optional(),
   wwcc_number: z.string().optional(),
@@ -24,6 +25,12 @@ const Schema = z.object({
     bsb: z.string(),
     account_number: z.string(),
   }).nullable().optional(),
+  super_details: z.object({
+    fund_name: z.string(),
+    fund_abn: z.string(),
+    usi: z.string(),
+    member_number: z.string(),
+  }).nullable().optional(),
 })
 
 export async function PATCH(request: Request) {
@@ -38,7 +45,7 @@ export async function PATCH(request: Request) {
   const updates: Record<string, any> = { ...parsed.data }
 
   // Blank strings → null
-  for (const key of ['phone', 'address', 'location', 'state', 'postcode', 'bio', 'abn', 'wwcc_number', 'wwcc_expiry', 'date_of_birth']) {
+  for (const key of ['phone', 'address', 'location', 'state', 'postcode', 'bio', 'preferred_name', 'abn', 'wwcc_number', 'wwcc_expiry', 'date_of_birth']) {
     if (key in updates && updates[key] === '') updates[key] = null
   }
 

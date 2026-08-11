@@ -25,10 +25,10 @@ export default async function ParentMessagesPage() {
   const tutorIds = [...new Set((bookings ?? []).map((b: any) => b.tutor_id).filter(Boolean))]
   const admin = createAdminClient()
   const { data: tutors } = tutorIds.length
-    ? await admin.from('tutors').select('id, legal_name').in('id', tutorIds)
+    ? await admin.from('tutors').select('id, legal_name, preferred_name').in('id', tutorIds)
     : { data: [] }
   const tutorNames: Record<string, string> = {}
-  for (const t of tutors ?? []) tutorNames[t.id] = t.legal_name
+  for (const t of tutors ?? []) tutorNames[t.id] = (t as any).preferred_name?.trim() || t.legal_name
 
   // Group messages by booking
   const msgsByBooking: Record<string, typeof messages> = {}

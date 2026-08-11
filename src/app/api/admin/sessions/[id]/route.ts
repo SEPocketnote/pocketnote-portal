@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     try {
       const { data: booking } = await admin
         .from('bookings')
-        .select('mode, location, tutors(legal_name, email, state), students(name), parents(name, email)')
+        .select('mode, location, tutors(legal_name, preferred_name, email, state), students(name), parents(name, email)')
         .eq('id', session.booking_id)
         .single()
 
@@ -55,12 +55,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const tz = stateToTimezone(tutor?.state)
         const sessionDatetime = `${formatSessionDateFullYear(session.scheduled_at, tz)} at ${formatTime(session.scheduled_at, tz)}`
 
+        const tutorDisplayName = tutor?.preferred_name?.trim() || tutor?.legal_name ?? 'your tutor'
         await Promise.all([
           tutor?.email && sendCancellationNotification({
             recipientName: tutor.legal_name,
             recipientEmail: tutor.email,
             studentName: student?.name ?? 'your student',
-            tutorName: tutor.legal_name,
+            tutorName: tutorDisplayName,
             sessionDatetime,
             mode: booking.mode,
             location: booking.location,
@@ -70,7 +71,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
             recipientName: parent.name,
             recipientEmail: parent.email,
             studentName: student?.name ?? 'your student',
-            tutorName: tutor?.legal_name ?? 'your tutor',
+            tutorName: tutorDisplayName,
             sessionDatetime,
             mode: booking.mode,
             location: booking.location,

@@ -17,7 +17,7 @@ export default async function ProgressPage() {
         .from('progress_reports')
         .select(`
           id, covered, went_well, needs_work, next_session_plan, notes, internal_rating, submitted_at,
-          sessions ( scheduled_at, bookings ( students ( name ), tutors ( legal_name, state ) ) )
+          sessions ( scheduled_at, bookings ( students ( name ), tutors ( legal_name, preferred_name, state ) ) )
         `)
         .eq('sessions.bookings.parent_id', parent.id)
         .order('submitted_at', { ascending: false })
@@ -51,7 +51,7 @@ export default async function ProgressPage() {
                         ? formatSessionDateFullYear(session.scheduled_at, stateToTimezone(booking?.tutors?.state))
                         : ''}
                       {booking?.tutors?.legal_name
-                        ? ` · with ${booking.tutors.legal_name}`
+                        ? ` · with ${(booking.tutors as any).preferred_name?.trim() || booking.tutors.legal_name}`
                         : ''}
                     </p>
                   </div>

@@ -29,7 +29,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         id, status, mode, location, start_date, schedule_type, sessions_count, recurrence_end_date,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
-        tutors ( id, legal_name, email, state )
+        tutors ( id, legal_name, preferred_name, email, state )
       `)
       .eq('id', id)
       .single(),
@@ -38,7 +38,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .select('id, scheduled_at, status, duration_minutes, progress_reports(covered, went_well, needs_work, next_session_plan, notes)')
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
-    admin.from('tutors').select('id, legal_name').eq('active', true).order('legal_name'),
+    admin.from('tutors').select('id, legal_name, preferred_name').eq('active', true).order('legal_name'),
   ])
 
   if (!booking) notFound()
@@ -69,7 +69,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <p className="text-sm text-muted-foreground mt-1">
             <Link href={`/admin/parents/${parent?.id}`} className="hover:text-primary hover:underline">{parent?.name}</Link>
             {' · '}
-            <Link href={`/admin/tutors/${tutor?.id}`} className="hover:text-primary hover:underline">{tutor?.legal_name}</Link>
+            <Link href={`/admin/tutors/${tutor?.id}`} className="hover:text-primary hover:underline">{(tutor as any)?.preferred_name?.trim() || tutor?.legal_name}</Link>
           </p>
         </div>
         <BookingStatus bookingId={id} currentStatus={booking.status} />
@@ -104,7 +104,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</h2>
             <Link href={`/admin/tutors/${tutor?.id}`} className="text-xs text-primary hover:underline">View profile →</Link>
           </div>
-          <p className="text-sm font-medium">{tutor?.legal_name}</p>
+          <p className="text-sm font-medium">{(tutor as any)?.preferred_name?.trim() || tutor?.legal_name}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{tutor?.email}</p>
         </section>
       </div>
@@ -114,7 +114,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <EnrolmentActions
           bookingId={id}
           currentTutorId={tutor?.id ?? ''}
-          tutors={(tutors ?? []) as { id: string; legal_name: string }[]}
+          tutors={(tutors ?? []) as { id: string; legal_name: string; preferred_name?: string | null }[]}
           currentStatus={booking.status}
           futureSessionTime={firstFutureTime}
           timezone={tutorTimezone}

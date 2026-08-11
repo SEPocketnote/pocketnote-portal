@@ -29,9 +29,11 @@ export default async function ParentThreadPage({ params }: { params: Promise<{ b
   const admin = createAdminClient()
   const { data: tutor } = await admin
     .from('tutors')
-    .select('legal_name')
+    .select('legal_name, preferred_name')
     .eq('id', (booking as any).tutor_id)
     .single()
+
+  const tutorName = (tutor as any)?.preferred_name?.trim() || tutor?.legal_name || 'Tutor'
 
   const student = booking.students as any
 
@@ -41,7 +43,7 @@ export default async function ParentThreadPage({ params }: { params: Promise<{ b
         <a href="/parent/messages" className="text-sm text-muted-foreground hover:text-primary">← Messages</a>
       </div>
       <div className="mb-4">
-        <h1 className="text-xl font-semibold">{tutor?.legal_name}</h1>
+        <h1 className="text-xl font-semibold">{tutorName}</h1>
         <p className="text-sm text-muted-foreground">re: {student?.name}</p>
       </div>
       <MessageThread
@@ -49,7 +51,7 @@ export default async function ParentThreadPage({ params }: { params: Promise<{ b
         initialMessages={messages ?? []}
         currentRole="parent"
         myName={parent?.name ?? 'You'}
-        otherPartyName={tutor?.legal_name ?? 'Tutor'}
+        otherPartyName={tutorName}
       />
     </div>
   )

@@ -19,7 +19,7 @@ export default async function TutorDashboard() {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, legal_name, state')
+    .select('id, legal_name, preferred_name, state')
     .eq('user_id', user!.id)
     .single()
 
@@ -36,7 +36,8 @@ export default async function TutorDashboard() {
 
   const now = new Date().toISOString()
   const tz = stateToTimezone(tutor.state)
-  const firstName = tutor.legal_name.split(' ')[0]
+  const displayName = tutor.preferred_name?.trim() || tutor.legal_name
+  const firstName = displayName.split(' ')[0]
 
   const [
     { data: allNotices },

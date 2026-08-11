@@ -202,7 +202,6 @@ export default async function TutorEarningsPage() {
           {inpersonRateCents && (
             <span>In-person: <span className="font-semibold text-foreground">${(inpersonRateCents / 100).toFixed(2)}/hr</span></span>
           )}
-          <span className="px-2 py-0.5 rounded-full bg-muted text-xs">{rateLabel}</span>
         </div>
       )}
 

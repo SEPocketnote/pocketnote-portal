@@ -57,7 +57,7 @@ export default async function AdminDashboard({
         bookings!inner (
           id, status,
           students ( name ),
-          tutors ( legal_name )
+          tutors ( legal_name, preferred_name )
         )
       `)
       .eq('status', 'scheduled')
@@ -190,7 +190,7 @@ export default async function AdminDashboard({
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{booking?.students?.name}</p>
-                      <p className="text-xs text-muted-foreground">with {booking?.tutors?.legal_name}</p>
+                      <p className="text-xs text-muted-foreground">with {(booking?.tutors as any)?.preferred_name?.trim() || (booking?.tutors as any)?.legal_name}</p>
                     </div>
                     <div className="text-right shrink-0 ml-3">
                       <p className="text-sm">{format(new Date(s.scheduled_at), 'EEE d MMM')}</p>

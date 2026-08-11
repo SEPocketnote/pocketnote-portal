@@ -94,6 +94,7 @@ export default function OnboardingFlow({
     photo_url: tutor.photo_url ?? '',
     bio: tutor.bio ?? '',
     phone: tutor.phone ?? '',
+    preferred_name: tutor.preferred_name ?? '',
     abn: tutor.abn ?? '',
     gst_registered: tutor.gst_registered ?? false,
     wwcc_number: tutor.wwcc_number ?? '',
@@ -343,6 +344,14 @@ export default function OnboardingFlow({
               <Field label="Phone" required>
                 <input type="tel" className="input" placeholder="0400 000 000" value={form.phone}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+              </Field>
+              <Field label="Preferred name" className="sm:col-span-2">
+                <input type="text" className="input" placeholder="e.g. Alex (leave blank to use legal name)"
+                  value={form.preferred_name}
+                  onChange={e => setForm(f => ({ ...f, preferred_name: e.target.value }))} />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Shown to families, on sessions, and on your public profile. Leave blank to use your legal name.
+                </p>
               </Field>
               <Field label="Suburb">
                 <input type="text" className="input" placeholder="e.g. Bondi" value={form.location}

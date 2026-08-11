@@ -21,9 +21,11 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
   const [bankTouched, setBankTouched] = useState({ bsb: false, account_number: false, account_name: false })
 
   const bankDetails = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
+  const superDetails = tutor.super_details as { fund_name?: string; fund_abn?: string; usi?: string; member_number?: string } | null
 
   const [form, setForm] = useState({
     phone: tutor.phone ?? '',
+    preferred_name: tutor.preferred_name ?? '',
     address: tutor.address ?? '',
     bio: tutor.bio ?? '',
     abn: tutor.abn ?? '',
@@ -42,6 +44,10 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     bank_account_name: bankDetails?.account_name ?? '',
     bank_bsb: bankDetails?.bsb ?? '',
     bank_account_number: bankDetails?.account_number ?? '',
+    super_fund_name: superDetails?.fund_name ?? '',
+    super_fund_abn: superDetails?.fund_abn ?? '',
+    super_usi: superDetails?.usi ?? '',
+    super_member_number: superDetails?.member_number ?? '',
   })
 
   function formatBsb(raw: string) {
@@ -116,11 +122,15 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     setError('')
     setSuccess('')
     try {
-      const { bank_account_name, bank_bsb, bank_account_number, ...rest } = form
+      const { bank_account_name, bank_bsb, bank_account_number, super_fund_name, super_fund_abn, super_usi, super_member_number, ...rest } = form
+      const anySuper = !!(super_fund_name || super_fund_abn || super_usi || super_member_number)
       const payload = {
         ...rest,
         bank_details: (bank_account_name || bank_bsb || bank_account_number)
           ? { account_name: bank_account_name, bsb: bank_bsb, account_number: bank_account_number }
+          : null,
+        super_details: anySuper
+          ? { fund_name: super_fund_name, fund_abn: super_fund_abn, usi: super_usi, member_number: super_member_number }
           : null,
       }
       const res = await fetch('/api/tutor/profile', {
@@ -172,9 +182,18 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Legal name">
             <p className="text-sm py-2 px-3 bg-muted/40 rounded-md text-foreground">{tutor.legal_name}</p>
+            <p className="text-xs text-muted-foreground mt-1">Used on invoices. Contact Pocketnote to update.</p>
           </Field>
           <Field label="Email">
             <p className="text-sm py-2 px-3 bg-muted/40 rounded-md text-foreground">{tutor.email}</p>
+          </Field>
+          <Field label="Preferred name" className="sm:col-span-2">
+            <input type="text" className="input" placeholder="e.g. Alex (leave blank to use legal name)"
+              value={form.preferred_name}
+              onChange={e => setForm({ ...form, preferred_name: e.target.value })} />
+            <p className="text-xs text-muted-foreground mt-1">
+              If set, this is the name shown to families, on sessions, and on your public profile. Leave blank to use your legal name.
+            </p>
           </Field>
           <Field label="Phone">
             <input type="tel" className="input" value={form.phone}
@@ -336,6 +355,40 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
             {accountNumberValid && (
               <p className="text-xs text-green-600 mt-1">✓ Valid format</p>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Superannuation */}
+      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Superannuation</h2>
+          <p className="text-xs text-muted-foreground mt-1">Your super fund details for payment processing.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium mb-1">Fund name</label>
+            <input type="text" className="input" placeholder="e.g. Australian Super"
+              value={form.super_fund_name}
+              onChange={e => setForm({ ...form, super_fund_name: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Fund ABN</label>
+            <input type="text" className="input" placeholder="e.g. 65 714 394 898"
+              value={form.super_fund_abn}
+              onChange={e => setForm({ ...form, super_fund_abn: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">USI (Unique Superannuation Identifier)</label>
+            <input type="text" className="input" placeholder="e.g. STA0100AU"
+              value={form.super_usi}
+              onChange={e => setForm({ ...form, super_usi: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Member number</label>
+            <input type="text" className="input" placeholder="e.g. 123456789"
+              value={form.super_member_number}
+              onChange={e => setForm({ ...form, super_member_number: e.target.value })} />
           </div>
         </div>
       </section>

@@ -10,7 +10,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ s
 
   const { data: tutor } = await admin
     .from('tutors')
-    .select('id, legal_name, bio, photo_url, subjects, year_levels, location, state, credentials')
+    .select('id, legal_name, preferred_name, bio, photo_url, subjects, year_levels, location, state, credentials')
     .eq('slug', slug)
     .eq('active', true)
     .eq('verified', true)
@@ -18,7 +18,8 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ s
 
   if (!tutor) notFound()
 
-  const initials = tutor.legal_name
+  const displayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
+  const initials = displayName
     ?.split(' ')
     .map((n: string) => n[0])
     .join('')
@@ -42,14 +43,14 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ s
             <div className="-mt-12 mb-4">
               <div className="w-24 h-24 rounded-full border-4 border-white bg-muted flex items-center justify-center overflow-hidden shadow-sm">
                 {tutor.photo_url ? (
-                  <img src={tutor.photo_url} alt={tutor.legal_name} className="w-full h-full object-cover" />
+                  <img src={tutor.photo_url} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-3xl font-semibold text-muted-foreground">{initials}</span>
                 )}
               </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-foreground mb-1">{tutor.legal_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-1">{displayName}</h1>
 
             {locationLabel && (
               <p className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">

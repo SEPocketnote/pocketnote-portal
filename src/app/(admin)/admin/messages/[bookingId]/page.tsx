@@ -10,7 +10,7 @@ export default async function AdminThreadPage({ params }: { params: Promise<{ bo
 
   const [{ data: booking }, { data: messages }] = await Promise.all([
     supabase.from('bookings')
-      .select('id, students(name), parents(name), tutors(legal_name)')
+      .select('id, students(name), parents(name), tutors(legal_name, preferred_name)')
       .eq('id', bookingId)
       .single(),
     supabase.from('messages')
@@ -40,7 +40,7 @@ export default async function AdminThreadPage({ params }: { params: Promise<{ bo
       <div className="mb-4">
         <h1 className="text-xl font-semibold">{student?.name}</h1>
         <p className="text-sm text-muted-foreground">
-          {parent?.name} ↔ {tutor?.legal_name}
+          {parent?.name} ↔ {tutor?.preferred_name?.trim() || tutor?.legal_name}
         </p>
       </div>
       <MessageThread
@@ -50,7 +50,7 @@ export default async function AdminThreadPage({ params }: { params: Promise<{ bo
         myName="Admin"
         otherPartyName=""
         adminParentName={parent?.name}
-        adminTutorName={tutor?.legal_name}
+        adminTutorName={tutor?.preferred_name?.trim() || tutor?.legal_name}
         readOnly
       />
     </div>
