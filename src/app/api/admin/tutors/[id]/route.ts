@@ -79,7 +79,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const { data: tutor } = await admin.from('tutors').select('user_id').eq('id', id).single()
 
-  // Cascade delete everything referencing this tutor's bookings/sessions
+  // Cascade delete everything referencing this tutor's bookings/sessions/invoices
   const { data: bookingRows } = await admin.from('bookings').select('id').eq('tutor_id', id)
   if (bookingRows?.length) {
     const bookingIds = bookingRows.map(b => b.id)
@@ -92,6 +92,12 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await admin.from('session_change_requests').delete().in('booking_id', bookingIds)
     await admin.from('bookings').delete().in('id', bookingIds)
   }
+  // invoices and progress_reports reference tutor_id directly without cascade
+  await admin.from('invoice_sessions').delete().in('invoice_id',
+    (await admin.from('invoices').select('id').eq('tutor_id', id)).data?.map(i => i.id) ?? []
+  )
+  await admin.from('invoices').delete().eq('tutor_id', id)
+  await admin.from('progress_reports').delete().eq('tutor_id', id)
 
   const { error: deleteError } = await admin.from('tutors').delete().eq('id', id)
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
