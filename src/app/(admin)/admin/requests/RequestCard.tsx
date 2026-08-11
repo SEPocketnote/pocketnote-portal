@@ -29,7 +29,7 @@ export default function RequestCard({
   const parent = req.parents as any
   const student = req.sessions?.bookings?.students?.name ?? '—'
   const tutorRaw = req.sessions?.bookings?.tutors
-  const tutor = (tutorRaw as any)?.preferred_name?.trim() || (tutorRaw as any)?.legal_name ?? '—'
+  const tutor = ((tutorRaw as any)?.preferred_name?.trim() || (tutorRaw as any)?.legal_name) ?? '—'
   const bookingId = req.sessions?.bookings?.id
 
   async function resolve(action: 'approve' | 'reject') {
