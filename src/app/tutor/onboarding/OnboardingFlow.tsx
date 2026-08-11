@@ -18,7 +18,7 @@ function toggle(arr: string[], val: string) {
 }
 
 function StepIndicator({ current }: { current: number }) {
-  const steps = ['Profile', 'Availability', 'Agreement']
+  const steps = ['Profile', 'Availability', 'Documents', 'Agreement']
   return (
     <div className="flex items-center gap-2 mb-8">
       {steps.map((label, i) => {
@@ -76,6 +76,10 @@ export default function OnboardingFlow({
   const [error, setError] = useState('')
   const [photoUploading, setPhotoUploading] = useState(false)
   const [slotCount, setSlotCount] = useState(initialSlots.length)
+  const [licenceUploaded, setLicenceUploaded] = useState(!!tutor.licence_url)
+  const [wwccUploaded, setWwccUploaded] = useState(!!tutor.wwcc_url)
+  const [licenceUploading, setLicenceUploading] = useState(false)
+  const [wwccUploading, setWwccUploading] = useState(false)
   const [tosAccepted, setTosAccepted] = useState(false)
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [codeAccepted, setCodeAccepted] = useState(false)
@@ -228,7 +232,38 @@ export default function OnboardingFlow({
     setStep(3)
   }
 
-  // ── Step 3: complete onboarding ───────────────────────────────────────────
+  // ── Step 3: document upload ───────────────────────────────────────────────
+
+  async function handleDocumentUpload(type: 'licence' | 'wwcc', file: File) {
+    const setUploading = type === 'licence' ? setLicenceUploading : setWwccUploading
+    const setUploaded = type === 'licence' ? setLicenceUploaded : setWwccUploaded
+    setUploading(true)
+    setError('')
+    try {
+      const body = new FormData()
+      body.append('type', type)
+      body.append('file', file)
+      const res = await fetch('/api/tutor/documents', { method: 'POST', body })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      setUploaded(true)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function handleDocumentsNext() {
+    setError('')
+    if (!licenceUploaded || !wwccUploaded) {
+      setError('Please upload both documents before continuing.')
+      return
+    }
+    setStep(4)
+  }
+
+  // ── Step 4: complete onboarding ───────────────────────────────────────────
 
   async function handleComplete() {
     setError('')
@@ -509,8 +544,79 @@ export default function OnboardingFlow({
         </div>
       )}
 
-      {/* ── Step 3: Agreement ── */}
+      {/* ── Step 3: Documents ── */}
       {step === 3 && (
+        <div className="space-y-6">
+          <section className="bg-white rounded-lg border border-border p-6 space-y-6">
+            <div>
+              <h2 className="text-sm font-semibold mb-1">Upload your compliance documents</h2>
+              <p className="text-xs text-muted-foreground">These are kept securely and are only visible to Pocketnote staff. JPG, PNG, or PDF · max 10MB each.</p>
+            </div>
+
+            {/* Driver's licence */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Driver&apos;s licence (front) <span className="text-destructive">*</span></p>
+              {licenceUploaded ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-green-600 font-medium">✓ Uploaded</span>
+                  <label className="text-xs text-primary hover:underline cursor-pointer">
+                    Replace
+                    <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleDocumentUpload('licence', f) }} />
+                  </label>
+                </div>
+              ) : (
+                <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg px-4 py-8 cursor-pointer hover:border-primary/50 transition-colors ${licenceUploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                  <span className="text-sm text-muted-foreground">
+                    {licenceUploading ? 'Uploading…' : 'Click to upload driver\'s licence'}
+                  </span>
+                  <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleDocumentUpload('licence', f) }} />
+                </label>
+              )}
+            </div>
+
+            {/* WWCC */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Working with Children Check card <span className="text-destructive">*</span></p>
+              {wwccUploaded ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-green-600 font-medium">✓ Uploaded</span>
+                  <label className="text-xs text-primary hover:underline cursor-pointer">
+                    Replace
+                    <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleDocumentUpload('wwcc', f) }} />
+                  </label>
+                </div>
+              ) : (
+                <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg px-4 py-8 cursor-pointer hover:border-primary/50 transition-colors ${wwccUploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                  <span className="text-sm text-muted-foreground">
+                    {wwccUploading ? 'Uploading…' : 'Click to upload WWCC card'}
+                  </span>
+                  <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleDocumentUpload('wwcc', f) }} />
+                </label>
+              )}
+            </div>
+          </section>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex gap-3">
+            <button onClick={() => { setError(''); setStep(2) }}
+              className="flex-1 py-3 rounded-md text-sm font-medium border border-border hover:bg-muted transition-colors">
+              ← Back
+            </button>
+            <button onClick={handleDocumentsNext} disabled={licenceUploading || wwccUploading}
+              className="flex-1 bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50">
+              Next: Agreement →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 4: Agreement ── */}
+      {step === 4 && (
         <div className="space-y-6">
           <section className="bg-white rounded-lg border border-border p-6 space-y-5">
             <h2 className="text-sm font-semibold">Almost done — please read and accept our policies</h2>
@@ -577,7 +683,7 @@ export default function OnboardingFlow({
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex gap-3">
-            <button onClick={() => { setError(''); setStep(2) }}
+            <button onClick={() => { setError(''); setStep(3) }}
               className="flex-1 py-3 rounded-md text-sm font-medium border border-border hover:bg-muted transition-colors">
               ← Back
             </button>

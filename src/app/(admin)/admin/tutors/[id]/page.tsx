@@ -6,6 +6,7 @@ import StatusToggle from './StatusToggle'
 import EditTutorForm from './EditTutorForm'
 import StudentRateOverrides from './StudentRateOverrides'
 import DeleteAccountButton from '@/components/DeleteAccountButton'
+import ViewDocumentButton from './ViewDocumentButton'
 
 
 export default async function TutorDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -163,6 +164,29 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           </section>
         )
       })()}
+
+      {/* Compliance documents */}
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Compliance documents</h2>
+        <div className="bg-white rounded-lg border border-border px-5 py-4 flex flex-wrap gap-4 text-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">Driver&apos;s licence</span>
+            {tutor.licence_url ? (
+              <ViewDocumentButton tutorId={id} type="licence" label="View ↗" />
+            ) : (
+              <span className="text-xs text-muted-foreground italic">Not uploaded</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">WWCC card</span>
+            {tutor.wwcc_url ? (
+              <ViewDocumentButton tutorId={id} type="wwcc" label="View ↗" />
+            ) : (
+              <span className="text-xs text-muted-foreground italic">Not uploaded</span>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Bookings */}
       {bookings && bookings.length > 0 && (

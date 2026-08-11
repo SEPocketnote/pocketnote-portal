@@ -1,0 +1,3 @@
+ALTER TABLE tutors
+  ADD COLUMN IF NOT EXISTS licence_url TEXT,
+  ADD COLUMN IF NOT EXISTS wwcc_url TEXT;
