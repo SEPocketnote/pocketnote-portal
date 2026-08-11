@@ -7,6 +7,7 @@ import { stateToTimezone, formatTime } from '@/lib/timezone'
 import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
 import EnrolmentActions from './EnrolmentActions'
+import CancelAllSessions from './CancelAllSessions'
 
 function scheduleLabel(booking: any) {
   const type = booking.schedule_type
@@ -123,9 +124,15 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
       {/* Sessions list */}
       <section className="mt-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Sessions ({sessions?.length ?? 0})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Sessions ({sessions?.length ?? 0})
+          </h2>
+          <CancelAllSessions
+            bookingId={id}
+            scheduledCount={(sessions ?? []).filter(s => s.status === 'scheduled').length}
+          />
+        </div>
         {!sessions?.length ? (
           <div className="bg-white rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">
             No sessions found.
