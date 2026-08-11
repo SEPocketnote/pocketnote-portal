@@ -358,14 +358,15 @@ export default function NewTutorPage() {
   )
 }
 
-function Field({ label, children, required, error }: {
+function Field({ label, children, required, error, className }: {
   label: string
   children: React.ReactNode
   required?: boolean
   error?: string
+  className?: string
 }) {
   return (
-    <div>
+    <div className={className}>
       <label className="block text-sm font-medium mb-1">
         {label}{required && <span className="text-destructive ml-0.5">*</span>}
       </label>
