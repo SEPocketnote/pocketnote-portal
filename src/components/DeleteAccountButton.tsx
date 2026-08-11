@@ -28,7 +28,7 @@ export default function DeleteAccountButton({
       setConfirming(false)
       return
     }
-    router.push(redirectTo)
+    window.location.href = redirectTo
   }
 
   return (
