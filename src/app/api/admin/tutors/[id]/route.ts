@@ -79,12 +79,18 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const { data: tutor } = await admin.from('tutors').select('user_id').eq('id', id).single()
 
-  // Delete sessions for all this tutor's bookings, then bookings, then tutor
-  const { data: bookingIds } = await admin.from('bookings').select('id').eq('tutor_id', id)
-  if (bookingIds?.length) {
-    const ids = bookingIds.map(b => b.id)
-    await admin.from('sessions').delete().in('booking_id', ids)
-    await admin.from('bookings').delete().in('id', ids)
+  // Cascade delete everything referencing this tutor's bookings/sessions
+  const { data: bookingRows } = await admin.from('bookings').select('id').eq('tutor_id', id)
+  if (bookingRows?.length) {
+    const bookingIds = bookingRows.map(b => b.id)
+    const { data: sessionRows } = await admin.from('sessions').select('id').in('booking_id', bookingIds)
+    if (sessionRows?.length) {
+      const sessionIds = sessionRows.map(s => s.id)
+      await admin.from('session_change_requests').delete().in('session_id', sessionIds)
+      await admin.from('invoice_sessions').delete().in('session_id', sessionIds)
+    }
+    await admin.from('session_change_requests').delete().in('booking_id', bookingIds)
+    await admin.from('bookings').delete().in('id', bookingIds)
   }
 
   const { error: deleteError } = await admin.from('tutors').delete().eq('id', id)
