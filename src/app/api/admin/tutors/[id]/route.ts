@@ -78,7 +78,18 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   }
 
   const { data: tutor } = await admin.from('tutors').select('user_id').eq('id', id).single()
-  await admin.from('tutors').delete().eq('id', id)
+
+  // Delete sessions for all this tutor's bookings, then bookings, then tutor
+  const { data: bookingIds } = await admin.from('bookings').select('id').eq('tutor_id', id)
+  if (bookingIds?.length) {
+    const ids = bookingIds.map(b => b.id)
+    await admin.from('sessions').delete().in('booking_id', ids)
+    await admin.from('bookings').delete().in('id', ids)
+  }
+
+  const { error: deleteError } = await admin.from('tutors').delete().eq('id', id)
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+
   if (tutor?.user_id) {
     await admin.auth.admin.deleteUser(tutor.user_id)
   }

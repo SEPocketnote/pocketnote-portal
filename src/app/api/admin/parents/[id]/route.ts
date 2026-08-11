@@ -52,9 +52,19 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   }
 
   const { data: parent } = await admin.from('parents').select('user_id').eq('id', id).single()
-  // Students cascade via FK; delete parent record first
+
+  // Delete sessions for all this parent's bookings, then bookings, then students, then parent
+  const { data: bookingIds } = await admin.from('bookings').select('id').eq('parent_id', id)
+  if (bookingIds?.length) {
+    const ids = bookingIds.map(b => b.id)
+    await admin.from('sessions').delete().in('booking_id', ids)
+    await admin.from('bookings').delete().in('id', ids)
+  }
   await admin.from('students').delete().eq('parent_id', id)
-  await admin.from('parents').delete().eq('id', id)
+
+  const { error: deleteError } = await admin.from('parents').delete().eq('id', id)
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+
   if (parent?.user_id) {
     await admin.auth.admin.deleteUser(parent.user_id)
   }
