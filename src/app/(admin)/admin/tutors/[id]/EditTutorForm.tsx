@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
+import AddressAutocomplete from '@/components/AddressAutocomplete'
+import SuburbAutocomplete from '@/components/SuburbAutocomplete'
 
 const AUS_STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
 
@@ -211,13 +213,26 @@ export default function EditTutorForm({
                 <p className="text-xs text-red-500 mt-1">ABN not found or cancelled</p>
               )}
             </Field>
-            <Field label="Address">
-              <input className="input" value={values.address}
-                onChange={e => set('address', e.target.value)} />
+            <Field label="Address" className="sm:col-span-2">
+              <AddressAutocomplete
+                value={values.address}
+                onChange={v => setValues(vals => ({ ...vals, address: v }))}
+                onSelect={r => setValues(vals => ({
+                  ...vals,
+                  address: r.streetAddress,
+                  location: r.suburb || vals.location,
+                  state: r.state || vals.state,
+                  postcode: r.postcode || vals.postcode,
+                }))}
+                className="input"
+              />
             </Field>
             <Field label="Suburb">
-              <input className="input" value={values.location}
-                onChange={e => set('location', e.target.value)} />
+              <SuburbAutocomplete
+                value={values.location}
+                onChange={v => setValues(vals => ({ ...vals, location: v }))}
+                onSelect={r => setValues(vals => ({ ...vals, location: r.suburb, state: r.state, postcode: r.postcode }))}
+              />
             </Field>
             <Field label="State">
               <select className="input" value={values.state}
@@ -411,9 +426,9 @@ export default function EditTutorForm({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div>
+    <div className={className}>
       <label className="text-xs text-muted-foreground block mb-1">{label}</label>
       {children}
     </div>

@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import AddressAutocomplete from '@/components/AddressAutocomplete'
+import SuburbAutocomplete from '@/components/SuburbAutocomplete'
 
 const SUBJECTS = ['Maths', 'English', 'Science', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Economics', 'Legal Studies', 'Music', 'Art']
 const YEAR_LEVELS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12']
@@ -199,9 +201,27 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
             <input type="tel" className="input" value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })} />
           </Field>
+          <Field label="Home address" className="sm:col-span-2">
+            <AddressAutocomplete
+              value={form.address}
+              onChange={v => setForm(f => ({ ...f, address: v }))}
+              onSelect={r => setForm(f => ({
+                ...f,
+                address: r.streetAddress,
+                location: r.suburb || f.location,
+                state: r.state || f.state,
+                postcode: r.postcode || f.postcode,
+              }))}
+              placeholder="Start typing your street address…"
+              className="input"
+            />
+          </Field>
           <Field label="Suburb">
-            <input type="text" className="input" placeholder="e.g. Bondi" value={form.location}
-              onChange={e => setForm({ ...form, location: e.target.value })} />
+            <SuburbAutocomplete
+              value={form.location}
+              onChange={v => setForm(f => ({ ...f, location: v }))}
+              onSelect={r => setForm(f => ({ ...f, location: r.suburb, state: r.state, postcode: r.postcode }))}
+            />
           </Field>
           <Field label="State">
             <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}>
@@ -212,10 +232,6 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
           <Field label="Postcode">
             <input type="text" className="input" placeholder="e.g. 2026" value={form.postcode}
               onChange={e => setForm({ ...form, postcode: e.target.value })} />
-          </Field>
-          <Field label="Home address" className="sm:col-span-2">
-            <input type="text" className="input" placeholder="Street address" value={form.address}
-              onChange={e => setForm({ ...form, address: e.target.value })} />
           </Field>
         </div>
         <Field label="Bio">
