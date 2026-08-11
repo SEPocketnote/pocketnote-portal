@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const tz = stateToTimezone(tutor?.state)
         const sessionDatetime = `${formatSessionDateFullYear(session.scheduled_at, tz)} at ${formatTime(session.scheduled_at, tz)}`
 
-        const tutorDisplayName = tutor?.preferred_name?.trim() || tutor?.legal_name ?? 'your tutor'
+        const tutorDisplayName = (tutor?.preferred_name?.trim() || tutor?.legal_name) ?? 'your tutor'
         await Promise.all([
           tutor?.email && sendCancellationNotification({
             recipientName: tutor.legal_name,
