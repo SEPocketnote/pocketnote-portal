@@ -135,9 +135,21 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
         )
       })()}
 
+      {/* Preferred name */}
+      {tutor.preferred_name && (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Display name</h2>
+          <div className="bg-white rounded-lg border border-border px-5 py-4 text-sm">
+            <p className="text-xs text-muted-foreground mb-0.5">Preferred name (shown to parents)</p>
+            <p className="font-medium">{tutor.preferred_name}</p>
+          </div>
+        </section>
+      )}
+
       {/* Bank details */}
       {(() => {
         const bd = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
+        const sd = tutor.super_details as { fund_name?: string; fund_abn?: string; usi?: string; member_number?: string } | null
         return (
           <section className="mt-6">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Payment details</h2>
@@ -161,6 +173,26 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
                 No bank details on file — tutor has not added payment information yet.
               </div>
             )}
+            {sd?.fund_name || sd?.fund_abn || sd?.usi || sd?.member_number ? (
+              <div className="bg-white rounded-lg border border-border px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Super fund</p>
+                  <p className="font-medium">{sd.fund_name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Fund ABN</p>
+                  <p className="font-medium">{sd.fund_abn || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">USI</p>
+                  <p className="font-medium">{sd.usi || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Member number</p>
+                  <p className="font-medium">{sd.member_number || '—'}</p>
+                </div>
+              </div>
+            ) : null}
           </section>
         )
       })()}

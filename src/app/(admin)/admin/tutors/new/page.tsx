@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import AddressAutocomplete from '@/components/AddressAutocomplete'
 
 const SUBJECTS = ['Maths', 'English', 'Science', 'Chemistry', 'Physics', 'Biology', 'History', 'Geography', 'Economics', 'Other']
 const YEAR_LEVELS = ['Year 1','Year 2','Year 3','Year 4','Year 5','Year 6','Year 7','Year 8','Year 9','Year 10','Year 11','Year 12']
@@ -140,6 +141,7 @@ export default function NewTutorPage() {
     legalName: '',
     email: '',
     phone: '',
+    address: '',
     location: '',
     state: '',
     postcode: '',
@@ -240,6 +242,20 @@ export default function NewTutorPage() {
                 onBlur={() => handleBlur('phone')}
                 placeholder="0400 000 000"
                 className={`input ${fieldErrors.phone ? 'border-destructive focus:ring-destructive' : ''}`}
+              />
+            </Field>
+            <Field label="Street address" className="sm:col-span-2">
+              <AddressAutocomplete
+                value={form.address}
+                onChange={v => setForm(f => ({ ...f, address: v }))}
+                onSelect={r => setForm(f => ({
+                  ...f,
+                  address: r.streetAddress,
+                  location: r.suburb || f.location,
+                  state: r.state || f.state,
+                  postcode: r.postcode || f.postcode,
+                }))}
+                placeholder="Start typing a street address…"
               />
             </Field>
             <Field label="Suburb">

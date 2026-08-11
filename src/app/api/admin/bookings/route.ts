@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendParentWelcome, sendBookingConfirmation, upsertBrevoContact } from '@/lib/brevo'
+import { sendParentWelcome, sendBookingConfirmation, sendTutorBookingNotification, upsertBrevoContact } from '@/lib/brevo'
 import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
 import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient()
 
   // 1. Get tutor
-  const { data: tutor } = await admin.from('tutors').select('legal_name, preferred_name, state').eq('id', d.tutorId).single()
+  const { data: tutor } = await admin.from('tutors').select('legal_name, preferred_name, email, state').eq('id', d.tutorId).single()
   if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 400 })
 
   // Resolve rate now — we need student ID first, so we do this after student resolution below
@@ -266,6 +266,26 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error('[bookings] email failed:', err)
+  }
+
+  // Notify tutor of new enrolment
+  if (tutor?.email) {
+    try {
+      const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
+      await sendTutorBookingNotification({
+        tutorName: tutorDisplayName,
+        tutorEmail: tutor.email,
+        studentName: d.studentName ?? 'your new student',
+        parentName: parent!.name,
+        parentPhone: d.parentPhone ?? null,
+        parentEmail: parent!.email,
+        firstSession: firstSessionLabel,
+        mode: d.mode,
+        location: d.location ?? null,
+      })
+    } catch (err) {
+      console.error('[bookings] tutor email failed:', err)
+    }
   }
 
   return NextResponse.json({ id: booking.id })

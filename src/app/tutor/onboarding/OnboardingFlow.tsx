@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AvailabilityGrid from '@/app/(tutor)/tutor/availability/AvailabilityGrid'
+import AddressAutocomplete from '@/components/AddressAutocomplete'
 
 const SUBJECTS = ['Maths', 'English', 'Science', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Economics', 'Legal Studies', 'Music', 'Art', 'Other']
 const YEAR_LEVELS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12']
@@ -368,8 +369,18 @@ export default function OnboardingFlow({
                   onChange={e => setForm(f => ({ ...f, postcode: e.target.value }))} />
               </Field>
               <Field label="Home address" required className="sm:col-span-2">
-                <input type="text" className="input" placeholder="Street address" value={form.address}
-                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+                <AddressAutocomplete
+                  value={form.address}
+                  onChange={v => setForm(f => ({ ...f, address: v }))}
+                  onSelect={r => setForm(f => ({
+                    ...f,
+                    address: r.streetAddress,
+                    location: r.suburb || f.location,
+                    state: r.state || f.state,
+                    postcode: r.postcode || f.postcode,
+                  }))}
+                  placeholder="Start typing your street address…"
+                />
               </Field>
               <Field label="Session mode" required className="sm:col-span-2">
                 <div className="flex gap-3">
@@ -547,7 +558,7 @@ export default function OnboardingFlow({
             </button>
             <button onClick={handleAvailabilityNext}
               className="flex-1 bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:opacity-90">
-              Next: Agreement →
+              Next: Documents →
             </button>
           </div>
         </div>

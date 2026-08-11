@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { format, isToday, isYesterday } from 'date-fns'
 
 type Message = {
@@ -38,6 +39,7 @@ export default function MessageThread({
   adminTutorName?: string
   readOnly?: boolean
 }) {
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -53,11 +55,11 @@ export default function MessageThread({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Mark messages as read on mount
+  // Mark messages as read on mount and refresh layout so the badge clears
   useEffect(() => {
     if (readOnly) return
-    fetch(`/api/messages/${bookingId}/read`, { method: 'PATCH' })
-  }, [bookingId, readOnly])
+    fetch(`/api/messages/${bookingId}/read`, { method: 'PATCH' }).then(() => router.refresh())
+  }, [bookingId, readOnly, router])
 
   // Poll for new messages every 4 seconds
   useEffect(() => {

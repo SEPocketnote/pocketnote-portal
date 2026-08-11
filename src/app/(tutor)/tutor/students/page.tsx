@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
-import MarkCompleteButton from './MarkCompleteButton'
+import { stateToTimezone } from '@/lib/timezone'
+import StudentCard from './StudentCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,7 +58,7 @@ export default async function TutorStudentsPage() {
   const tz = stateToTimezone(tutor?.state)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-2xl">
       <h1 className="text-2xl font-semibold">Students</h1>
 
       {!bookings.length ? (
@@ -69,75 +69,24 @@ export default async function TutorStudentsPage() {
       ) : (
         <div className="space-y-4">
           {bookings.map((b: any) => {
-            const student = b.students
-            const parent = b.parents
-            const pkg = b.packages
-            const rawSessions = (sessionsByBooking[b.id] ?? []).filter(s => s.status !== 'cancelled')
-            // Past sessions first (newest past first), then upcoming (nearest first)
-            const pastS = rawSessions.filter(s => new Date(s.scheduled_at) < now)
-            const upcomingS = rawSessions.filter(s => new Date(s.scheduled_at) >= now).reverse()
-            const sessions = [...pastS, ...upcomingS]
+            const active = (sessionsByBooking[b.id] ?? []).filter(s => s.status !== 'cancelled')
+            const upcoming = active.filter(s => new Date(s.scheduled_at) >= now)
+              .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+            const past = active.filter(s => new Date(s.scheduled_at) < now)
+              .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())
+            const pastNeedingReport = past.filter(s => !reportedSessionIds.has(s.id))
+            const pastWithReport = past.filter(s => reportedSessionIds.has(s.id))
 
             return (
-              <div key={b.id} className="bg-white rounded-lg border border-border p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="font-semibold text-lg">{student?.name}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {student?.year_level}{student?.subjects?.length ? ` · ${student.subjects.join(', ')}` : ''}
-                    </p>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {rawSessions.filter((s: any) => s.status === 'completed').length}/{b.sessions_count ?? pkg?.sessions_total ?? 0} sessions
-                  </span>
-                </div>
-
-                {student?.notes && (
-                  <p className="text-sm bg-muted/50 rounded p-3 mb-4">{student.notes}</p>
-                )}
-
-                <div className="text-sm space-y-1 text-muted-foreground mb-5">
-                  <p>Parent: <span className="text-foreground">{parent?.name}</span></p>
-                  <p>Contact: <a href={`tel:${parent?.phone}`} className="text-primary">{parent?.phone}</a></p>
-                  <p>Mode: <span className="text-foreground capitalize">{b.mode}{b.location ? ` · ${b.location}` : ''}</span></p>
-                </div>
-
-                {/* Session history — newest first */}
-                {sessions.length > 0 && (
-                  <div className="border-t border-border pt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Sessions</p>
-                    <div className="space-y-2">
-                      {sessions.map(s => {
-                        const isPast = new Date(s.scheduled_at) < now
-                        const hasReport = reportedSessionIds.has(s.id)
-                        return (
-                          <div key={s.id} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)}
-                              {' · '}{s.duration_minutes ?? 60} min
-                            </span>
-                            {!isPast ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">Upcoming</span>
-                            ) : s.status === 'scheduled' ? (
-                              <MarkCompleteButton sessionId={s.id} />
-                            ) : hasReport ? (
-                              <a href={`/tutor/reports/${s.id}`}
-                                className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 hover:bg-green-100">
-                                ✓ Report
-                              </a>
-                            ) : (
-                              <a href={`/tutor/reports/${s.id}`}
-                                className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">
-                                Write report
-                              </a>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <StudentCard
+                key={b.id}
+                booking={b}
+                upcoming={upcoming}
+                pastNeedingReport={pastNeedingReport}
+                pastWithReport={pastWithReport}
+                reportedSessionIds={reportedSessionIds}
+                tz={tz}
+              />
             )
           })}
         </div>
