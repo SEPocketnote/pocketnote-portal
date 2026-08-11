@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AvailabilityGrid from '@/app/(tutor)/tutor/availability/AvailabilityGrid'
 import AddressAutocomplete from '@/components/AddressAutocomplete'
+import SuburbAutocomplete from '@/components/SuburbAutocomplete'
 
 const SUBJECTS = ['Maths', 'English', 'Science', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Economics', 'Legal Studies', 'Music', 'Art', 'Other']
 const YEAR_LEVELS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12']
@@ -354,20 +355,6 @@ export default function OnboardingFlow({
                   Shown to families, on sessions, and on your public profile. Leave blank to use your legal name.
                 </p>
               </Field>
-              <Field label="Suburb">
-                <input type="text" className="input" placeholder="e.g. Bondi" value={form.location}
-                  onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
-              </Field>
-              <Field label="State">
-                <select className="input" value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))}>
-                  <option value="">Select state</option>
-                  {AU_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </Field>
-              <Field label="Postcode">
-                <input type="text" className="input" placeholder="e.g. 2026" value={form.postcode}
-                  onChange={e => setForm(f => ({ ...f, postcode: e.target.value }))} />
-              </Field>
               <Field label="Home address" required className="sm:col-span-2">
                 <AddressAutocomplete
                   value={form.address}
@@ -380,7 +367,25 @@ export default function OnboardingFlow({
                     postcode: r.postcode || f.postcode,
                   }))}
                   placeholder="Start typing your street address…"
+                  className="input"
                 />
+              </Field>
+              <Field label="Suburb">
+                <SuburbAutocomplete
+                  value={form.location}
+                  onChange={v => setForm(f => ({ ...f, location: v }))}
+                  onSelect={r => setForm(f => ({ ...f, location: r.suburb, state: r.state, postcode: r.postcode }))}
+                />
+              </Field>
+              <Field label="State">
+                <select className="input" value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))}>
+                  <option value="">Select state</option>
+                  {AU_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </Field>
+              <Field label="Postcode">
+                <input type="text" className="input" placeholder="e.g. 2026" value={form.postcode}
+                  onChange={e => setForm(f => ({ ...f, postcode: e.target.value }))} />
               </Field>
               <Field label="Session mode" required className="sm:col-span-2">
                 <div className="flex gap-3">

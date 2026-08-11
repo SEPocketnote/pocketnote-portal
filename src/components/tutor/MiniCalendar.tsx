@@ -33,7 +33,9 @@ export default function MiniCalendar({ sessions, tz }: { sessions: CalendarSessi
   const todayLocal = useMemo(() => getLocalParts(new Date().toISOString(), tz), [tz])
   const [viewYear, setViewYear] = useState(todayLocal.year)
   const [viewMonth, setViewMonth] = useState(todayLocal.month)
-  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [selectedDay, setSelectedDay] = useState<number | null>(() =>
+    getLocalParts(new Date().toISOString(), tz).day
+  )
 
   function prevMonth() {
     setSelectedDay(null)
