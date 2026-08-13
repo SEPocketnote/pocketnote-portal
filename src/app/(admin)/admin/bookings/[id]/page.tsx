@@ -126,7 +126,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* Billing */}
-      {(subId || (payments && payments.length > 0)) && (
+      {(booking?.schedule_type !== 'single') && (
         <section className="bg-white rounded-lg border border-border p-4 mt-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing</h2>
