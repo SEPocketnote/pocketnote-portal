@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { stateToTimezone, formatTime } from '@/lib/timezone'
+import { stripe } from '@/lib/stripe'
 import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
 import EnrolmentActions from './EnrolmentActions'
@@ -23,11 +24,12 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  const [{ data: booking }, { data: sessions }, { data: tutors }] = await Promise.all([
+  const [{ data: booking }, { data: sessions }, { data: tutors }, { data: payments }] = await Promise.all([
     supabase
       .from('bookings')
       .select(`
         id, status, mode, location, start_date, schedule_type, sessions_count, recurrence_end_date,
+        stripe_subscription_id,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
         tutors ( id, legal_name, preferred_name, email, state )
@@ -40,7 +42,20 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
     admin.from('tutors').select('id, legal_name, preferred_name').eq('active', true).order('legal_name'),
+    admin.from('payments').select('id, amount, status, paid_at, created_at').eq('booking_id', id).order('created_at', { ascending: false }).limit(10),
   ])
+
+  // Fetch Stripe subscription status if one exists
+  let stripeSubStatus: string | null = null
+  const subId = (booking as any)?.stripe_subscription_id as string | null
+  if (subId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subId)
+      stripeSubStatus = sub.status
+    } catch {
+      stripeSubStatus = 'unknown'
+    }
+  }
 
   if (!booking) notFound()
 
@@ -109,6 +124,58 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <p className="text-xs text-muted-foreground mt-0.5">{tutor?.email}</p>
         </section>
       </div>
+
+      {/* Billing */}
+      {(subId || (payments && payments.length > 0)) && (
+        <section className="bg-white rounded-lg border border-border p-4 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing</h2>
+            {subId && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                stripeSubStatus === 'active' ? 'bg-green-100 text-green-700' :
+                stripeSubStatus === 'past_due' ? 'bg-amber-100 text-amber-700' :
+                stripeSubStatus === 'canceled' ? 'bg-red-100 text-red-700' :
+                'bg-muted text-muted-foreground'
+              }`}>
+                Subscription {stripeSubStatus ?? '—'}
+              </span>
+            )}
+          </div>
+          {!subId && booking?.schedule_type !== 'single' && (
+            <p className="text-xs text-muted-foreground mb-3">No subscription — parent has not saved a card yet.</p>
+          )}
+          {payments && payments.length > 0 ? (
+            <div className="divide-y divide-border">
+              {payments.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between py-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${
+                      p.status === 'paid' ? 'bg-green-500' :
+                      p.status === 'failed' ? 'bg-red-500' : 'bg-amber-400'
+                    }`} />
+                    <span className="text-muted-foreground">
+                      {p.paid_at
+                        ? format(new Date(p.paid_at), 'd MMM yyyy')
+                        : format(new Date(p.created_at), 'd MMM yyyy')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`font-medium ${p.status === 'failed' ? 'text-red-600' : ''}`}>
+                      ${(p.amount / 100).toFixed(2)}
+                    </span>
+                    <span className={`capitalize ${
+                      p.status === 'paid' ? 'text-green-700' :
+                      p.status === 'failed' ? 'text-red-600' : 'text-muted-foreground'
+                    }`}>{p.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">No payments recorded yet.</p>
+          )}
+        </section>
+      )}
 
       {/* Enrolment actions */}
       <div className="mt-4">

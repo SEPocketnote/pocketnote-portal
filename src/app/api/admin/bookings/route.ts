@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendParentWelcome, sendBookingConfirmation, sendTutorBookingNotification, upsertBrevoContact } from '@/lib/brevo'
 import { stripe } from '@/lib/stripe'
+import { createBookingSubscription } from '@/lib/stripe-subscriptions'
 import { z } from 'zod'
 import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
 import { stateToTimezone, toUtcFromZoned, formatSessionFull } from '@/lib/timezone'
@@ -227,7 +228,33 @@ export async function POST(request: Request) {
 
   if (!booking) return NextResponse.json({ error: 'Failed to create enrolment' }, { status: 500 })
 
-  // 9. Insert sessions
+  // 9. Create Stripe subscription for recurring bookings (if parent has a card on file)
+  if (d.scheduleType !== 'single' && booking) {
+    try {
+      const { data: parentFull } = await admin
+        .from('parents')
+        .select('stripe_customer_id, default_payment_method_id')
+        .eq('id', parent.id)
+        .single()
+
+      if (parentFull?.stripe_customer_id && parentFull?.default_payment_method_id && rate_cents_snapshot) {
+        const subId = await createBookingSubscription({
+          stripeCustomerId: parentFull.stripe_customer_id,
+          paymentMethodId: parentFull.default_payment_method_id,
+          rateCents: rate_cents_snapshot,
+          durationMinutes: durationMinutes,
+          scheduleType: d.scheduleType as 'weekly' | 'fortnightly',
+          firstSessionDate: firstSession,
+        })
+        await admin.from('bookings').update({ stripe_subscription_id: subId }).eq('id', booking.id)
+      }
+    } catch (err) {
+      console.error('[bookings] stripe subscription create failed:', err)
+      // Non-fatal — booking is created, subscription can be set up later
+    }
+  }
+
+  // 11. Insert sessions
   await admin.from('sessions').insert(
     sessionDates.map(dt => ({
       booking_id: booking.id,
@@ -237,7 +264,7 @@ export async function POST(request: Request) {
     }))
   )
 
-  // 10. Send email — welcome + magic link for new parents, booking confirmation for existing
+  // 12. Send email — welcome + magic link for new parents, booking confirmation for existing
   const firstSessionLabel = formatSessionFull(firstSession, tutorTimezone)
   try {
     if (isNewParent && authUserId) {
