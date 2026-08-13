@@ -42,3 +42,16 @@
     @apply w-full border border-input rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring;
   }
 }
+
+/* ── Driver.js tour overrides ──────────────────────────────────────────── */
+.driver-popover { border-radius: 10px; padding: 20px; max-width: 280px; }
+.driver-popover-title { font-size: 15px; font-weight: 700; }
+.driver-popover-description { font-size: 13px; line-height: 1.55; color: #4b5563; margin-top: 6px; }
+.driver-popover-footer { margin-top: 16px; }
+.driver-popover-footer-btn { border-radius: 6px; font-size: 12px; padding: 5px 12px; }
+#driver-popover-next-btn,
+#driver-popover-done-btn { background-color: #E26F6F; border-color: #E26F6F; color: #fff; }
+#driver-popover-next-btn:hover,
+#driver-popover-done-btn:hover { background-color: #d45f5f; border-color: #d45f5f; }
+#driver-popover-prev-btn { color: #6b7280; border-color: #e5e7eb; }
+.driver-popover-progress-text { font-size: 11px; color: #9ca3af; }

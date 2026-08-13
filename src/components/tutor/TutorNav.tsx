@@ -1,28 +1,116 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   CalendarDays, Users2, DollarSign, MessageSquare,
-  Clock, UserCircle, LogOut, BookOpen,
+  Clock, UserCircle, LogOut, BookOpen, HelpCircle,
 } from 'lucide-react'
+import type { DriveStep } from 'driver.js'
 
 const links = [
-  { href: '/tutor', label: 'My Sessions', icon: CalendarDays, exact: true },
-  { href: '/tutor/students', label: 'Students', icon: Users2 },
-  { href: '/tutor/earnings', label: 'Earnings', icon: DollarSign },
-  { href: '/tutor/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/tutor/availability', label: 'Availability', icon: Clock },
-  { href: '/tutor/profile', label: 'My Profile', icon: UserCircle },
-  { href: '/tutor/resources', label: 'Resources', icon: BookOpen },
+  { href: '/tutor', label: 'My Sessions', icon: CalendarDays, exact: true, tourId: 'tour-tutor-sessions' },
+  { href: '/tutor/students', label: 'Students', icon: Users2, tourId: 'tour-tutor-students' },
+  { href: '/tutor/earnings', label: 'Earnings', icon: DollarSign, tourId: 'tour-tutor-earnings' },
+  { href: '/tutor/messages', label: 'Messages', icon: MessageSquare, tourId: 'tour-tutor-messages' },
+  { href: '/tutor/availability', label: 'Availability', icon: Clock, tourId: 'tour-tutor-availability' },
+  { href: '/tutor/profile', label: 'My Profile', icon: UserCircle, tourId: 'tour-tutor-profile' },
+  { href: '/tutor/resources', label: 'Resources', icon: BookOpen, tourId: 'tour-tutor-resources' },
 ]
+
+const TOUR_KEY = 'pn_tour_tutor'
+
+const TOUR_STEPS: DriveStep[] = [
+  {
+    element: '#tour-tutor-sessions',
+    popover: {
+      title: 'Your sessions',
+      description: 'See all upcoming sessions here. After each one happens, mark it complete so your earnings are recorded.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-tutor-students',
+    popover: {
+      title: 'Students',
+      description: 'View all your active students, their session history, and parent contact details.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-tutor-earnings',
+    popover: {
+      title: 'Earnings',
+      description: 'Track your session earnings and submit invoices for payment from here.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-tutor-messages',
+    popover: {
+      title: 'Messages',
+      description: 'Stay in touch with parents directly. They get an email notification when you reply.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-tutor-availability',
+    popover: {
+      title: 'Availability',
+      description: 'Set the days and times you\'re available to teach so admin can schedule sessions that work for you.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-tutor-profile',
+    popover: {
+      title: 'Your profile',
+      description: 'Update your photo, bio, subjects, and contact details. Parents see this when they\'re matched with you.',
+      side: 'right', align: 'center',
+    },
+  },
+]
+
+function useTour() {
+  const startTour = useCallback(async () => {
+    if (typeof window === 'undefined' || window.innerWidth < 768) return
+    const { driver } = await import('driver.js')
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — CSS has no type declarations
+    await import('driver.js/dist/driver.css')
+    const d = driver({
+      animate: true,
+      overlayOpacity: 0.25,
+      showProgress: true,
+      progressText: '{{current}} of {{total}}',
+      nextBtnText: 'Next →',
+      prevBtnText: '← Back',
+      doneBtnText: 'Got it',
+      steps: TOUR_STEPS,
+      onDestroyStarted: () => {
+        localStorage.setItem(TOUR_KEY, '1')
+        d.destroy()
+      },
+    })
+    d.drive()
+  }, [])
+
+  useEffect(() => {
+    if (localStorage.getItem(TOUR_KEY)) return
+    const t = setTimeout(startTour, 800)
+    return () => clearTimeout(t)
+  }, [startTour])
+
+  return startTour
+}
 
 export default function TutorNav({ name, photoUrl, unreadMessages = 0 }: { name: string; photoUrl?: string | null; unreadMessages?: number }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const replayTour = useTour()
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
@@ -59,12 +147,13 @@ export default function TutorNav({ name, photoUrl, unreadMessages = 0 }: { name:
 
       {/* Main nav */}
       <nav className="space-y-0.5 flex-1 min-h-0">
-        {links.map(({ href, label, icon: Icon, exact }) => {
+        {links.map(({ href, label, icon: Icon, exact, tourId }) => {
           const active = exact ? pathname === href : pathname.startsWith(href)
           const isMessages = href === '/tutor/messages'
           return (
             <Link
               key={href}
+              id={tourId}
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 active ? 'bg-white text-primary' : 'text-white/90 hover:bg-white/20 hover:text-white'
@@ -83,7 +172,15 @@ export default function TutorNav({ name, photoUrl, unreadMessages = 0 }: { name:
       </nav>
 
       {/* Bottom */}
-      <div className="mt-6 pt-4 border-t border-white/20">
+      <div className="mt-6 pt-4 border-t border-white/20 space-y-0.5">
+        <button
+          onClick={replayTour}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/20 hover:text-white transition-colors"
+          title="Replay feature tour"
+        >
+          <HelpCircle className="w-4 h-4 shrink-0" />
+          Feature tour
+        </button>
         <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/20 hover:text-white transition-colors"

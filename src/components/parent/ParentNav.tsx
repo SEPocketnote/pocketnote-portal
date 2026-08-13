@@ -1,23 +1,103 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CalendarDays, TrendingUp, MessageSquare, UserCircle, LogOut, BookOpen } from 'lucide-react'
+import { CalendarDays, TrendingUp, MessageSquare, UserCircle, LogOut, BookOpen, HelpCircle } from 'lucide-react'
+import type { DriveStep } from 'driver.js'
 
 const links = [
-  { href: '/parent', label: 'My Sessions', icon: CalendarDays, exact: true },
-  { href: '/parent/progress', label: 'Progress Reports', icon: TrendingUp },
-  { href: '/parent/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/parent/resources', label: 'Resources', icon: BookOpen },
-  { href: '/parent/account', label: 'Account', icon: UserCircle },
+  { href: '/parent', label: 'My Sessions', icon: CalendarDays, exact: true, tourId: 'tour-parent-sessions' },
+  { href: '/parent/progress', label: 'Progress Reports', icon: TrendingUp, tourId: 'tour-parent-progress' },
+  { href: '/parent/messages', label: 'Messages', icon: MessageSquare, tourId: 'tour-parent-messages' },
+  { href: '/parent/resources', label: 'Resources', icon: BookOpen, tourId: 'tour-parent-resources' },
+  { href: '/parent/account', label: 'Account', icon: UserCircle, tourId: 'tour-parent-account' },
 ]
+
+const TOUR_KEY = 'pn_tour_parent'
+
+const TOUR_STEPS: DriveStep[] = [
+  {
+    element: '#tour-parent-sessions',
+    popover: {
+      title: 'Your sessions',
+      description: 'See all upcoming and past tutoring sessions. You can request a reschedule or cancellation from here too.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-parent-progress',
+    popover: {
+      title: 'Progress reports',
+      description: "After each session your tutor writes a short note on how things went. Check in here to stay across your child's progress.",
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-parent-messages',
+    popover: {
+      title: 'Messages',
+      description: "Chat directly with your tutor. You'll get an email notification when they reply.",
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-parent-resources',
+    popover: {
+      title: 'Resources',
+      description: 'Useful links and documents from Pocketnote — worksheets, guides, and more.',
+      side: 'right', align: 'center',
+    },
+  },
+  {
+    element: '#tour-parent-account',
+    popover: {
+      title: 'Your account',
+      description: 'Update your contact details, billing information, and home address here.',
+      side: 'right', align: 'center',
+    },
+  },
+]
+
+function useTour() {
+  const startTour = useCallback(async () => {
+    if (typeof window === 'undefined' || window.innerWidth < 768) return
+    const { driver } = await import('driver.js')
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — CSS has no type declarations
+    await import('driver.js/dist/driver.css')
+    const d = driver({
+      animate: true,
+      overlayOpacity: 0.25,
+      showProgress: true,
+      progressText: '{{current}} of {{total}}',
+      nextBtnText: 'Next →',
+      prevBtnText: '← Back',
+      doneBtnText: 'Got it',
+      steps: TOUR_STEPS,
+      onDestroyStarted: () => {
+        localStorage.setItem(TOUR_KEY, '1')
+        d.destroy()
+      },
+    })
+    d.drive()
+  }, [])
+
+  useEffect(() => {
+    if (localStorage.getItem(TOUR_KEY)) return
+    const t = setTimeout(startTour, 800)
+    return () => clearTimeout(t)
+  }, [startTour])
+
+  return startTour
+}
 
 export default function ParentNav({ name, unreadMessages = 0 }: { name: string; unreadMessages?: number }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const replayTour = useTour()
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
@@ -51,12 +131,13 @@ export default function ParentNav({ name, unreadMessages = 0 }: { name: string; 
 
       {/* Main nav */}
       <nav className="space-y-0.5 flex-1 min-h-0">
-        {links.map(({ href, label, icon: Icon, exact }) => {
+        {links.map(({ href, label, icon: Icon, exact, tourId }) => {
           const active = exact ? pathname === href : pathname.startsWith(href)
           const isMessages = href === '/parent/messages'
           return (
             <Link
               key={href}
+              id={tourId}
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 active ? 'bg-white text-primary' : 'text-white/90 hover:bg-white/20 hover:text-white'
@@ -75,7 +156,15 @@ export default function ParentNav({ name, unreadMessages = 0 }: { name: string; 
       </nav>
 
       {/* Bottom */}
-      <div className="mt-6 pt-4 border-t border-white/20">
+      <div className="mt-6 pt-4 border-t border-white/20 space-y-0.5">
+        <button
+          onClick={replayTour}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/20 hover:text-white transition-colors"
+          title="Replay feature tour"
+        >
+          <HelpCircle className="w-4 h-4 shrink-0" />
+          Feature tour
+        </button>
         <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/20 hover:text-white transition-colors"
