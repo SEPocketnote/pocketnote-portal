@@ -578,9 +578,12 @@ export default function OnboardingFlow({
               <p className="text-xs text-muted-foreground">These are kept securely and are only visible to Pocketnote staff. JPG, PNG, or PDF · max 10MB each.</p>
             </div>
 
-            {/* Driver's licence */}
+            {/* Government-issued ID */}
             <div className="space-y-2">
-              <p className="text-sm font-medium">Driver&apos;s licence (front) <span className="text-destructive">*</span></p>
+              <p className="text-sm font-medium">Government-issued photo ID <span className="text-destructive">*</span></p>
+              <p className="text-xs text-muted-foreground">
+                e.g. driver&apos;s licence (front), passport, proof of age card, or Medicare card
+              </p>
               {licenceUploaded ? (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-green-600 font-medium">✓ Uploaded</span>
@@ -593,7 +596,7 @@ export default function OnboardingFlow({
               ) : (
                 <label className={`flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg px-4 py-8 cursor-pointer hover:border-primary/50 transition-colors ${licenceUploading ? 'opacity-60 pointer-events-none' : ''}`}>
                   <span className="text-sm text-muted-foreground">
-                    {licenceUploading ? 'Uploading…' : 'Click to upload driver\'s licence'}
+                    {licenceUploading ? 'Uploading…' : 'Click to upload government-issued ID'}
                   </span>
                   <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden"
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleDocumentUpload('licence', f) }} />
