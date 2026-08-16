@@ -8,7 +8,7 @@ export default async function PaymentsPage() {
   const { data: payments } = await admin
     .from('payments')
     .select(`
-      id, amount, status, paid_at, created_at,
+      id, amount, status, paid_at, created_at, method, notes,
       bookings (
         id,
         parents ( id, name ),
@@ -23,6 +23,8 @@ export default async function PaymentsPage() {
     amount: p.amount as number,
     status: p.status as string,
     date: p.paid_at ?? p.created_at,
+    method: p.method as string | null,
+    notes: p.notes as string | null,
     bookingId: p.bookings?.id ?? null,
     parentId: p.bookings?.parents?.id ?? null,
     parentName: p.bookings?.parents?.name ?? '—',
@@ -58,6 +60,7 @@ export default async function PaymentsPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Method</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -80,6 +83,10 @@ export default async function PaymentsPage() {
                   <td className="px-4 py-3 text-muted-foreground">{row.studentName}</td>
                   <td className="px-4 py-3 text-right font-medium tabular-nums">
                     ${(row.amount / 100).toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs capitalize">
+                    {row.method ? row.method.replace(/_/g, ' ') : '—'}
+                    {row.notes && <span className="ml-1 italic">· {row.notes}</span>}
                   </td>
                   <td className="px-4 py-3">
                     <StatusPill status={row.status} />
