@@ -1,15 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
-import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
 import { tutorDisplayName } from '@/lib/tutor-display'
-
-const STATUS_STYLES: Record<string, string> = {
-  scheduled: 'bg-blue-100 text-blue-700',
-  completed: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
-  rescheduled: 'bg-yellow-100 text-yellow-700',
-}
+import SessionsTable from './SessionsTable'
 
 type Filter = 'upcoming' | 'past' | 'all'
 
@@ -29,7 +21,7 @@ export default async function SessionsPage({
     .from('sessions')
     .select(`
       id, scheduled_at, status, duration_minutes,
-      progress_reports ( id ),
+      progress_reports ( covered, went_well, needs_work, next_session_plan, notes ),
       bookings!inner(
         id, mode,
         parents ( id, name ),
@@ -102,93 +94,7 @@ export default async function SessionsPage({
           No sessions found.
         </div>
       ) : (
-        <>
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-2">
-            {filtered.map((s: any) => {
-              const tz = stateToTimezone(s.bookings?.tutors?.state)
-              return (
-                <Link
-                  key={s.id}
-                  href={`/admin/bookings/${s.bookings?.id}`}
-                  className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm">{s.bookings?.students?.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.bookings?.parents?.name} · {tutorDisplayName(s.bookings?.tutors)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)} · {s.duration_minutes} min
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {s.progress_reports && <FileText className="w-3.5 h-3.5 text-muted-foreground" aria-label="Progress report submitted" />}
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[s.status] ?? 'bg-muted text-muted-foreground'}`}>
-                      {s.status}
-                    </span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date & time</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Duration</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground w-8"></th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((s: any) => {
-                  const tz = stateToTimezone(s.bookings?.tutors?.state)
-                  return (
-                    <tr key={s.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{formatSessionDateFullYear(s.scheduled_at, tz)}</p>
-                        <p className="text-xs text-muted-foreground">{formatTime(s.scheduled_at, tz)}</p>
-                      </td>
-                      <td className="px-4 py-3">{s.bookings?.students?.name ?? '—'}</td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/parents/${s.bookings?.parents?.id}`}
-                          className="hover:text-primary hover:underline"
-                        >
-                          {s.bookings?.parents?.name ?? '—'}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/tutors/${s.bookings?.tutors?.id}`}
-                          className="hover:text-primary hover:underline"
-                        >
-                          {tutorDisplayName(s.bookings?.tutors) || '—'}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.duration_minutes} min</td>
-                      <td className="px-4 py-3">
-                        {s.progress_reports && (
-                          <FileText className="w-3.5 h-3.5 text-muted-foreground" aria-label="Progress report submitted" />
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[s.status] ?? 'bg-muted text-muted-foreground'}`}>
-                          {s.status}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <SessionsTable sessions={filtered as any} />
       )}
     </div>
   )
