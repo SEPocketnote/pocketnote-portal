@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { format, startOfDay, endOfDay, addDays, subWeeks, startOfWeek } from 'date-fns'
+import { stateToTimezone, formatSessionDateShort, formatTime } from '@/lib/timezone'
 import { Inbox, Users2, CalendarDays, TrendingUp, BookOpen } from 'lucide-react'
 import PeriodToggle from './PeriodToggle'
 import ActivityChart, { type ChartWeek } from '@/components/admin/ActivityChart'
@@ -57,7 +58,7 @@ export default async function AdminDashboard({
         bookings!inner (
           id, status,
           students ( name ),
-          tutors ( legal_name, preferred_name )
+          tutors ( legal_name, preferred_name, state )
         )
       `)
       .eq('status', 'scheduled')
@@ -193,8 +194,8 @@ export default async function AdminDashboard({
                       <p className="text-xs text-muted-foreground">with {(booking?.tutors as any)?.preferred_name?.trim() || (booking?.tutors as any)?.legal_name}</p>
                     </div>
                     <div className="text-right shrink-0 ml-3">
-                      <p className="text-sm">{format(new Date(s.scheduled_at), 'EEE d MMM')}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(s.scheduled_at), 'h:mm a')}</p>
+                      <p className="text-sm">{formatSessionDateShort(s.scheduled_at, stateToTimezone((booking?.tutors as any)?.state))}</p>
+                      <p className="text-xs text-muted-foreground">{formatTime(s.scheduled_at, stateToTimezone((booking?.tutors as any)?.state))}</p>
                     </div>
                   </Link>
                 )
