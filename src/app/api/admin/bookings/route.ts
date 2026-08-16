@@ -272,7 +272,7 @@ export async function POST(request: Request) {
       const { data: linkData } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email: parent!.email,
-        options: { redirectTo: `${siteUrl}/auth/callback` },
+        options: { redirectTo: `${siteUrl}/auth/confirm` },
       })
       const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
       await sendParentWelcome({
