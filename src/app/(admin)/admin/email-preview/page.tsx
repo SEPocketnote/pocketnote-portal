@@ -130,6 +130,21 @@ const EMAILS: EmailPreview[] = [
   },
 
   {
+    id: 'tutor-approved',
+    group: 'Onboarding',
+    label: 'Tutor approved',
+    subject: "You're approved — welcome to the Pocketnote team!",
+    recipient: `${T_NAME} <${T_EMAIL}>`,
+    html: std(`
+      ${h1(`You're approved, ${T_FIRST}!`)}
+      ${para(`Your Pocketnote profile has been reviewed and approved. You're now part of the team — sign in to your portal to get started.`)}
+      ${btn(`${SITE}/login`, 'Go to my portal')}
+      ${DIVIDER}
+      ${HELP}
+    `),
+  },
+
+  {
     id: 'parent-welcome-new-link',
     group: 'Onboarding',
     label: 'Parent welcome — new, with link',

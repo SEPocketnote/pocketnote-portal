@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendTutorApprovedEmail } from '@/lib/brevo'
 import { z } from 'zod'
 
 const Schema = z.object({
@@ -54,6 +55,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const admin = createAdminClient()
   const { error } = await admin.from('tutors').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Send approval email when a tutor is verified for the first time
+  if (updates.verified === true) {
+    try {
+      const { data: tutor } = await admin.from('tutors').select('legal_name, email').eq('id', id).single()
+      if (tutor) await sendTutorApprovedEmail({ name: tutor.legal_name, email: tutor.email })
+    } catch (err) {
+      console.error('[tutors] approved email failed:', err)
+    }
+  }
 
   return NextResponse.json({ ok: true })
 }
