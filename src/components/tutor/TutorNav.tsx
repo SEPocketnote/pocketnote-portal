@@ -176,10 +176,10 @@ export default function TutorNav({ name, photoUrl, unreadMessages = 0 }: { name:
         <button
           onClick={replayTour}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/20 hover:text-white transition-colors"
-          title="Replay feature tour"
+          title="Show me around again"
         >
           <HelpCircle className="w-4 h-4 shrink-0" />
-          Feature tour
+          Show me around
         </button>
         <button
           onClick={handleSignOut}
