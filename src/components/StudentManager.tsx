@@ -149,7 +149,7 @@ export default function StudentManager({
   return (
     <div className="space-y-2">
       {students.map(s => (
-        <div key={s.id} className="bg-white rounded-lg border border-border p-4">
+        <div key={s.id} className="bg-white rounded-2xl shadow-md p-4">
           {editingId === s.id ? (
             <StudentForm
               initial={{
@@ -182,7 +182,7 @@ export default function StudentManager({
       ))}
 
       {addingNew ? (
-        <div className="bg-white rounded-lg border border-border p-4">
+        <div className="bg-white rounded-2xl shadow-md p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
             New student
           </p>

@@ -62,7 +62,7 @@ export default async function TutorStudentsPage() {
       <h1 className="text-2xl font-semibold">Students</h1>
 
       {!bookings.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
           <p className="font-medium mb-1">No students yet</p>
           <p className="text-sm text-muted-foreground">Your students will appear here once sessions are booked.</p>
         </div>

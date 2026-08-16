@@ -127,7 +127,7 @@ export default function AvailabilityGrid({
         </div>
       </div>
     )}
-    <div className="bg-white rounded-lg border border-border divide-y divide-border">
+    <div className="bg-white rounded-2xl shadow-md divide-y divide-border/50">
       {DAYS.map(({ label, value: day }) => {
         const daySlots = slots.filter(s => s.day_of_week === day)
         const isAdding = adding[day]

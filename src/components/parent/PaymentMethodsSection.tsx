@@ -194,7 +194,7 @@ export default function PaymentMethodsSection() {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
         Payment method
       </h2>
-      <div className="bg-white rounded-lg border border-border p-5 space-y-3">
+      <div className="bg-white rounded-2xl shadow-md p-5 space-y-3">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : methods.length === 0 ? (

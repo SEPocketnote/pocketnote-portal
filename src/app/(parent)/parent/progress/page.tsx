@@ -42,7 +42,7 @@ export default async function ProgressPage() {
       <h1 className="text-2xl font-semibold">Progress Reports</h1>
 
       {!rows.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
           <p className="font-medium mb-1">No sessions yet</p>
           <p className="text-sm text-muted-foreground">
             Reports will appear here after each session.
@@ -54,7 +54,7 @@ export default async function ProgressPage() {
             const tz = (parent as any)?.timezone ?? stateToTimezone(booking?.tutors?.state)
             const tutorName = booking?.tutors?.preferred_name?.trim() || booking?.tutors?.legal_name
             return (
-              <div key={session.id} className="bg-white rounded-lg border border-border p-6">
+              <div key={session.id} className="bg-white rounded-2xl shadow-md p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="font-semibold">{booking?.students?.name ?? 'Student'}</p>

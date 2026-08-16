@@ -59,7 +59,7 @@ export default function AccountForm({ name, email, phone, timezone }: {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-border p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium mb-1">Name</label>
         <input type="text" className="input" value={form.name}

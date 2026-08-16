@@ -37,7 +37,7 @@ export default function ParentResourcesPage() {
 
       <div className="space-y-3">
         {resources.map(({ icon: Icon, title, description, href }) => (
-          <div key={title} className="bg-white rounded-xl border border-border p-5 flex items-start gap-4">
+          <div key={title} className="bg-white rounded-2xl shadow-md p-5 flex items-start gap-4">
             <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0 mt-0.5">
               <Icon className="w-5 h-5 text-primary" />
             </div>
