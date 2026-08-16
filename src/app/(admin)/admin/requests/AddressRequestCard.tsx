@@ -8,8 +8,8 @@ export default function AddressRequestCard({ req }: { req: any }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [adminNote, setAdminNote] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectNote, setRejectNote] = useState('')
 
   const parent = req.parents as any
 
@@ -20,7 +20,7 @@ export default function AddressRequestCard({ req }: { req: any }) {
       const res = await fetch(`/api/admin/address-change-requests/${req.id}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action, adminNote: adminNote || undefined }),
+        body: JSON.stringify({ action, adminNote: rejectNote || undefined }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -67,23 +67,13 @@ export default function AddressRequestCard({ req }: { req: any }) {
 
       {!rejectOpen ? (
         <div className="space-y-3">
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Note to parent & tutor (optional)</label>
-            <input
-              type="text"
-              className="input text-sm"
-              placeholder="e.g. Updated — tutor has been notified."
-              value={adminNote}
-              onChange={e => setAdminNote(e.target.value)}
-            />
-          </div>
           <div className="flex gap-2">
             <button
               onClick={() => resolve('approve')}
               disabled={saving}
               className="btn btn-primary text-sm px-4 py-2 disabled:opacity-50"
             >
-              {saving ? 'Saving…' : 'Approve & notify tutor'}
+              {saving ? 'Saving…' : 'Approve'}
             </button>
             <button
               onClick={() => setRejectOpen(true)}
@@ -103,8 +93,8 @@ export default function AddressRequestCard({ req }: { req: any }) {
               type="text"
               className="input text-sm w-full"
               placeholder="e.g. Please call us to discuss…"
-              value={adminNote}
-              onChange={e => setAdminNote(e.target.value)}
+              value={rejectNote}
+              onChange={e => setRejectNote(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
@@ -116,7 +106,7 @@ export default function AddressRequestCard({ req }: { req: any }) {
               {saving ? 'Saving…' : 'Confirm reject'}
             </button>
             <button
-              onClick={() => { setRejectOpen(false); setAdminNote('') }}
+              onClick={() => { setRejectOpen(false); setRejectNote('') }}
               className="btn text-sm px-4 py-2"
             >
               Cancel
