@@ -90,7 +90,7 @@ export default async function SessionsPage({
       </div>
 
       {!filtered.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center text-sm text-muted-foreground">
           No sessions found.
         </div>
       ) : (

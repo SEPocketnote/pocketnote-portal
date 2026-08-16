@@ -36,7 +36,7 @@ export default function AddressRequestCard({ req }: { req: any }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-border p-5 space-y-4">
+    <div className="bg-white rounded-2xl shadow-md p-5 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">

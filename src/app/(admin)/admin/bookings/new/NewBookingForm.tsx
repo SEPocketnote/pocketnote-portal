@@ -198,7 +198,7 @@ export default function NewBookingForm({
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* Parent */}
-      <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</h2>
 
         {parentMode === 'idle' && (
@@ -271,7 +271,7 @@ export default function NewBookingForm({
 
       {/* Student — only shown once parent is resolved */}
       {parentResolved && (
-        <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</h2>
 
           {parentMode === 'existing' && selectedParent && selectedParent.students.length > 0 && (
@@ -333,7 +333,7 @@ export default function NewBookingForm({
 
       {/* Booking details */}
       {parentResolved && (
-        <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+        <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Booking</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Tutor" required>
@@ -364,7 +364,7 @@ export default function NewBookingForm({
 
       {/* Schedule */}
       {parentResolved && (
-        <section className="bg-white rounded-lg border border-border p-6 space-y-5">
+        <section className="bg-white rounded-2xl shadow-md p-6 space-y-5">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Schedule — {sessionSummary()}
           </h2>

@@ -168,7 +168,7 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
 
   if (!editing) {
     return (
-      <div className="bg-white rounded-lg border border-border p-6 mb-6 space-y-4">
+      <div className="bg-white rounded-2xl shadow-md p-6 mb-6 space-y-4">
         <div className="flex justify-end">
           <button onClick={openEdit} className="text-sm text-primary hover:underline">
             Edit
@@ -224,7 +224,7 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
   // Edit mode
   const f = form!
   return (
-    <div className="bg-white rounded-lg border border-border p-6 mb-6 space-y-6">
+    <div className="bg-white rounded-2xl shadow-md p-6 mb-6 space-y-6">
       <h2 className="font-medium">Edit enquiry</h2>
 
       <section className="space-y-4">

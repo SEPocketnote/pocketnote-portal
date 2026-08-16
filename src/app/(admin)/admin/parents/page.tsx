@@ -29,7 +29,7 @@ export default async function ParentsPage() {
       </div>
 
       {!parents?.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
           <p className="font-medium mb-1">No parents yet</p>
           <p className="text-sm text-muted-foreground">Parents are created when you create an enrolment.</p>
         </div>
@@ -43,7 +43,7 @@ export default async function ParentsPage() {
                 <Link
                   key={p.id}
                   href={`/admin/parents/${p.id}`}
-                  className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+                  className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
                 >
                   <div className="min-w-0">
                     <p className="font-medium truncate">{p.name}</p>
@@ -62,7 +62,7 @@ export default async function ParentsPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden">
+          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40">

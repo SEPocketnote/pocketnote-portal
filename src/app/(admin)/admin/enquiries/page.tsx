@@ -108,7 +108,7 @@ export default async function EnquiriesPage({
               <Link
                 key={e.id}
                 href={`/admin/enquiries/${e.id}`}
-                className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+                className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
               >
                 <div className="min-w-0">
                   <p className="font-medium truncate">{e.parent_name}</p>
@@ -130,7 +130,7 @@ export default async function EnquiriesPage({
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
               <thead className="border-b border-border bg-muted/40">
                 <tr>

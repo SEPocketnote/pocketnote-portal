@@ -99,7 +99,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
       </div>
 
       {/* Invoice summary */}
-      <section className="bg-white rounded-lg border border-border p-6 space-y-3 mb-4">
+      <section className="bg-white rounded-2xl shadow-md p-6 space-y-3 mb-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Invoice details</h2>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <div>
@@ -150,7 +150,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
       </section>
 
       {/* Sessions list */}
-      <section className="bg-white rounded-lg border border-border overflow-hidden mb-4">
+      <section className="bg-white rounded-2xl shadow-md overflow-hidden mb-4">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions</p>
         </div>

@@ -50,7 +50,7 @@ export default async function EnquiryDetailPage({
 
       <EnquiryDetails enquiry={enquiry} />
 
-      <div className="bg-white rounded-lg border border-border p-6">
+      <div className="bg-white rounded-2xl shadow-md p-6">
         <h2 className="font-medium mb-4">Notes</h2>
         <EnquiryNotes enquiryId={id} initialNotes={notes ?? []} />
       </div>

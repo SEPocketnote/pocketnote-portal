@@ -64,7 +64,7 @@ export default function NewEnquiryPage() {
 
       <h1 className="text-2xl font-semibold mb-6">New enquiry</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-border p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-6">
         <section className="space-y-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent details</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

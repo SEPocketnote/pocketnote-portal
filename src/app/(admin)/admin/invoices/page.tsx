@@ -39,7 +39,7 @@ export default async function AdminInvoicesPage() {
       <h1 className="text-2xl font-semibold mb-6">Invoices</h1>
 
       {!invoices?.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center text-sm text-muted-foreground">
           No invoices submitted yet.
         </div>
       ) : (
@@ -53,7 +53,7 @@ export default async function AdminInvoicesPage() {
                 <a
                   key={inv.id}
                   href={`/admin/invoices/${inv.id}`}
-                  className="block bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+                  className="block bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3 mb-1">
                     <p className="font-medium truncate">{tutorNames[inv.tutor_id] ?? '—'}</p>
@@ -72,7 +72,7 @@ export default async function AdminInvoicesPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden">
+          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

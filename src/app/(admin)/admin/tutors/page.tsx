@@ -42,7 +42,7 @@ export default async function TutorsPage() {
       </div>
 
       {!tutors?.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
           <p className="font-medium mb-1">No tutors yet</p>
           <p className="text-sm text-muted-foreground">Add your first tutor to get started.</p>
         </div>
@@ -54,7 +54,7 @@ export default async function TutorsPage() {
               <Link
                 key={t.id}
                 href={`/admin/tutors/${t.id}`}
-                className="flex items-start justify-between gap-3 bg-white rounded-lg border border-border p-4 hover:bg-muted/20 transition-colors"
+                className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
               >
                 <div className="min-w-0">
                   <p className="font-medium truncate">{t.legal_name}</p>
@@ -78,7 +78,7 @@ export default async function TutorsPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
               <thead className="border-b border-border bg-muted/40">
                 <tr>

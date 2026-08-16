@@ -75,7 +75,7 @@ export default function StudentRateOverrides({
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
         Student rate overrides
       </h2>
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         {overrides.length === 0 ? (
           <p className="px-4 py-4 text-sm text-muted-foreground">
             No custom rates set. All students use the tutor&apos;s standard mode rate.

@@ -47,7 +47,7 @@ export default async function PaymentsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         {rows.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
             No payments recorded yet. They'll appear here as Stripe invoices are processed.

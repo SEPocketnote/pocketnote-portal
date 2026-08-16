@@ -41,7 +41,7 @@ export default function EditParentForm({
   }
 
   return (
-    <section className="bg-white rounded-lg border border-border p-6">
+    <section className="bg-white rounded-2xl shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Details</h2>
         {!editing && (

@@ -36,7 +36,7 @@ export default async function AdminMessagesPage() {
       <h1 className="text-2xl font-semibold mb-6">Messages</h1>
 
       {!bookings?.length ? (
-        <div className="bg-white rounded-lg border border-border p-10 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-md p-10 text-center text-sm text-muted-foreground">
           No bookings yet.
         </div>
       ) : (
@@ -44,7 +44,7 @@ export default async function AdminMessagesPage() {
           {withMessages.length > 0 && (
             <section>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Active threads</p>
-              <div className="bg-white rounded-lg border border-border divide-y divide-border">
+              <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
                 {withMessages.map((b: any) => {
                   const msgs = msgsByBooking[b.id] ?? []
                   const last = msgs[0]
@@ -80,7 +80,7 @@ export default async function AdminMessagesPage() {
           {withoutMessages.length > 0 && (
             <section>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">No messages yet</p>
-              <div className="bg-white rounded-lg border border-border divide-y divide-border">
+              <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
                 {withoutMessages.map((b: any) => (
                   <Link
                     key={b.id}

@@ -103,7 +103,7 @@ function UserTable({ users, meId, showAdminActions }: {
 }) {
   if (!users.length) {
     return (
-      <div className="bg-white rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">
+      <div className="bg-white rounded-2xl shadow-md p-6 text-center text-sm text-muted-foreground">
         None yet.
       </div>
     )
@@ -115,7 +115,7 @@ function UserTable({ users, meId, showAdminActions }: {
         {users.map((u: any) => {
           const isSelf = u.id === meId
           return (
-            <div key={u.id} className="bg-white rounded-lg border border-border p-4">
+            <div key={u.id} className="bg-white rounded-2xl shadow-md p-4">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   <p className="font-medium truncate">{u.name ?? u.email}</p>
@@ -140,7 +140,7 @@ function UserTable({ users, meId, showAdminActions }: {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block bg-white rounded-lg border border-border overflow-hidden overflow-x-auto">
+      <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="border-b border-border bg-muted/40">

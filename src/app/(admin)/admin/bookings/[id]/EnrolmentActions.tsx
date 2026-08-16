@@ -71,7 +71,7 @@ export default function EnrolmentActions({
   if (currentStatus === 'cancelled' || currentStatus === 'completed') return null
 
   return (
-    <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+    <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Enrolment actions</h2>
 
       <div className="space-y-3">

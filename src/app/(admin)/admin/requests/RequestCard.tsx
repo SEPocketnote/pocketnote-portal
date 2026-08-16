@@ -63,7 +63,7 @@ export default function RequestCard({
     : null
 
   return (
-    <div className="bg-white rounded-lg border border-border p-5 space-y-4">
+    <div className="bg-white rounded-2xl shadow-md p-5 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
