@@ -582,7 +582,7 @@ export default function OnboardingFlow({
             <div className="space-y-2">
               <p className="text-sm font-medium">Government-issued photo ID <span className="text-destructive">*</span></p>
               <p className="text-xs text-muted-foreground">
-                e.g. driver&apos;s licence (front), passport, proof of age card, or Medicare card
+                e.g. driver&apos;s licence (front), passport, or proof of age card
               </p>
               {licenceUploaded ? (
                 <div className="flex items-center gap-3">
