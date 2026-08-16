@@ -9,7 +9,6 @@ import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
 import EnrolmentActions from './EnrolmentActions'
 import CancelAllSessions from './CancelAllSessions'
-import RecordPaymentButton from './RecordPaymentButton'
 
 function scheduleLabel(booking: any) {
   const type = booking.schedule_type
@@ -184,7 +183,6 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         ) : (
           <p className="text-xs text-muted-foreground mb-1">No payments recorded yet.</p>
         )}
-        <RecordPaymentButton bookingId={id} />
       </section>
 
       {/* Enrolment actions */}
