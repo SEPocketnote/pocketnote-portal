@@ -31,7 +31,9 @@ export async function POST(request: Request) {
       ? invoice.subscription
       : invoice.subscription?.id ?? null
 
-    // Resolve booking: subscription takes priority, metadata.booking_id is the fallback for ad-hoc invoices
+    // Resolve booking:
+    // 1. Subscription invoice → match via stripe_subscription_id on booking
+    // 2. One-off invoice → match via stripe_customer_id on parent → most recent confirmed booking
     let bookingId: string | null = null
 
     if (subscriptionId) {
@@ -42,8 +44,29 @@ export async function POST(request: Request) {
         .single()
       if (booking) bookingId = booking.id
       else console.warn('[stripe-webhook] no booking found for subscription', subscriptionId)
-    } else if (invoice.metadata?.booking_id) {
-      bookingId = invoice.metadata.booking_id
+    } else {
+      const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null
+      if (customerId) {
+        const { data: parent } = await admin
+          .from('parents')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .single()
+        if (parent) {
+          const { data: booking } = await admin
+            .from('bookings')
+            .select('id')
+            .eq('parent_id', parent.id)
+            .eq('status', 'confirmed')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          if (booking) bookingId = booking.id
+          else console.warn('[stripe-webhook] no confirmed booking for parent', parent.id)
+        } else {
+          console.warn('[stripe-webhook] no parent found for customer', customerId)
+        }
+      }
     }
 
     if (!bookingId) return NextResponse.json({ ok: true })
@@ -61,7 +84,7 @@ export async function POST(request: Request) {
         paid_at: isPaid ? paidAt : null,
         stripe_charge_id: isPaid ? chargeId : null,
         stripe_invoice_id: invoice.id,
-        method: 'stripe_subscription',
+        method: subscriptionId ? 'stripe_subscription' : 'stripe_invoice',
       },
       { onConflict: 'stripe_invoice_id', ignoreDuplicates: false }
     )
