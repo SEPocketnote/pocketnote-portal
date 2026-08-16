@@ -89,6 +89,7 @@ function CardForm() {
       return
     }
 
+    window.dispatchEvent(new Event('pn:gate-complete'))
     router.refresh()
   }
 
@@ -116,6 +117,7 @@ function TosOnlyForm() {
     setLoading(true)
     const res = await fetch('/api/parent/accept-tos', { method: 'POST' })
     if (res.ok) {
+      window.dispatchEvent(new Event('pn:gate-complete'))
       router.refresh()
     } else {
       setError('Failed to save. Please try again.')
@@ -174,7 +176,7 @@ export default function SetupGateModal({ hasCard }: { hasCard: boolean }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div id="pn-setup-gate" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 max-h-[90vh] overflow-y-auto">
 
         <div className="text-center mb-6">

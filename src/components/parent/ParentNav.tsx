@@ -86,6 +86,11 @@ function useTour() {
 
   useEffect(() => {
     if (localStorage.getItem(TOUR_KEY)) return
+    if (document.getElementById('pn-setup-gate')) {
+      const onGateDone = () => setTimeout(startTour, 600)
+      window.addEventListener('pn:gate-complete', onGateDone, { once: true })
+      return () => window.removeEventListener('pn:gate-complete', onGateDone)
+    }
     const t = setTimeout(startTour, 800)
     return () => clearTimeout(t)
   }, [startTour])
