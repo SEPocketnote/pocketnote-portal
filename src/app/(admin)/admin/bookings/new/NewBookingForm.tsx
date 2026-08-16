@@ -483,7 +483,7 @@ export default function NewBookingForm({
       {parentResolved && (
         <button type="submit" disabled={loading}
           className="w-full bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50">
-          {loading ? 'Creating enrolment…' : 'Create enrolment & send welcome email'}
+          {loading ? 'Creating enrolment…' : 'Create enrolment'}
         </button>
       )}
     </form>
