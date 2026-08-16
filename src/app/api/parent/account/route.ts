@@ -7,7 +7,10 @@ function isValidAuPhone(value: string): boolean {
   return /^(\+?61[2-9]\d{8}|0[2-9]\d{8})$/.test(digits)
 }
 
-const AU_STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT']
+const AU_TIMEZONES = [
+  'Australia/Sydney', 'Australia/Brisbane', 'Australia/Adelaide',
+  'Australia/Perth', 'Australia/Darwin', 'Australia/Hobart',
+]
 
 const Schema = z.object({
   name: z.string().min(1),
@@ -15,9 +18,9 @@ const Schema = z.object({
     v => !v || isValidAuPhone(v),
     { message: 'Please enter a valid Australian phone number' }
   ),
-  state: z.string().optional().refine(
-    v => !v || AU_STATES.includes(v),
-    { message: 'Invalid state' }
+  timezone: z.string().optional().refine(
+    v => !v || AU_TIMEZONES.includes(v),
+    { message: 'Invalid timezone' }
   ),
 })
 
@@ -32,7 +35,7 @@ export async function PATCH(request: Request) {
 
   const updates: Record<string, any> = { name: parsed.data.name }
   updates.phone = parsed.data.phone || null
-  updates.state = parsed.data.state || null
+  updates.timezone = parsed.data.timezone || null
 
   const { error } = await supabase
     .from('parents')

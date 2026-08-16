@@ -12,7 +12,7 @@ export default async function ParentDashboard() {
 
   const { data: parent } = await supabase
     .from('parents')
-    .select('id, name, state')
+    .select('id, name, state, timezone')
     .eq('user_id', user!.id)
     .single()
 
@@ -65,15 +65,12 @@ export default async function ParentDashboard() {
 
   const nextSession = upcomingSessions[0]
   const firstName = parent.name.split(' ')[0]
-  // Use parent's own state for display timezone; fall back to next session's tutor state
-  const nextTz = parent.state
-    ? stateToTimezone(parent.state)
-    : nextSession ? stateToTimezone(tutorMap[(nextSession.booking as any).tutor_id]?.state) : 'Australia/Sydney'
+  // Use parent's own timezone; fall back to tutor's state timezone for backwards compat
+  const nextTz = (parent as any).timezone
+    ?? (nextSession ? stateToTimezone(tutorMap[(nextSession.booking as any).tutor_id]?.state) : 'Australia/Sydney')
 
-  // Parent's own timezone takes priority; fall back to first tutor's state
-  const parentTz = parent.state
-    ? stateToTimezone(parent.state)
-    : (tutorRows ?? []).length > 0 ? stateToTimezone((tutorRows ?? [])[0].state) : 'Australia/Sydney'
+  const parentTz = (parent as any).timezone
+    ?? ((tutorRows ?? []).length > 0 ? stateToTimezone((tutorRows ?? [])[0].state) : 'Australia/Sydney')
   const calendarTz = parentTz
   const calendarSessions = upcomingSessions.map(s => ({
     scheduled_at: s.scheduled_at,
@@ -242,9 +239,8 @@ export default async function ParentDashboard() {
             ) : (
               <div className="divide-y divide-border/50">
                 {upcomingSessions.map((s) => {
-                  const tz = parent.state
-                    ? stateToTimezone(parent.state)
-                    : stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
+                  const tz = (parent as any).timezone
+                    ?? stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
                   const sessionLabel = formatSessionDateShortTime(s.scheduled_at, tz)
                   const isToday = isTodayInTz(s.scheduled_at, tz)
                   return (

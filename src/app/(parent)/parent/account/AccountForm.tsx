@@ -9,29 +9,27 @@ function validateAuPhone(value: string): boolean {
   return /^(\+?61[2-9]\d{8}|0[2-9]\d{8})$/.test(digits)
 }
 
-const AU_STATES = [
-  { value: 'NSW', label: 'New South Wales' },
-  { value: 'VIC', label: 'Victoria' },
-  { value: 'QLD', label: 'Queensland' },
-  { value: 'SA',  label: 'South Australia' },
-  { value: 'WA',  label: 'Western Australia' },
-  { value: 'TAS', label: 'Tasmania' },
-  { value: 'ACT', label: 'Australian Capital Territory' },
-  { value: 'NT',  label: 'Northern Territory' },
+const AU_TIMEZONES = [
+  { value: 'Australia/Sydney',    label: 'Sydney / Melbourne / Canberra (AEDT/AEST)' },
+  { value: 'Australia/Brisbane',  label: 'Brisbane / Queensland (AEST, no daylight saving)' },
+  { value: 'Australia/Adelaide',  label: 'Adelaide / South Australia (ACDT/ACST)' },
+  { value: 'Australia/Perth',     label: 'Perth / Western Australia (AWST)' },
+  { value: 'Australia/Darwin',    label: 'Darwin / Northern Territory (ACST, no daylight saving)' },
+  { value: 'Australia/Hobart',    label: 'Hobart / Tasmania (AEDT/AEST)' },
 ]
 
-export default function AccountForm({ name, email, phone, state }: {
+export default function AccountForm({ name, email, phone, timezone }: {
   name: string
   email: string
   phone: string
-  state: string
+  timezone: string
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
   const [phoneError, setPhoneError] = useState('')
-  const [form, setForm] = useState({ name, phone, state })
+  const [form, setForm] = useState({ name, phone, timezone })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -47,7 +45,7 @@ export default function AccountForm({ name, email, phone, state }: {
       const res = await fetch('/api/parent/account', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name: form.name, phone: form.phone, timezone: form.timezone }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
@@ -79,11 +77,11 @@ export default function AccountForm({ name, email, phone, state }: {
         {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">State</label>
-        <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}>
-          <option value="">Select state…</option>
-          {AU_STATES.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+        <label className="block text-sm font-medium mb-1">Timezone</label>
+        <select className="input" value={form.timezone} onChange={e => setForm({ ...form, timezone: e.target.value })}>
+          <option value="">Select timezone…</option>
+          {AU_TIMEZONES.map(t => (
+            <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </select>
         <p className="text-xs text-muted-foreground mt-1">Used to show session times in your local timezone</p>
