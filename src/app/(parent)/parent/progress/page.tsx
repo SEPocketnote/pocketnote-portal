@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { stateToTimezone, formatSessionDateFullYear } from '@/lib/timezone'
 
 export default async function ProgressPage() {
@@ -8,68 +8,82 @@ export default async function ProgressPage() {
 
   const { data: parent } = await supabase
     .from('parents')
-    .select('id')
+    .select('id, timezone')
     .eq('user_id', user!.id)
     .single()
 
-  const { data: reports } = parent
+  const now = new Date().toISOString()
+
+  const { data: sessions } = parent
     ? await supabase
-        .from('progress_reports')
+        .from('sessions')
         .select(`
-          id, covered, went_well, needs_work, next_session_plan, notes, internal_rating, submitted_at,
-          sessions ( scheduled_at, bookings ( students ( name ), tutors ( legal_name, preferred_name, state ) ) )
+          id, scheduled_at, status,
+          progress_reports ( id, covered, went_well, needs_work, next_session_plan, notes, internal_rating, submitted_at ),
+          bookings!inner (
+            students ( name ),
+            tutors ( legal_name, preferred_name, state )
+          )
         `)
-        .eq('sessions.bookings.parent_id', parent.id)
-        .order('submitted_at', { ascending: false })
+        .lt('scheduled_at', now)
+        .neq('status', 'cancelled')
+        .order('scheduled_at', { ascending: false })
+        .limit(50)
     : { data: [] }
+
+  const rows = (sessions ?? []).map((s: any) => ({
+    session: s,
+    report: Array.isArray(s.progress_reports) ? s.progress_reports[0] ?? null : s.progress_reports ?? null,
+    booking: s.bookings,
+  }))
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Progress Reports</h1>
 
-      {!reports?.length ? (
+      {!rows.length ? (
         <div className="bg-white rounded-lg border border-border p-10 text-center">
-          <p className="font-medium mb-1">No reports yet</p>
+          <p className="font-medium mb-1">No sessions yet</p>
           <p className="text-sm text-muted-foreground">
             Reports will appear here after each session.
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {reports.map((r) => {
-            const session = r.sessions as any
-            const booking = session?.bookings as any
+          {rows.map(({ session, report, booking }) => {
+            const tz = (parent as any)?.timezone ?? stateToTimezone(booking?.tutors?.state)
+            const tutorName = booking?.tutors?.preferred_name?.trim() || booking?.tutors?.legal_name
             return (
-              <div key={r.id} className="bg-white rounded-lg border border-border p-6">
+              <div key={session.id} className="bg-white rounded-lg border border-border p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="font-semibold">
-                      {booking?.students?.name ?? 'Student'}
-                    </p>
+                    <p className="font-semibold">{booking?.students?.name ?? 'Student'}</p>
                     <p className="text-sm text-muted-foreground">
-                      {session?.scheduled_at
-                        ? formatSessionDateFullYear(session.scheduled_at, stateToTimezone(booking?.tutors?.state))
-                        : ''}
-                      {booking?.tutors?.legal_name
-                        ? ` · with ${(booking.tutors as any).preferred_name?.trim() || booking.tutors.legal_name}`
-                        : ''}
+                      {formatSessionDateFullYear(session.scheduled_at, tz)}
+                      {tutorName ? ` · with ${tutorName}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-4">
-                    {r.internal_rating ? <RatingPill rating={r.internal_rating} /> : null}
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(r.submitted_at), 'd MMM')}
-                    </span>
+                    {report
+                      ? report.internal_rating
+                        ? <RatingPill rating={report.internal_rating} />
+                        : null
+                      : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Waiting on tutor</span>
+                    }
                   </div>
                 </div>
 
-                <div className="space-y-3 text-sm">
-                  {r.covered && <ReportRow label="What we covered" value={r.covered} />}
-                  {r.went_well && <ReportRow label="What went well" value={r.went_well} />}
-                  {r.needs_work && <ReportRow label="Areas to work on" value={r.needs_work} />}
-                  {r.next_session_plan && <ReportRow label="Plan for next session" value={r.next_session_plan} />}
-                  {r.notes && <ReportRow label="Additional notes" value={r.notes} />}
-                </div>
+                {report ? (
+                  <div className="space-y-3 text-sm">
+                    {report.covered && <ReportRow label="What we covered" value={report.covered} />}
+                    {report.went_well && <ReportRow label="What went well" value={report.went_well} />}
+                    {report.needs_work && <ReportRow label="Areas to work on" value={report.needs_work} />}
+                    {report.next_session_plan && <ReportRow label="Plan for next session" value={report.next_session_plan} />}
+                    {report.notes && <ReportRow label="Additional notes" value={report.notes} />}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Your tutor hasn&apos;t submitted a report for this session yet.</p>
+                )}
               </div>
             )
           })}

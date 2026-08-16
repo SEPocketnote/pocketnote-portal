@@ -63,6 +63,13 @@ export default async function ParentDashboard() {
       .map((s) => ({ ...s, booking: b }))
   ).sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()) ?? []
 
+  const pastSessions = bookings?.flatMap((b) =>
+    (b.sessions as any[])
+      .filter((s) => !isFuture(new Date(s.scheduled_at)) && s.status !== 'cancelled')
+      .map((s) => ({ ...s, booking: b }))
+  ).sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())
+  .slice(0, 5) ?? []
+
   const nextSession = upcomingSessions[0]
   const firstName = parent.name.split(' ')[0]
   // Use parent's own timezone; fall back to tutor's state timezone for backwards compat
@@ -273,6 +280,43 @@ export default async function ParentDashboard() {
               </div>
             )}
           </div>
+
+          {/* Past Sessions */}
+          {pastSessions.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border">
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm leading-tight">Past sessions</h2>
+                  <p className="text-[11px] text-muted-foreground">Last {pastSessions.length}</p>
+                </div>
+              </div>
+              <div className="divide-y divide-border/50">
+                {pastSessions.map((s) => {
+                  const tz = (parent as any).timezone
+                    ?? stateToTimezone(tutorMap[(s.booking as any).tutor_id]?.state)
+                  return (
+                    <div key={s.id} className="flex items-center justify-between px-5 py-3">
+                      <div>
+                        <p className="text-sm font-medium">{formatSessionDateShortTime(s.scheduled_at, tz)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(s.booking.students as any)?.name}
+                          {' · '}{tutorNames[(s.booking as any).tutor_id] ?? 'TBC'}
+                        </p>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        s.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {s.status}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
         </div>
 
