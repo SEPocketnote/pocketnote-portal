@@ -42,8 +42,38 @@ export async function POST(request: Request) {
         .select('id')
         .eq('stripe_subscription_id', subscriptionId)
         .single()
-      if (booking) bookingId = booking.id
-      else console.warn('[stripe-webhook] no booking found for subscription', subscriptionId)
+      if (booking) {
+        bookingId = booking.id
+      } else {
+        // Race condition: subscription_id not yet written to DB (fires before complete-setup commits).
+        // Fall back to customer → most recent unlinked recurring booking and heal the missing ID.
+        const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null
+        if (customerId) {
+          const { data: parent } = await admin
+            .from('parents')
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .single()
+          if (parent) {
+            const { data: fallback } = await admin
+              .from('bookings')
+              .select('id')
+              .eq('parent_id', parent.id)
+              .eq('status', 'confirmed')
+              .in('schedule_type', ['weekly', 'fortnightly'])
+              .is('stripe_subscription_id', null)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
+            if (fallback) {
+              bookingId = fallback.id
+              // Heal the race: store the subscription ID so future webhooks resolve correctly
+              await admin.from('bookings').update({ stripe_subscription_id: subscriptionId }).eq('id', fallback.id)
+            }
+          }
+        }
+        if (!bookingId) console.warn('[stripe-webhook] no booking found for subscription', subscriptionId)
+      }
     } else {
       const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null
       if (customerId) {
