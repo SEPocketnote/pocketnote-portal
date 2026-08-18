@@ -29,7 +29,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .from('bookings')
       .select(`
         id, status, mode, location, start_date, schedule_type, sessions_count, recurrence_end_date,
-        stripe_subscription_id,
+        stripe_subscription_id, rate_cents_snapshot,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
         tutors ( id, legal_name, preferred_name, email, state )
@@ -223,6 +223,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 status={session.status}
                 durationMinutes={session.duration_minutes ?? 60}
                 timezone={tutorTimezone}
+                rateCentsSnapshot={(booking as any).rate_cents_snapshot ?? null}
                 report={(session as any).progress_reports ?? null}
               />
             ))}

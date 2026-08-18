@@ -75,28 +75,9 @@ export async function POST(request: Request) {
         if (!bookingId) console.warn('[stripe-webhook] no booking found for subscription', subscriptionId)
       }
     } else {
-      const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? null
-      if (customerId) {
-        const { data: parent } = await admin
-          .from('parents')
-          .select('id')
-          .eq('stripe_customer_id', customerId)
-          .single()
-        if (parent) {
-          const { data: booking } = await admin
-            .from('bookings')
-            .select('id')
-            .eq('parent_id', parent.id)
-            .eq('status', 'confirmed')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
-          if (booking) bookingId = booking.id
-          else console.warn('[stripe-webhook] no confirmed booking for parent', parent.id)
-        } else {
-          console.warn('[stripe-webhook] no parent found for customer', customerId)
-        }
-      }
+      // One-off invoice with no subscription — not auto-matched.
+      // These are reconciled manually via the "Record payment" flow on the booking detail page.
+      console.info('[stripe-webhook] skipping one-off invoice (no subscription id):', invoice.id)
     }
 
     if (!bookingId) return NextResponse.json({ ok: true })
