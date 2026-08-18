@@ -6,7 +6,7 @@ const T_NAME = 'James Chen', T_FIRST = 'James', T_EMAIL = 'james@example.com'
 const S_NAME = 'Emma Johnson'
 const SESSION_DT = 'Thursday, 14 Aug 2026 at 4:00 PM'
 const LOCATION = '22 Park Street, Bondi NSW 2026'
-const SITE = 'https://pocketnote-portal.vercel.app'
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 const LINK = '#sample-magic-link'
 
 // ─── Shared fragments ───────────────────────────────────────────────────────
