@@ -61,7 +61,7 @@ export default function InvoiceForm({
   return (
     <div className="space-y-6">
       {/* Session list */}
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions included</p>
         </div>
@@ -86,7 +86,7 @@ export default function InvoiceForm({
       </div>
 
       {/* Totals */}
-      <div className="bg-white rounded-lg border border-border p-5">
+      <div className="bg-white rounded-2xl shadow-md p-5">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Sessions</span>
@@ -142,7 +142,7 @@ export default function InvoiceForm({
         <button onClick={submit} disabled={submitting} className="btn btn-primary disabled:opacity-50">
           {submitting ? 'Submitting…' : 'Submit Invoice'}
         </button>
-        <a href="/tutor/earnings" className="btn">Cancel</a>
+        <button type="button" onClick={() => { window.location.href = '/tutor/earnings' }} className="btn">Cancel</button>
       </div>
     </div>
   )

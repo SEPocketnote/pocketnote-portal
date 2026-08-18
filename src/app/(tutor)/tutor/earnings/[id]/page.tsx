@@ -1,36 +1,46 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import { stateToTimezone, formatSessionFull } from '@/lib/timezone'
-import InvoiceActions from './InvoiceActions'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminInvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+const STATUS_STYLES: Record<string, string> = {
+  submitted: 'bg-amber-100 text-amber-700',
+  approved: 'bg-blue-100 text-blue-700',
+  paid: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700',
+}
+
+export default async function TutorInvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) redirect('/login')
 
-  const admin = createAdminClient()
+  const { data: tutor } = await supabase
+    .from('tutors')
+    .select('id, state')
+    .eq('user_id', user.id)
+    .single()
 
-  const { data: invoice } = await admin
+  if (!tutor) redirect('/tutor/earnings')
+
+  // RLS ensures tutors can only read their own invoices
+  const { data: invoice } = await supabase
     .from('invoices')
     .select('*')
     .eq('id', id)
+    .eq('tutor_id', tutor.id)
     .single()
 
   if (!invoice) notFound()
 
-  // Get tutor
-  const { data: tutor } = await admin
-    .from('tutors')
-    .select('id, legal_name, email, state')
-    .eq('id', invoice.tutor_id)
-    .single()
+  const admin = createAdminClient()
+  const tz = stateToTimezone(tutor.state)
 
-  // Get sessions in this invoice
   const { data: invoiceSessions } = await admin
     .from('invoice_sessions')
     .select('session_id')
@@ -58,51 +68,24 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
     }))
   }
 
-  const tutorTz = stateToTimezone(tutor?.state)
   const hrs = Math.floor(invoice.total_minutes / 60)
   const mins = invoice.total_minutes % 60
 
-  const STATUS_STYLES: Record<string, string> = {
-    submitted: 'bg-amber-100 text-amber-700',
-    approved: 'bg-blue-100 text-blue-700',
-    paid: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
-  }
-
   return (
-    <div className="max-w-2xl">
-      <div className="mb-6">
-        <a href="/admin/invoices" className="text-sm text-muted-foreground hover:text-primary">← Back to invoices</a>
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <Link href="/tutor/earnings" className="text-sm text-muted-foreground hover:text-primary">← Back to earnings</Link>
       </div>
 
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">{tutor?.legal_name ?? '—'}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{tutor?.email}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {(invoice.status === 'approved' || invoice.status === 'paid') && (
-            <a
-              href={`/api/admin/invoices/${id}/pdf`}
-              className="btn text-sm px-3 py-1.5 flex items-center gap-1.5"
-              download
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Download PDF
-            </a>
-          )}
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_STYLES[invoice.status] ?? 'bg-muted text-muted-foreground'}`}>
-            {invoice.status}
-          </span>
-        </div>
+      <div className="flex items-start justify-between">
+        <h1 className="text-2xl font-semibold">Invoice</h1>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_STYLES[invoice.status] ?? 'bg-muted text-muted-foreground'}`}>
+          {invoice.status}
+        </span>
       </div>
 
-      {/* Invoice summary */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-3 mb-4">
+      {/* Invoice details */}
+      <section className="bg-white rounded-2xl shadow-md p-6 space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Invoice details</h2>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <div>
@@ -140,7 +123,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
         </dl>
         {invoice.notes && (
           <div className="border-t border-border pt-3">
-            <p className="text-xs text-muted-foreground mb-1">Tutor notes</p>
+            <p className="text-xs text-muted-foreground mb-1">Your notes</p>
             <p className="text-sm">{invoice.notes}</p>
           </div>
         )}
@@ -153,7 +136,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
       </section>
 
       {/* Sessions list */}
-      <section className="bg-white rounded-2xl shadow-md overflow-hidden mb-4">
+      <section className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="px-5 py-3 border-b border-border bg-muted/30">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions</p>
         </div>
@@ -163,7 +146,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
               <div>
                 <p className="text-sm font-medium">{s.student_name ?? '—'}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatSessionFull(s.scheduled_at, tutorTz)}
+                  {formatSessionFull(s.scheduled_at, tz)}
                 </p>
               </div>
               <div className="text-right shrink-0">
@@ -176,14 +159,6 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
           ))}
         </div>
       </section>
-
-      {/* Status management + admin notes */}
-      <InvoiceActions
-        invoiceId={id}
-        status={invoice.status}
-        adminNotes={invoice.admin_notes ?? ''}
-        rejectionReason={invoice.rejection_reason ?? null}
-      />
     </div>
   )
 }

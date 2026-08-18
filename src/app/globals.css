@@ -41,6 +41,12 @@
   .input {
     @apply w-full border border-input rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring;
   }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 border border-border rounded-md px-4 py-2 text-sm font-medium bg-white transition-colors hover:bg-muted/40 cursor-pointer select-none;
+  }
+  .btn-primary {
+    @apply bg-primary text-primary-foreground border-primary hover:bg-primary hover:opacity-90;
+  }
 }
 
 /* ── Driver.js tour overrides ──────────────────────────────────────────── */

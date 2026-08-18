@@ -20,6 +20,7 @@ export default function InvoiceActions({
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes)
   const [paidAt, setPaidAt] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Rejection flow
@@ -208,15 +209,23 @@ export default function InvoiceActions({
           className="input min-h-[80px] resize-y"
           placeholder="Internal notes visible to admins only…"
           value={adminNotes}
-          onChange={e => setAdminNotes(e.target.value)}
+          onChange={e => { setAdminNotes(e.target.value); setNotesSaved(false) }}
         />
-        <button
-          onClick={() => update({ admin_notes: adminNotes })}
-          disabled={saving}
-          className="btn text-xs px-3 py-1.5 mt-2 disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Save notes'}
-        </button>
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            onClick={async () => {
+              const ok = await update({ admin_notes: adminNotes })
+              if (ok) setNotesSaved(true)
+            }}
+            disabled={saving}
+            className="btn text-xs px-3 py-1.5 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save notes'}
+          </button>
+          {notesSaved && (
+            <span className="text-xs text-green-600 font-medium">Saved</span>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-xs text-red-600">{error}</p>}

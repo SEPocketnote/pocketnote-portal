@@ -274,7 +274,7 @@ export default async function TutorEarningsPage() {
         ) : (
           <div className="bg-white rounded-2xl shadow-md divide-y divide-border/50">
             {invoices.map((inv) => (
-              <div key={inv.id} className="px-5 py-4">
+              <Link key={inv.id} href={`/tutor/earnings/${inv.id}`} className="block px-5 py-4 hover:bg-muted/20 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">
@@ -298,7 +298,7 @@ export default async function TutorEarningsPage() {
                     <span className="font-semibold">Reason: </span>{inv.rejection_reason}
                   </div>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         )}
