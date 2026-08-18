@@ -36,6 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   await admin.from('payments').insert({
     booking_id: session.booking_id,
+    session_id: sessionId,
     amount: amountCents,
     status: 'paid',
     paid_at: new Date(paidAt).toISOString(),

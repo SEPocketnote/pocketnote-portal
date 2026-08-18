@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { stateToTimezone, formatTime } from '@/lib/timezone'
+import { stateToTimezone, formatTime, formatSessionFull } from '@/lib/timezone'
 import { stripe } from '@/lib/stripe'
 import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
@@ -42,7 +42,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
     admin.from('tutors').select('id, legal_name, preferred_name').eq('active', true).order('legal_name'),
-    admin.from('payments').select('id, amount, status, paid_at, created_at, method, notes, stripe_invoice_id, stripe_charge_id').eq('booking_id', id).order('created_at', { ascending: false }).limit(10),
+    admin.from('payments').select('id, amount, status, paid_at, created_at, method, notes, stripe_invoice_id, stripe_charge_id, session_id').eq('booking_id', id).order('created_at', { ascending: false }).limit(10),
   ])
 
   // Fetch Stripe subscription status if one exists
@@ -159,7 +159,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               }
               const methodLabel = METHOD_LABEL[p.method] ?? p.method ?? 'Payment'
               const ref = p.stripe_invoice_id || p.stripe_charge_id || null
-              const refShort = ref ? ref.slice(0, 16) + (ref.length > 16 ? '…' : '') : null
+              const refShort = ref ? ref.slice(0, 20) + (ref.length > 20 ? '…' : '') : null
+              const linkedSession = p.session_id
+                ? (sessions ?? []).find((s: any) => s.id === p.session_id)
+                : null
               return (
                 <div key={p.id} className="py-3 text-xs">
                   <div className="flex items-center justify-between">
@@ -170,11 +173,17 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                       }`} />
                       <div>
                         <span className="font-medium">{methodLabel}</span>
-                        <span className="text-muted-foreground ml-2">
-                          {p.paid_at
-                            ? format(new Date(p.paid_at), 'd MMM yyyy')
-                            : format(new Date(p.created_at), 'd MMM yyyy')}
-                        </span>
+                        {linkedSession ? (
+                          <span className="text-muted-foreground ml-2">
+                            {formatSessionFull(linkedSession.scheduled_at, tutorTimezone)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground ml-2">
+                            {p.paid_at
+                              ? format(new Date(p.paid_at), 'd MMM yyyy')
+                              : format(new Date(p.created_at), 'd MMM yyyy')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
