@@ -2,6 +2,13 @@ import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { format } from 'date-fns'
 import { stateToTimezone, formatSessionFull } from '@/lib/timezone'
 
+const POCKETNOTE = {
+  name: 'Pocketnote',
+  abn: '91 693 195 836',
+  email: 'accounts@pocketnote.com.au',
+  phone: '0485 883 221',
+}
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
@@ -11,31 +18,80 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     paddingHorizontal: 48,
   },
-  header: {
+  // Invoice title block (top)
+  titleBlock: {
+    marginBottom: 28,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 32,
-  },
-  brand: {
-    fontSize: 18,
-    fontFamily: 'Helvetica-Bold',
-    color: '#be5a5a',
   },
   invoiceTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Helvetica-Bold',
+    color: '#111827',
     marginBottom: 4,
+  },
+  invoiceMeta: {
+    fontSize: 9,
+    color: '#6b7280',
+    marginBottom: 2,
   },
   statusPill: {
     fontSize: 9,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
-    backgroundColor: '#dbeafe',
-    color: '#1d4ed8',
     alignSelf: 'flex-start',
-    marginTop: 4,
+    marginTop: 6,
+  },
+  // Party cards — side by side
+  partiesRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
+  },
+  partyCard: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    borderRadius: 6,
+    padding: 14,
+  },
+  partyCardHighlight: {
+    flex: 1,
+    backgroundColor: '#fef2f2',
+    borderRadius: 6,
+    padding: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: '#be5a5a',
+  },
+  partyLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  partyLabelHighlight: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#be5a5a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  partyName: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 3,
+  },
+  partyDetail: {
+    fontSize: 9,
+    color: '#6b7280',
+    marginBottom: 2,
   },
   sectionTitle: {
     fontSize: 8,
@@ -106,9 +162,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
-  colDate: { width: '35%' },
-  colStudent: { width: '25%' },
-  colDuration: { width: '15%', textAlign: 'right' },
+  colDate: { width: '30%' },
+  colStudent: { width: '20%' },
+  colMode: { width: '12%' },
+  colDuration: { width: '13%', textAlign: 'right' },
   colRate: { width: '12%', textAlign: 'right' },
   colAmount: { width: '13%', textAlign: 'right' },
   footer: {
@@ -134,6 +191,7 @@ type Session = {
   duration_minutes: number | null
   student_name: string | null
   rate_cents: number | null
+  mode?: string | null
 }
 
 type Invoice = {
@@ -191,15 +249,21 @@ export function InvoicePDF({
     return Math.round(((s.duration_minutes ?? 60) / 60) * rate)
   }
 
+  function formatMode(mode?: string | null): string {
+    if (!mode) return '—'
+    return mode === 'in-person' ? 'In-person' : 'Online'
+  }
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.brand}>Pocketnote</Text>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.invoiceTitle}>{invoiceTitle} #{shortId}</Text>
-            <Text style={{ fontSize: 9, color: '#6b7280' }}>
+
+        {/* Invoice title + reference */}
+        <View style={styles.titleBlock}>
+          <View>
+            <Text style={styles.invoiceTitle}>{invoiceTitle}</Text>
+            <Text style={styles.invoiceMeta}>#{shortId}</Text>
+            <Text style={styles.invoiceMeta}>
               Submitted {format(new Date(invoice.submitted_at), 'd MMM yyyy')}
             </Text>
             <View style={[styles.statusPill, { backgroundColor: statusColor.bg }]}>
@@ -208,37 +272,45 @@ export function InvoicePDF({
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Tutor */}
-        <Text style={styles.sectionTitle}>Tutor</Text>
-        <View style={styles.card}>
-          <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 11, marginBottom: 4 }}>
-            {tutor?.legal_name ?? '—'}
-          </Text>
-          {tutor?.email ? (
-            <Text style={{ color: '#6b7280', fontSize: 9, marginBottom: 2 }}>{tutor.email}</Text>
-          ) : null}
-          {tutor?.phone ? (
-            <Text style={{ color: '#6b7280', fontSize: 9, marginBottom: 2 }}>{tutor.phone}</Text>
-          ) : null}
-          {tutor?.abn ? (
-            <Text style={{ color: '#6b7280', fontSize: 9, marginBottom: 2 }}>ABN: {tutor.abn}</Text>
-          ) : null}
-          {gstRegistered ? (
-            <Text style={{ color: '#059669', fontSize: 9, marginTop: 2 }}>GST Registered</Text>
-          ) : null}
-        </View>
-
-        {/* Invoice details */}
-        <Text style={styles.sectionTitle}>Invoice details</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Period</Text>
-            <Text style={styles.value}>
-              {format(new Date(invoice.period_start), 'd MMM yyyy')} – {format(new Date(invoice.period_end), 'd MMM yyyy')}
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.invoiceMeta}>
+              Period: {format(new Date(invoice.period_start), 'd MMM')} – {format(new Date(invoice.period_end), 'd MMM yyyy')}
             </Text>
+            {invoice.paid_at ? (
+              <Text style={styles.invoiceMeta}>
+                Paid: {format(new Date(invoice.paid_at), 'd MMM yyyy')}
+              </Text>
+            ) : null}
           </View>
+        </View>
+
+        {/* Parties — ISSUED BY (tutor) | ISSUED TO (Pocketnote) */}
+        <View style={styles.partiesRow}>
+          {/* Issued by — tutor */}
+          <View style={styles.partyCardHighlight}>
+            <Text style={styles.partyLabelHighlight}>Issued by</Text>
+            <Text style={styles.partyName}>{tutor?.legal_name ?? '—'}</Text>
+            {tutor?.email ? <Text style={styles.partyDetail}>{tutor.email}</Text> : null}
+            {tutor?.phone ? <Text style={styles.partyDetail}>{tutor.phone}</Text> : null}
+            {tutor?.abn ? <Text style={styles.partyDetail}>ABN: {tutor.abn}</Text> : null}
+            {gstRegistered ? (
+              <Text style={{ ...styles.partyDetail, color: '#059669', marginTop: 3 }}>GST Registered</Text>
+            ) : null}
+          </View>
+
+          {/* Issued to — Pocketnote */}
+          <View style={styles.partyCard}>
+            <Text style={styles.partyLabel}>Issued to</Text>
+            <Text style={styles.partyName}>{POCKETNOTE.name}</Text>
+            <Text style={styles.partyDetail}>ABN: {POCKETNOTE.abn}</Text>
+            <Text style={styles.partyDetail}>{POCKETNOTE.email}</Text>
+            <Text style={styles.partyDetail}>{POCKETNOTE.phone}</Text>
+          </View>
+        </View>
+
+        {/* Invoice summary */}
+        <Text style={styles.sectionTitle}>Summary</Text>
+        <View style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.label}>Sessions</Text>
             <Text style={styles.value}>{invoice.sessions_count}</Text>
@@ -247,12 +319,6 @@ export function InvoicePDF({
             <Text style={styles.label}>Total hours</Text>
             <Text style={styles.value}>{totalHours}</Text>
           </View>
-          {invoice.paid_at ? (
-            <View style={styles.row}>
-              <Text style={styles.label}>Paid on</Text>
-              <Text style={styles.value}>{format(new Date(invoice.paid_at), 'd MMM yyyy')}</Text>
-            </View>
-          ) : null}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>
@@ -265,18 +331,19 @@ export function InvoicePDF({
         {/* Tutor notes */}
         {invoice.notes ? (
           <>
-            <Text style={styles.sectionTitle}>Tutor notes</Text>
+            <Text style={styles.sectionTitle}>Notes</Text>
             <View style={styles.card}>
               <Text style={{ fontSize: 9, color: '#374151' }}>{invoice.notes}</Text>
             </View>
           </>
         ) : null}
 
-        {/* Sessions */}
+        {/* Sessions table */}
         <Text style={styles.sectionTitle}>Sessions ({sessions.length})</Text>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderCell, styles.colDate]}>Date &amp; time</Text>
           <Text style={[styles.tableHeaderCell, styles.colStudent]}>Student</Text>
+          <Text style={[styles.tableHeaderCell, styles.colMode]}>Mode</Text>
           <Text style={[styles.tableHeaderCell, styles.colDuration]}>Duration</Text>
           <Text style={[styles.tableHeaderCell, styles.colRate]}>Rate</Text>
           <Text style={[styles.tableHeaderCell, styles.colAmount]}>Amount</Text>
@@ -291,6 +358,9 @@ export function InvoicePDF({
               </Text>
               <Text style={[{ fontSize: 9 }, styles.colStudent]}>
                 {s.student_name ?? '—'}
+              </Text>
+              <Text style={[{ fontSize: 9 }, styles.colMode]}>
+                {formatMode(s.mode)}
               </Text>
               <Text style={[{ fontSize: 9 }, styles.colDuration]}>
                 {s.duration_minutes ?? 60} min
@@ -307,7 +377,7 @@ export function InvoicePDF({
 
         {/* Footer */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>Pocketnote</Text>
+          <Text style={styles.footerText}>{POCKETNOTE.name}</Text>
           <Text style={styles.footerText}>{invoiceTitle} #{shortId}</Text>
           <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>

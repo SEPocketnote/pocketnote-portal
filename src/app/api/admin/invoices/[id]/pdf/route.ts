@@ -42,12 +42,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     duration_minutes: number | null
     student_name: string | null
     rate_cents: number | null
+    mode: string | null
   }> = []
 
   if (sessionIds.length) {
     const { data: rawSessions } = await admin
       .from('sessions')
-      .select('id, scheduled_at, duration_minutes, bookings(students(name))')
+      .select('id, scheduled_at, duration_minutes, bookings(mode, students(name))')
       .in('id', sessionIds)
       .order('scheduled_at', { ascending: true })
 
@@ -57,6 +58,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       duration_minutes: s.duration_minutes,
       student_name: s.bookings?.students?.name ?? null,
       rate_cents: rateBySesionId.get(s.id) ?? null,
+      mode: s.bookings?.mode ?? null,
     }))
   }
 
