@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { format } from 'date-fns'
+import { stateToTimezone, formatSessionFull } from '@/lib/timezone'
 
 const styles = StyleSheet.create({
   page: {
@@ -156,6 +157,7 @@ type Tutor = {
   phone?: string | null
   abn?: string | null
   gst_registered?: boolean | null
+  state?: string | null
 } | null
 
 export function InvoicePDF({
@@ -167,6 +169,7 @@ export function InvoicePDF({
   tutor: Tutor
   sessions: Session[]
 }) {
+  const tutorTz = stateToTimezone(tutor?.state)
   const hrs = Math.floor(invoice.total_minutes / 60)
   const mins = invoice.total_minutes % 60
   const totalHours = `${hrs}h${mins > 0 ? ` ${mins}m` : ''}`
@@ -284,7 +287,7 @@ export function InvoicePDF({
           return (
             <View key={s.id} style={styles.tableRow}>
               <Text style={[{ fontSize: 9 }, styles.colDate]}>
-                {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                {formatSessionFull(s.scheduled_at, tutorTz)}
               </Text>
               <Text style={[{ fontSize: 9 }, styles.colStudent]}>
                 {s.student_name ?? '—'}

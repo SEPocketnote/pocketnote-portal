@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   const { data: tutor } = await admin
     .from('tutors')
-    .select('legal_name, email, phone, abn, gst_registered')
+    .select('legal_name, email, phone, abn, gst_registered, state')
     .eq('id', invoice.tutor_id)
     .single()
 
