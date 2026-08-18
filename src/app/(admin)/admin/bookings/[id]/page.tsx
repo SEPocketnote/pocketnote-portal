@@ -42,7 +42,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
     admin.from('tutors').select('id, legal_name, preferred_name').eq('active', true).order('legal_name'),
-    admin.from('payments').select('id, amount, status, paid_at, created_at, method, notes').eq('booking_id', id).order('created_at', { ascending: false }).limit(10),
+    admin.from('payments').select('id, amount, status, paid_at, created_at, method, notes, stripe_invoice_id, stripe_charge_id').eq('booking_id', id).order('created_at', { ascending: false }).limit(10),
   ])
 
   // Fetch Stripe subscription status if one exists
@@ -147,38 +147,55 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         )}
         {payments && payments.length > 0 ? (
           <div className="divide-y divide-border">
-            {payments.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between py-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                    p.status === 'paid' ? 'bg-green-500' :
-                    p.status === 'failed' ? 'bg-red-500' : 'bg-amber-400'
-                  }`} />
-                  <div>
-                    <span className="text-muted-foreground">
-                      {p.paid_at
-                        ? format(new Date(p.paid_at), 'd MMM yyyy')
-                        : format(new Date(p.created_at), 'd MMM yyyy')}
-                    </span>
-                    {p.method && p.method !== 'stripe_subscription' && (
-                      <span className="ml-2 text-muted-foreground capitalize">
-                        ({p.method.replace(/_/g, ' ')})
+            {payments.map((p: any) => {
+              const METHOD_LABEL: Record<string, string> = {
+                stripe_subscription: 'Subscription',
+                stripe_invoice: 'Stripe invoice',
+                stripe_charge: 'Stripe charge',
+                ndis: 'NDIS',
+                bank_transfer: 'Bank transfer',
+                cash: 'Cash',
+                other: 'Other',
+              }
+              const methodLabel = METHOD_LABEL[p.method] ?? p.method ?? 'Payment'
+              const ref = p.stripe_invoice_id || p.stripe_charge_id || null
+              const refShort = ref ? ref.slice(0, 16) + (ref.length > 16 ? '…' : '') : null
+              return (
+                <div key={p.id} className="py-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                        p.status === 'paid' ? 'bg-green-500' :
+                        p.status === 'failed' ? 'bg-red-500' : 'bg-amber-400'
+                      }`} />
+                      <div>
+                        <span className="font-medium">{methodLabel}</span>
+                        <span className="text-muted-foreground ml-2">
+                          {p.paid_at
+                            ? format(new Date(p.paid_at), 'd MMM yyyy')
+                            : format(new Date(p.created_at), 'd MMM yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`font-medium tabular-nums ${p.status === 'failed' ? 'text-red-600' : ''}`}>
+                        ${(p.amount / 100).toFixed(2)}
                       </span>
-                    )}
-                    {p.notes && <span className="ml-2 text-muted-foreground italic">{p.notes}</span>}
+                      <span className={`capitalize w-12 text-right ${
+                        p.status === 'paid' ? 'text-green-700' :
+                        p.status === 'failed' ? 'text-red-600' : 'text-muted-foreground'
+                      }`}>{p.status}</span>
+                    </div>
                   </div>
+                  {(refShort || p.notes) && (
+                    <div className="ml-3.5 mt-1 text-muted-foreground space-y-0.5">
+                      {refShort && <p className="font-mono">{refShort}</p>}
+                      {p.notes && <p className="italic">{p.notes}</p>}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`font-medium tabular-nums ${p.status === 'failed' ? 'text-red-600' : ''}`}>
-                    ${(p.amount / 100).toFixed(2)}
-                  </span>
-                  <span className={`capitalize ${
-                    p.status === 'paid' ? 'text-green-700' :
-                    p.status === 'failed' ? 'text-red-600' : 'text-muted-foreground'
-                  }`}>{p.status}</span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <p className="text-xs text-muted-foreground mb-1">No payments recorded yet.</p>
