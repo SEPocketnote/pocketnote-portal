@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
+import { stateToTimezone, formatSessionFull } from '@/lib/timezone'
 import InvoiceActions from './InvoiceActions'
 
 export const dynamic = 'force-dynamic'
@@ -25,7 +26,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
   // Get tutor
   const { data: tutor } = await admin
     .from('tutors')
-    .select('id, legal_name, email')
+    .select('id, legal_name, email, state')
     .eq('id', invoice.tutor_id)
     .single()
 
@@ -56,6 +57,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
     }))
   }
 
+  const tutorTz = stateToTimezone(tutor?.state)
   const hrs = Math.floor(invoice.total_minutes / 60)
   const mins = invoice.total_minutes % 60
 
@@ -160,7 +162,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
               <div>
                 <p className="text-sm font-medium">{s.student_name ?? '—'}</p>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(s.scheduled_at), 'EEE d MMM yyyy · h:mm a')}
+                  {formatSessionFull(s.scheduled_at, tutorTz)}
                 </p>
               </div>
               <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>
