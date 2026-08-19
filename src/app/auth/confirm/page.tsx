@@ -4,21 +4,30 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-// Landing page for magic link / invite clicks.
+// Landing page for invite magic link clicks.
 //
-// The admin generateLink API produces a Supabase-hosted verification URL.
-// When Supabase processes it, it redirects here with tokens in the URL
-// fragment (#access_token=...) because no PKCE verifier was set up
-// client-side. The server-side /auth/callback route never sees fragments,
-// so those logins silently fail. The browser Supabase client reads the
-// fragment automatically and sets the session in cookies. Once the session
-// is ready we call /api/auth/confirm to do role setup and get the redirect.
+// Supabase may redirect here with either:
+//   - ?code=... (PKCE flow, newer Supabase versions)
+//   - #access_token=... (implicit flow, older behaviour)
+//
+// For the code flow we delegate straight to /auth/callback which already
+// handles exchangeCodeForSession server-side. For the hash flow the browser
+// Supabase client reads the fragment and fires onAuthStateChange.
 
 export default function AuthConfirmPage() {
   const router = useRouter()
   const handled = useRef(false)
 
   useEffect(() => {
+    // If Supabase redirected with ?code=... delegate to the server-side handler.
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    if (code) {
+      handled.current = true
+      router.replace(`/auth/callback?code=${encodeURIComponent(code)}`)
+      return
+    }
+
     const supabase = createClient()
 
     async function doRedirect(accessToken: string) {
@@ -36,16 +45,15 @@ export default function AuthConfirmPage() {
       }
     }
 
-    // The browser client processes the URL hash automatically on init.
-    // onAuthStateChange fires once the session is established from the hash.
+    // Hash token flow: browser client reads #access_token automatically.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
         doRedirect(session.access_token)
       }
     })
 
-    // Also handle the case where the session was already set before the
-    // listener was attached (e.g. page reload with valid cookies).
+    // Handle the case where the session was already established before the
+    // listener attached (e.g. page reload with valid cookies).
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) doRedirect(session.access_token)
     })

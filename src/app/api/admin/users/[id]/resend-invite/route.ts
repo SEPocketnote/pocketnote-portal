@@ -21,7 +21,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const { data: linkData } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email: target.email,
-    options: { redirectTo: `${siteUrl}/auth/confirm` },
+    options: { redirectTo: `${siteUrl}/auth/callback` },
   })
 
   const inviteUrl = linkData?.properties?.action_link
