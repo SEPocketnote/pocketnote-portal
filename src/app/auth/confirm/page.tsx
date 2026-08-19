@@ -21,11 +21,14 @@ export default function AuthConfirmPage() {
   useEffect(() => {
     const supabase = createClient()
 
-    async function doRedirect() {
+    async function doRedirect(accessToken: string) {
       if (handled.current) return
       handled.current = true
       try {
-        const res = await fetch('/api/auth/confirm', { method: 'POST' })
+        const res = await fetch('/api/auth/confirm', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
         const { redirect } = await res.json()
         router.replace(redirect ?? '/login?error=auth')
       } catch {
@@ -37,14 +40,14 @@ export default function AuthConfirmPage() {
     // onAuthStateChange fires once the session is established from the hash.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        doRedirect()
+        doRedirect(session.access_token)
       }
     })
 
     // Also handle the case where the session was already set before the
     // listener was attached (e.g. page reload with valid cookies).
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) doRedirect()
+      if (session) doRedirect(session.access_token)
     })
 
     const timeout = setTimeout(() => {

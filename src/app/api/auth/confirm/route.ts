@@ -1,13 +1,34 @@
 import { NextResponse } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // Called by /auth/confirm after the browser Supabase client has set the
 // session from the URL hash. Replicates the role-setup logic from
 // /auth/callback so first-time users get their profile and tutor link.
-export async function POST() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function POST(request: Request) {
+  // Prefer the access token passed directly from the client (avoids a cookie
+  // race condition on first-time logins where the session cookie may not yet
+  // be present when this request arrives).
+  const authHeader = request.headers.get('Authorization')
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+  let user: { id: string; email?: string } | null = null
+
+  if (token) {
+    const client = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+    const { data } = await client.auth.getUser(token)
+    user = data.user ?? null
+  }
+
+  if (!user) {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user ?? null
+  }
 
   if (!user) {
     return NextResponse.json({ redirect: '/login?error=auth' })
