@@ -90,9 +90,9 @@ export async function POST(request: Request) {
     const { data: linkData } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email: tutorEmail,
-      options: { redirectTo: `${siteUrl}/auth/callback` },
     })
-    inviteUrl = linkData?.properties?.action_link
+    const tokenHash = linkData?.properties?.hashed_token
+    inviteUrl = tokenHash ? `${siteUrl}/auth/confirm?token_hash=${tokenHash}&type=magiclink` : undefined
   }
 
 

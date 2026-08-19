@@ -19,12 +19,36 @@ export default function AuthConfirmPage() {
   const handled = useRef(false)
 
   useEffect(() => {
-    // If Supabase redirected with ?code=... delegate to the server-side handler.
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
+    const tokenHash = params.get('token_hash')
+    const tokenType = (params.get('type') ?? 'magiclink') as 'magiclink' | 'invite' | 'email'
+
+    // If Supabase redirected with ?code=... delegate to the server-side handler.
     if (code) {
       handled.current = true
       router.replace(`/auth/callback?code=${encodeURIComponent(code)}`)
+      return
+    }
+
+    // Invite flow: verify the token_hash directly from the browser client
+    // (no PKCE verifier required).
+    if (tokenHash) {
+      handled.current = true
+      void (async () => {
+        const supabase = createClient()
+        const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tokenType })
+        if (!error && data.session) {
+          const res = await fetch('/api/auth/confirm', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${data.session.access_token}` },
+          })
+          const { redirect } = await res.json().catch(() => ({ redirect: '/login?error=auth' }))
+          router.replace(redirect ?? '/login?error=auth')
+        } else {
+          router.replace('/login?error=auth')
+        }
+      })()
       return
     }
 

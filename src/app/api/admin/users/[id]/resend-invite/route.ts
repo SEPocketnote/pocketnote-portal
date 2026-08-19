@@ -21,11 +21,11 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const { data: linkData } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email: target.email,
-    options: { redirectTo: `${siteUrl}/auth/callback` },
   })
 
-  const inviteUrl = linkData?.properties?.action_link
-  if (!inviteUrl) return NextResponse.json({ error: 'Failed to generate link' }, { status: 500 })
+  const tokenHash = linkData?.properties?.hashed_token
+  if (!tokenHash) return NextResponse.json({ error: 'Failed to generate link' }, { status: 500 })
+  const inviteUrl = `${siteUrl}/auth/confirm?token_hash=${tokenHash}&type=magiclink`
 
   try {
     await sendAdminInvite({ email: target.email, inviteUrl })

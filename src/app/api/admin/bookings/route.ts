@@ -272,15 +272,16 @@ export async function POST(request: Request) {
       const { data: linkData } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email: parent!.email,
-        options: { redirectTo: `${siteUrl}/auth/callback` },
       })
+      const tokenHash = linkData?.properties?.hashed_token
+      const inviteUrl = tokenHash ? `${siteUrl}/auth/confirm?token_hash=${tokenHash}&type=magiclink` : undefined
       const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
       await sendParentWelcome({
         name: parent!.name,
         email: parent!.email,
         tutorName: tutorDisplayName,
         firstSession: firstSessionLabel,
-        inviteUrl: linkData?.properties?.action_link,
+        inviteUrl,
       })
     } else {
       const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
