@@ -67,6 +67,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await admin.from('bookings').delete().in('id', bookingIds)
   }
   await admin.from('students').delete().eq('parent_id', id)
+  await admin.from('address_change_requests').delete().eq('parent_id', id)
 
   const { error: deleteError } = await admin.from('parents').delete().eq('id', id)
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
