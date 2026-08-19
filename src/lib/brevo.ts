@@ -736,7 +736,7 @@ export async function sendInvoiceStatusEmail({
     approved: {
       subject: `Invoice #${invoiceRef} approved`,
       heading: `Invoice approved, ${firstName}`,
-      body: `Your invoice of <strong>${totalDisplay}</strong> has been approved by Pocketnote admin. Payment will be processed shortly.`,
+      body: `Your invoice of <strong>${totalDisplay}</strong> has been approved by Pocketnote admin. Payment will be processed in the next payment cycle.`,
       accent: '#3b82f6',
     },
     paid: {
