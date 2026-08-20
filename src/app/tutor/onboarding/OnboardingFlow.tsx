@@ -683,7 +683,7 @@ export default function OnboardingFlow({
                   className="mt-0.5 accent-primary h-4 w-4 shrink-0" />
                 <span className="text-sm">
                   I have read and agree to the{' '}
-                  <a href="https://pocketnote.com.au/tutor-code-of-conduct" target="_blank" rel="noopener noreferrer"
+                  <a href="https://pocketnote.com.au/code-of-conduct/" target="_blank" rel="noopener noreferrer"
                     className="text-primary underline hover:opacity-80">
                     Tutor Code of Conduct
                   </a>
@@ -695,7 +695,7 @@ export default function OnboardingFlow({
                   className="mt-0.5 accent-primary h-4 w-4 shrink-0" />
                 <span className="text-sm">
                   I have read and agree to the{' '}
-                  <a href="https://pocketnote.com.au/child-safety" target="_blank" rel="noopener noreferrer"
+                  <a href="https://pocketnote.com.au/child-safety/" target="_blank" rel="noopener noreferrer"
                     className="text-primary underline hover:opacity-80">
                     Child Safety Policy
                   </a>
