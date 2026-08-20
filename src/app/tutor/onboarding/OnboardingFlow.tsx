@@ -306,7 +306,7 @@ export default function OnboardingFlow({
         <div className="space-y-6">
 
           {/* Photo */}
-          <section className="bg-white rounded-lg border border-border p-6">
+          <section className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">
               Profile photo <span className="text-destructive">*</span>
             </h2>
@@ -334,7 +334,7 @@ export default function OnboardingFlow({
           </section>
 
           {/* Details */}
-          <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+          <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Your details</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Legal name">
@@ -421,7 +421,7 @@ export default function OnboardingFlow({
           </section>
 
           {/* Compliance */}
-          <section className="bg-white rounded-lg border border-border p-6 space-y-4">
+          <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Compliance</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="ABN" required>
@@ -462,7 +462,7 @@ export default function OnboardingFlow({
           </section>
 
           {/* What you teach */}
-          <section className="bg-white rounded-lg border border-border p-6 space-y-5">
+          <section className="bg-white rounded-2xl shadow-md p-6 space-y-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">What you teach</h2>
 
             <div>
@@ -548,7 +548,7 @@ export default function OnboardingFlow({
       {/* ── Step 2: Availability ── */}
       {step === 2 && (
         <div className="space-y-6">
-          <section className="bg-white rounded-lg border border-border p-6">
+          <section className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-sm font-semibold mb-1">When are you available to tutor?</h2>
             <p className="text-xs text-muted-foreground mb-5">Complete your availability. You are able to update this if it changes.</p>
             <AvailabilityGrid initialSlots={initialSlots} onSlotsChange={setSlotCount} />
@@ -572,7 +572,7 @@ export default function OnboardingFlow({
       {/* ── Step 3: Documents ── */}
       {step === 3 && (
         <div className="space-y-6">
-          <section className="bg-white rounded-lg border border-border p-6 space-y-6">
+          <section className="bg-white rounded-2xl shadow-md p-6 space-y-6">
             <div>
               <h2 className="text-sm font-semibold mb-1">Upload your compliance documents</h2>
               <p className="text-xs text-muted-foreground">These are kept securely and are only visible to Pocketnote staff. JPG, PNG, or PDF · max 10MB each.</p>
@@ -646,7 +646,7 @@ export default function OnboardingFlow({
       {/* ── Step 4: Agreement ── */}
       {step === 4 && (
         <div className="space-y-6">
-          <section className="bg-white rounded-lg border border-border p-6 space-y-5">
+          <section className="bg-white rounded-2xl shadow-md p-6 space-y-5">
             <h2 className="text-sm font-semibold">Almost done — please read and accept our policies</h2>
             <p className="text-sm text-muted-foreground">
               By joining Pocketnote you agree to be bound by all four policies below.
