@@ -3,6 +3,16 @@ import { createClient } from '@/lib/supabase/server'
 import { createBrevoDeal, sendEnquiryNotification, upsertBrevoContact } from '@/lib/brevo'
 import { z } from 'zod'
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': 'https://pocketnote.com.au',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
+
 const EnquirySchema = z.object({
   parentName: z.string().min(1),
   email: z.string().email(),
@@ -22,7 +32,7 @@ export async function POST(request: Request) {
   const parsed = EnquirySchema.safeParse(body)
 
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid input' }, { status: 400, headers: CORS_HEADERS })
   }
 
   const data = parsed.data
@@ -45,7 +55,7 @@ export async function POST(request: Request) {
 
   if (dbError) {
     console.error('[enquiry] db error:', dbError)
-    return NextResponse.json({ error: 'Failed to save enquiry' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to save enquiry' }, { status: 500, headers: CORS_HEADERS })
   }
 
   // Notify admin — awaited so it completes before the function returns
@@ -74,5 +84,5 @@ export async function POST(request: Request) {
     await createBrevoDeal({ name: data.parentName, email: data.email })
   })().catch(err => console.error('[enquiry] crm sync failed:', err))
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true }, { headers: CORS_HEADERS })
 }
