@@ -133,7 +133,7 @@ export default function AdminNav({ email, navCounts }: { email?: string; navCoun
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 w-72 bg-primary min-h-screen px-4 py-6 shadow-xl flex flex-col overflow-y-auto">
+          <div className="relative z-50 w-72 bg-primary h-screen px-4 py-6 shadow-xl flex flex-col overflow-y-auto">
             <button onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors" aria-label="Close navigation">
               <CloseIcon />
