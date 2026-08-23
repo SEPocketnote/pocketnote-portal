@@ -44,7 +44,7 @@ export default function ParentsSearch({ parents }: { parents: Parent[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md p-10 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center text-sm text-muted-foreground">
           No parents match &ldquo;{query}&rdquo;.
         </div>
       ) : (
@@ -57,7 +57,7 @@ export default function ParentsSearch({ parents }: { parents: Parent[] }) {
                 <Link
                   key={p.id}
                   href={`/admin/parents/${p.id}`}
-                  className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
+                  className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-card p-4 hover:bg-muted/20 transition-colors"
                 >
                   <div className="min-w-0">
                     <p className="font-medium truncate">{p.name}</p>
@@ -76,10 +76,10 @@ export default function ParentsSearch({ parents }: { parents: Parent[] }) {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden">
+          <div className="hidden md:block bg-white rounded-2xl shadow-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
+                <tr className="border-b border-border bg-[#F5F4F2]">
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</th>

@@ -32,7 +32,7 @@ const COLORS = {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-border rounded-xl shadow-md px-4 py-3 text-sm">
+    <div className="bg-white border border-border rounded-xl shadow-card px-4 py-3 text-sm">
       <p className="font-semibold mb-2 text-foreground">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-2 mb-1">

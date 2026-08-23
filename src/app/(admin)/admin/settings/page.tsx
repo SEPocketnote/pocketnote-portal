@@ -5,7 +5,7 @@ export default function SettingsPage() {
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold mb-2">Settings</h1>
       <p className="text-muted-foreground text-sm mb-8">Manage business configuration and admin preferences.</p>
-      <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+      <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
         <Link href="/admin/settings/rate-tiers" className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
           <div>
             <p className="font-medium">Rate Tiers</p>

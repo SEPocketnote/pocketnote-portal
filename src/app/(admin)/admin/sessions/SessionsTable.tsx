@@ -123,7 +123,7 @@ function MobileCard({ s }: { s: Session }) {
   const hasReport = !!s.progress_reports
 
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-card overflow-hidden">
       <div className="flex items-start justify-between gap-3 p-4">
         <Link href={`/admin/bookings/${s.bookings?.id}`} className="min-w-0 flex-1">
           <p className="font-medium text-sm">{s.bookings?.students?.name}</p>
@@ -166,10 +166,10 @@ export default function SessionsTable({ sessions }: { sessions: Session[] }) {
       </div>
 
       {/* Desktop */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden">
+      <div className="hidden md:block bg-white rounded-2xl shadow-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40">
+            <tr className="border-b border-border bg-[#F5F4F2]">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date & time</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</th>

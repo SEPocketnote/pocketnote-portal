@@ -108,7 +108,7 @@ export default async function EnquiriesPage({
               <Link
                 key={e.id}
                 href={`/admin/enquiries/${e.id}`}
-                className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
+                className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-card p-4 hover:bg-muted/20 transition-colors"
               >
                 <div className="min-w-0">
                   <p className="font-medium truncate">{e.parent_name}</p>
@@ -130,18 +130,18 @@ export default async function EnquiriesPage({
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden overflow-x-auto">
+          <div className="hidden md:block bg-white rounded-2xl shadow-card overflow-hidden overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
-              <thead className="border-b border-border bg-muted/40">
+              <thead className="border-b border-border bg-[#F5F4F2]">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parent</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Student</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Subjects</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
-                  <th className="text-left px-4 py-3">
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subjects</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <SortableHeader column="status" label="Status" currentSort={sort} currentDir={dir} baseParams={sortBase} />
                   </th>
-                  <th className="text-left px-4 py-3">
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <SortableHeader column="received" label="Received" currentSort={sort} currentDir={dir} baseParams={sortBase} />
                   </th>
                 </tr>

@@ -34,7 +34,7 @@ export default function CreateParentForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-card p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium mb-1">Name <span className="text-destructive">*</span></label>
         <input
@@ -79,7 +79,7 @@ export default function CreateParentForm() {
         </p>
       </div>
 
-      <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 text-sm text-muted-foreground">
+      <div className="rounded-lg bg-[#F5F4F2] border border-border px-4 py-3 text-sm text-muted-foreground">
         No invite email will be sent. To give this parent portal access later, use the <strong>Send invite</strong> button on their profile.
       </div>
 
@@ -95,7 +95,7 @@ export default function CreateParentForm() {
         </button>
         <a
           href="/admin/parents"
-          className="px-4 py-2.5 rounded-md text-sm font-medium border border-border hover:bg-muted/40 transition-colors"
+          className="px-4 py-2.5 rounded-md text-sm font-medium border border-border hover:bg-[#F5F4F2] transition-colors"
         >
           Cancel
         </a>

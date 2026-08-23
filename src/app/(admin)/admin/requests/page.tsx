@@ -73,7 +73,7 @@ export default async function RequestsPage() {
           Session changes {pendingSession?.length ? `(${pendingSession.length})` : ''}
         </h2>
         {!pendingSession?.length ? (
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center text-sm text-muted-foreground">
+          <div className="bg-white rounded-2xl shadow-card p-6 text-center text-sm text-muted-foreground">
             No pending session requests.
           </div>
         ) : (
@@ -100,7 +100,7 @@ export default async function RequestsPage() {
           Address updates {pendingAddress?.length ? `(${pendingAddress.length})` : ''}
         </h2>
         {!pendingAddress?.length ? (
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center text-sm text-muted-foreground">
+          <div className="bg-white rounded-2xl shadow-card p-6 text-center text-sm text-muted-foreground">
             No pending address requests.
           </div>
         ) : (
@@ -118,7 +118,7 @@ export default async function RequestsPage() {
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
             Recently resolved
           </h2>
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
             {[
               ...(resolvedSession ?? []).map((r: any) => ({ ...r, _type: 'session' })),
               ...(resolvedAddress ?? []).map((r: any) => ({ ...r, _type: 'address' })),

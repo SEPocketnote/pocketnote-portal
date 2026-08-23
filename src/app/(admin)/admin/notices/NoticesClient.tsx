@@ -66,7 +66,7 @@ export default function NoticesClient({ notices: initial }: { notices: Notice[] 
     <div className="space-y-8">
 
       {/* Create form */}
-      <section className="bg-white rounded-2xl shadow-md p-6">
+      <section className="bg-white rounded-2xl shadow-card p-6">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">New notice</h2>
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
@@ -143,7 +143,7 @@ export default function NoticesClient({ notices: initial }: { notices: Notice[] 
       )}
 
       {active.length === 0 && (
-        <div className="bg-white rounded-2xl shadow-md p-8 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-card p-8 text-center text-sm text-muted-foreground">
           No active notices. Create one above to broadcast a message to all tutors.
         </div>
       )}

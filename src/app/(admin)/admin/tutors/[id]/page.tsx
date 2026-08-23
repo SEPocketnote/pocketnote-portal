@@ -139,7 +139,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
       {tutor.preferred_name && (
         <section className="mt-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Display name</h2>
-          <div className="bg-white rounded-2xl shadow-md px-5 py-4 text-sm">
+          <div className="bg-white rounded-2xl shadow-card px-5 py-4 text-sm">
             <p className="text-xs text-muted-foreground mb-0.5">Preferred name (shown to parents)</p>
             <p className="font-medium">{tutor.preferred_name}</p>
           </div>
@@ -154,7 +154,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
           <section className="mt-6">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Payment details</h2>
             {bd?.account_name || bd?.bsb || bd?.account_number ? (
-              <div className="bg-white rounded-2xl shadow-md px-5 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+              <div className="bg-white rounded-2xl shadow-card px-5 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Account name</p>
                   <p className="font-medium">{bd.account_name || '—'}</p>
@@ -174,7 +174,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
               </div>
             )}
             {sd?.fund_name || sd?.fund_abn || sd?.usi || sd?.member_number ? (
-              <div className="bg-white rounded-2xl shadow-md px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-3">
+              <div className="bg-white rounded-2xl shadow-card px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-3">
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Super fund</p>
                   <p className="font-medium">{sd.fund_name || '—'}</p>
@@ -200,7 +200,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
       {/* Compliance documents */}
       <section className="mt-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Compliance documents</h2>
-        <div className="bg-white rounded-2xl shadow-md px-5 py-4 flex flex-wrap gap-4 text-sm">
+        <div className="bg-white rounded-2xl shadow-card px-5 py-4 flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-3">
             <span className="text-muted-foreground">Driver&apos;s licence</span>
             {tutor.licence_url ? (
@@ -224,10 +224,10 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
       {bookings && bookings.length > 0 && (
         <section className="mt-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Students</h2>
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
             {bookings.map((b: any) => (
               <a key={b.id} href={`/admin/bookings/${b.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors">
+                className="flex items-center justify-between px-4 py-3 hover:bg-[#F5F4F2] transition-colors">
                 <div>
                   <p className="text-sm font-medium">{b.students?.name}</p>
                   <p className="text-xs text-muted-foreground">

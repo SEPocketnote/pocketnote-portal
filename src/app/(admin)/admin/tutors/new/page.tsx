@@ -127,7 +127,7 @@ export default function NewTutorPage() {
       </div>
       <h1 className="text-2xl font-semibold mb-6">Add tutor</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-md p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-card p-6 space-y-6">
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Details</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

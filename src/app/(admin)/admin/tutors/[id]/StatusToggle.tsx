@@ -38,7 +38,7 @@ export default function StatusToggle({ tutorId, active, verified, hasAccount, na
   }
 
   return (
-    <section className="bg-white rounded-2xl shadow-md p-4 mt-4 flex items-center justify-between gap-4 flex-wrap">
+    <section className="bg-white rounded-2xl shadow-card p-4 mt-4 flex items-center justify-between gap-4 flex-wrap">
       <div>
         <p className="text-sm font-medium">Portal access</p>
         <p className="text-xs text-muted-foreground mt-0.5">

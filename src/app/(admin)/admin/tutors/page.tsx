@@ -23,7 +23,7 @@ export default async function TutorsPage() {
       </div>
 
       {!tutors?.length ? (
-        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center">
           <p className="font-medium mb-1">No tutors yet</p>
           <p className="text-sm text-muted-foreground">Add your first tutor to get started.</p>
         </div>

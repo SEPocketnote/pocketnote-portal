@@ -104,14 +104,14 @@ export default function RateTiersList({ tiers }: { tiers: RateTier[] }) {
   return (
     <div className="space-y-6">
       {tiers.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md p-8 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-card p-8 text-center text-sm text-muted-foreground">
           No rate tiers yet. Add one below.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-[#F5F4F2]">
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Online ($/hr)</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">In-person ($/hr)</th>
@@ -195,7 +195,7 @@ export default function RateTiersList({ tiers }: { tiers: RateTier[] }) {
       )}
 
       {/* Add tier form */}
-      <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="bg-white rounded-2xl shadow-card p-6">
         <h2 className="text-sm font-semibold mb-4">Add new tier</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>

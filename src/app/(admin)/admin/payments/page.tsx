@@ -47,7 +47,7 @@ export default async function PaymentsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         {rows.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
             No payments recorded yet. They'll appear here as Stripe invoices are processed.
@@ -55,7 +55,7 @@ export default async function PaymentsPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-[#F5F4F2]">
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</th>

@@ -154,7 +154,7 @@ export default function TutorPicker({
 
       <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
         {hasAnyFilter && matched.length > 0 && (
-          <div className="px-3 py-1.5 bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          <div className="px-3 py-1.5 bg-[#F5F4F2] text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Matching tutors ({matched.length})
           </div>
         )}
@@ -181,7 +181,7 @@ export default function TutorPicker({
         )}
 
         {hasAnyFilter && others.length > 0 && (
-          <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
+          <div className="px-3 py-1.5 bg-[#F5F4F2] flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               {matched.length > 0 ? 'All other tutors' : `All ${others.length} tutors`}
             </span>

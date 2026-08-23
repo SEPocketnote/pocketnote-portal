@@ -81,7 +81,7 @@ export default function TutorsSearch({ tutors }: { tutors: Tutor[] }) {
               key={f}
               onClick={() => setStatus(f)}
               className={`px-3 py-1.5 capitalize transition-colors ${
-                status === f ? 'bg-primary text-primary-foreground' : 'bg-white hover:bg-muted/40'
+                status === f ? 'bg-primary text-primary-foreground' : 'bg-white hover:bg-[#F5F4F2]'
               }`}
             >
               {f}
@@ -95,7 +95,7 @@ export default function TutorsSearch({ tutors }: { tutors: Tutor[] }) {
               key={f}
               onClick={() => setVerified(f)}
               className={`px-3 py-1.5 transition-colors ${
-                verified === f ? 'bg-primary text-primary-foreground' : 'bg-white hover:bg-muted/40'
+                verified === f ? 'bg-primary text-primary-foreground' : 'bg-white hover:bg-[#F5F4F2]'
               }`}
             >
               {label}
@@ -105,7 +105,7 @@ export default function TutorsSearch({ tutors }: { tutors: Tutor[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md p-10 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center text-sm text-muted-foreground">
           {query ? `No tutors match "${query}".` : 'No tutors match the selected filters.'}
         </div>
       ) : (
@@ -116,7 +116,7 @@ export default function TutorsSearch({ tutors }: { tutors: Tutor[] }) {
               <Link
                 key={t.id}
                 href={`/admin/tutors/${t.id}`}
-                className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-md p-4 hover:bg-muted/20 transition-colors"
+                className="flex items-start justify-between gap-3 bg-white rounded-2xl shadow-card p-4 hover:bg-muted/20 transition-colors"
               >
                 <div className="min-w-0">
                   <p className="font-medium truncate">{t.legal_name}</p>
@@ -140,14 +140,14 @@ export default function TutorsSearch({ tutors }: { tutors: Tutor[] }) {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden overflow-x-auto">
+          <div className="hidden md:block bg-white rounded-2xl shadow-card overflow-hidden overflow-x-auto">
             <table className="w-full text-sm min-w-[480px]">
-              <thead className="border-b border-border bg-muted/40">
+              <thead className="border-b border-border bg-[#F5F4F2]">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Subjects</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Location</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subjects</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

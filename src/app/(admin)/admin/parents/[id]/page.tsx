@@ -116,7 +116,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
       />
 
       {/* Account info */}
-      <section className="bg-white rounded-2xl shadow-md p-6 mt-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Account</h2>
           <ResendParentInviteButton parentId={id} name={parent.name} hasAccount={hasAccount} />
@@ -154,7 +154,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
             Upcoming sessions
           </h2>
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
             {(upcomingSessions ?? []).map((s: any) => {
               const tz = stateToTimezone(s.bookings?.tutors?.state)
               return (
@@ -189,14 +189,14 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           </Link>
         </div>
         {activeBookings.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center text-sm text-muted-foreground">
+          <div className="bg-white rounded-2xl shadow-card p-6 text-center text-sm text-muted-foreground">
             No active enrolments.{' '}
             <Link href={`/admin/bookings/new?parentId=${parent.id}`} className="text-primary hover:underline">
               Create one →
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
             {activeBookings.map((b: any) => (
               <Link
                 key={b.id}
@@ -223,7 +223,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
       {pastBookings.length > 0 && (
         <section className="mt-6">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Past enrolments</h2>
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
             {pastBookings.map((b: any) => (
               <Link
                 key={b.id}

@@ -24,7 +24,7 @@ function StatusPill({ banned, confirmed }: { banned: boolean; confirmed: boolean
 function UserTable({ users, meId }: { users: UserRow[]; meId: string }) {
   if (!users.length) {
     return (
-      <div className="bg-white rounded-2xl shadow-md p-6 text-center text-sm text-muted-foreground">
+      <div className="bg-white rounded-2xl shadow-card p-6 text-center text-sm text-muted-foreground">
         No results.
       </div>
     )
@@ -36,7 +36,7 @@ function UserTable({ users, meId }: { users: UserRow[]; meId: string }) {
         {users.map(u => {
           const isSelf = u.id === meId
           return (
-            <div key={u.id} className="bg-white rounded-2xl shadow-md p-4">
+            <div key={u.id} className="bg-white rounded-2xl shadow-card p-4">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   {u.detailHref ? (
@@ -63,14 +63,14 @@ function UserTable({ users, meId }: { users: UserRow[]; meId: string }) {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-md overflow-hidden overflow-x-auto">
+      <div className="hidden md:block bg-white rounded-2xl shadow-card overflow-hidden overflow-x-auto">
         <table className="w-full text-sm min-w-[560px]">
           <thead>
-            <tr className="border-b border-border bg-muted/40">
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Name / Email</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Status</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Joined</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Last sign-in</th>
+            <tr className="border-b border-border bg-[#F5F4F2]">
+              <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name / Email</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Joined</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Last sign-in</th>
               <th className="px-4 py-2.5" />
             </tr>
           </thead>

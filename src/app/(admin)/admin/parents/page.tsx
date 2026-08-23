@@ -29,7 +29,7 @@ export default async function ParentsPage() {
       </div>
 
       {!parents?.length ? (
-        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center">
           <p className="font-medium mb-1">No parents yet</p>
           <p className="text-sm text-muted-foreground">Parents are created when you create an enrolment.</p>
         </div>

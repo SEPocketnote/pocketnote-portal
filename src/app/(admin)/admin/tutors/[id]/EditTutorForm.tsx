@@ -156,7 +156,7 @@ export default function EditTutorForm({
   const hasAnyProfile = !!(tutor.bio || tutor.abn || tutor.phone || tutor.location)
 
   return (
-    <section className="bg-white rounded-2xl shadow-md p-6 mt-4 space-y-4">
+    <section className="bg-white rounded-2xl shadow-card p-6 mt-4 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</h2>
         {editing ? (

@@ -92,7 +92,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* Summary */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Enrolment details</h2>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Info label="Mode" value={booking.mode} />
@@ -106,7 +106,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
       {/* Parent & tutor contact */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        <section className="bg-white rounded-2xl shadow-md p-4">
+        <section className="bg-white rounded-2xl shadow-card p-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Parent</h2>
             <Link href={`/admin/parents/${parent?.id}`} className="text-xs text-primary hover:underline">View profile →</Link>
@@ -115,7 +115,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <p className="text-xs text-muted-foreground mt-0.5">{parent?.email}</p>
           {parent?.phone && <p className="text-xs text-muted-foreground">{parent.phone}</p>}
         </section>
-        <section className="bg-white rounded-2xl shadow-md p-4">
+        <section className="bg-white rounded-2xl shadow-card p-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tutor</h2>
             <Link href={`/admin/tutors/${tutor?.id}`} className="text-xs text-primary hover:underline">View profile →</Link>
@@ -126,7 +126,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* Billing */}
-      <section className="bg-white rounded-2xl shadow-md p-4 mt-4">
+      <section className="bg-white rounded-2xl shadow-card p-4 mt-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing</h2>
           <div className="flex items-center gap-2">
@@ -235,11 +235,11 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           />
         </div>
         {!sessions?.length ? (
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center text-sm text-muted-foreground">
+          <div className="bg-white rounded-2xl shadow-card p-6 text-center text-sm text-muted-foreground">
             No sessions found.
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border">
             {sessions.map((session, i) => (
               <SessionRow
                 key={session.id}
