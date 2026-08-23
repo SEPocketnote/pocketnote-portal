@@ -137,9 +137,9 @@ export default async function ParentDashboard() {
 
             {/* My Bookings */}
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <BookOpen className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border/50">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4 text-blue-500" />
                 </div>
                 <div>
                   <h2 className="font-semibold text-sm leading-tight">My bookings</h2>
@@ -184,9 +184,9 @@ export default async function ParentDashboard() {
 
             {/* My Tutors */}
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <UserCircle className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border/50">
+                <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                  <UserCircle className="w-4 h-4 text-violet-500" />
                 </div>
                 <div>
                   <h2 className="font-semibold text-sm leading-tight">

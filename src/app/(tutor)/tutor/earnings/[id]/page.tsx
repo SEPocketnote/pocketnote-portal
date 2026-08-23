@@ -153,7 +153,7 @@ export default async function TutorInvoiceDetailPage({ params }: { params: Promi
 
       {/* Sessions list */}
       <section className="bg-white rounded-2xl shadow-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-muted/30">
+        <div className="px-5 py-3 border-b border-border bg-[#F5F4F2]">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions</p>
         </div>
         <div className="divide-y divide-border">

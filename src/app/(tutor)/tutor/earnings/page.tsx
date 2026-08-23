@@ -151,7 +151,7 @@ export default async function TutorEarningsPage() {
 
       {/* No bank details warning */}
       {!hasBankDetails && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 flex items-start justify-between gap-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-amber-800">Bank details required</p>
             <p className="text-sm text-amber-700 mt-0.5">
@@ -165,7 +165,7 @@ export default async function TutorEarningsPage() {
       )}
 
       {/* Pay cycle banner */}
-      <div className={`rounded-lg border px-5 py-4 ${payCycle.isUrgent ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'}`}>
+      <div className={`rounded-2xl border px-5 py-4 ${payCycle.isUrgent ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200'}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className={`text-sm font-semibold ${payCycle.isUrgent ? 'text-orange-800' : 'text-blue-800'}`}>
@@ -191,7 +191,7 @@ export default async function TutorEarningsPage() {
 
       {/* Rate banner or no-rate warning */}
       {!hasAnyRate ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-4 text-sm text-amber-800">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-sm text-amber-800">
           No pay rate has been assigned to your account yet. Contact your admin to set up your rate before submitting invoices.
         </div>
       ) : (
@@ -208,12 +208,26 @@ export default async function TutorEarningsPage() {
       {/* Summary tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl shadow-card p-5">
-          <p className="text-sm text-muted-foreground mb-1">Pending payment</p>
-          <p className="text-2xl font-semibold text-primary">${(totalPending / 100).toFixed(2)}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Pending payment</p>
+              <p className="text-3xl font-bold tracking-tight text-amber-500">${(totalPending / 100).toFixed(2)}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
         </div>
         <div className="bg-white rounded-2xl shadow-card p-5">
-          <p className="text-sm text-muted-foreground mb-1">Total paid</p>
-          <p className="text-2xl font-semibold">${(totalPaid / 100).toFixed(2)}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Total paid</p>
+              <p className="text-3xl font-bold tracking-tight text-emerald-600">${(totalPaid / 100).toFixed(2)}</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -244,7 +258,7 @@ export default async function TutorEarningsPage() {
                 )
               })}
             </div>
-            <div className="border-t border-border px-5 py-4 bg-muted/30 flex items-center justify-between">
+            <div className="border-t border-border px-5 py-4 bg-[#F5F4F2] flex items-center justify-between">
               <div className="text-sm">
                 <span className="font-medium">{uninvoiced.length} session{uninvoiced.length !== 1 ? 's' : ''}</span>
                 <span className="text-muted-foreground"> · {Math.floor(uninvoicedMinutes / 60)}h {uninvoicedMinutes % 60 > 0 ? `${uninvoicedMinutes % 60}m` : ''}</span>

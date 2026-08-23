@@ -62,7 +62,7 @@ export default function InvoiceForm({
     <div className="space-y-6">
       {/* Session list */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-muted/30">
+        <div className="px-5 py-3 border-b border-border bg-[#F5F4F2]">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sessions included</p>
         </div>
         <div className="divide-y divide-border">

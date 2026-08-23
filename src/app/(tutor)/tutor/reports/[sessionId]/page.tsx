@@ -46,7 +46,7 @@ export default async function ReportPage({ params }: { params: Promise<{ session
         </p>
       </div>
 
-      <div className="bg-white rounded-lg border border-border p-6">
+      <div className="bg-white rounded-2xl shadow-card p-6">
         <ReportForm sessionId={sessionId} existing={existing} />
       </div>
     </div>

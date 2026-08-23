@@ -170,10 +170,10 @@ export default async function TutorDashboard() {
 
             {/* My Students */}
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="flex items-center justify-between px-5 pt-5 pb-4">
+              <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border/50">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Users2 className="w-4 h-4 text-primary" />
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                    <Users2 className="w-4 h-4 text-blue-500" />
                   </div>
                   <div>
                     <h2 className="font-semibold text-sm leading-tight">My students</h2>
@@ -206,7 +206,7 @@ export default async function TutorDashboard() {
 
             {/* Reports Due */}
             <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
+              <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border/50">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   reportsdue.length > 0 ? 'bg-amber-100' : 'bg-green-100'
                 }`}>
