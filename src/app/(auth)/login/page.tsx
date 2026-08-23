@@ -119,15 +119,7 @@ function LoginForm() {
             <PocketnoteMark size={52} color="white" />
           </div>
 
-          <h2 className="text-4xl font-bold text-white tracking-tight mb-3">Pocketnote</h2>
-          <p className="text-white/75 text-base max-w-[260px] leading-relaxed">
-            Smart tutoring, expertly managed for you.
-          </p>
-
-          <div className="mt-12 border border-white/25 rounded-2xl px-8 py-5 bg-white/10 backdrop-blur-sm text-center">
-            <p className="text-white/60 text-xs mb-1">Powered by</p>
-            <p className="text-white font-semibold text-sm tracking-wide">pocketnote.com.au</p>
-          </div>
+          <h2 className="text-4xl font-bold text-white tracking-tight">Pocketnote</h2>
         </div>
       </div>
 
