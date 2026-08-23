@@ -47,7 +47,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export default function ActivityChart({ data }: { data: ChartWeek[] }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-5 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-card p-5 overflow-hidden">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="font-semibold text-sm leading-tight">Activity</h2>
@@ -55,24 +55,24 @@ export default function ActivityChart({ data }: { data: ChartWeek[] }) {
         </div>
       </div>
 
-      <div className="h-56">
+      <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="gradSessions" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.sessions} stopOpacity={0.18} />
-                <stop offset="95%" stopColor={COLORS.sessions} stopOpacity={0} />
+                <stop offset="0%" stopColor={COLORS.sessions} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={COLORS.sessions} stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="gradEnquiries" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.enquiries} stopOpacity={0.18} />
-                <stop offset="95%" stopColor={COLORS.enquiries} stopOpacity={0} />
+                <stop offset="0%" stopColor={COLORS.enquiries} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={COLORS.enquiries} stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="gradBookings" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.bookings} stopOpacity={0.18} />
-                <stop offset="95%" stopColor={COLORS.bookings} stopOpacity={0} />
+                <stop offset="0%" stopColor={COLORS.bookings} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={COLORS.bookings} stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ece9e5" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: '#888' }}
@@ -97,7 +97,7 @@ export default function ActivityChart({ data }: { data: ChartWeek[] }) {
               dataKey="sessions"
               name="Sessions"
               stroke={COLORS.sessions}
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="url(#gradSessions)"
               dot={false}
               activeDot={{ r: 4 }}
@@ -107,7 +107,7 @@ export default function ActivityChart({ data }: { data: ChartWeek[] }) {
               dataKey="enquiries"
               name="Enquiries"
               stroke={COLORS.enquiries}
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="url(#gradEnquiries)"
               dot={false}
               activeDot={{ r: 4 }}
@@ -117,7 +117,7 @@ export default function ActivityChart({ data }: { data: ChartWeek[] }) {
               dataKey="bookings"
               name="Bookings"
               stroke={COLORS.bookings}
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="url(#gradBookings)"
               dot={false}
               activeDot={{ r: 4 }}

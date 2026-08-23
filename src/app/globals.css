@@ -49,6 +49,14 @@
   }
 }
 
+/* Elevated card shadow — softer and more layered than shadow-md */
+.shadow-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.07);
+}
+.shadow-card-hover:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 16px 40px rgba(0,0,0,0.10);
+}
+
 /* ── Driver.js tour overrides ──────────────────────────────────────────── */
 .driver-popover {
   border-radius: 14px;

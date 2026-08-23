@@ -137,18 +137,20 @@ export default async function AdminDashboard({
           label="New enquiries"
           value={newEnquiries ?? 0}
           href="/admin/enquiries"
-          highlight={!!newEnquiries}
+          color="amber"
         />
         <StatCard
           icon={Users2}
           label="Active students"
           value={activeBookings ?? 0}
           href="/admin/bookings"
+          color="blue"
         />
         <StatCard
           icon={CalendarDays}
           label={`Sessions — ${PERIOD_LABEL[period].toLowerCase()}`}
           value={sessionsPeriod ?? 0}
+          color="coral"
         />
       </div>
 
@@ -159,7 +161,7 @@ export default async function AdminDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Upcoming sessions */}
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
           <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border/50">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -209,7 +211,7 @@ export default async function AdminDashboard({
         </div>
 
         {/* Recent enquiries */}
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
           <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
               <Inbox className="w-4 h-4 text-amber-500" />
@@ -263,26 +265,34 @@ export default async function AdminDashboard({
   )
 }
 
-function StatCard({ icon: Icon, label, value, href, highlight }: {
+const STAT_COLORS = {
+  coral: { bg: 'bg-primary/10',   icon: 'text-primary' },
+  amber: { bg: 'bg-amber-50',     icon: 'text-amber-500' },
+  blue:  { bg: 'bg-blue-50',      icon: 'text-blue-500' },
+  green: { bg: 'bg-emerald-50',   icon: 'text-emerald-500' },
+} as const
+
+function StatCard({ icon: Icon, label, value, href, color = 'coral' }: {
   icon: React.ElementType
   label: string
   value: number
   href?: string
-  highlight?: boolean
+  color?: keyof typeof STAT_COLORS
 }) {
+  const c = STAT_COLORS[color]
   const inner = (
-    <div className={`bg-white rounded-2xl shadow-md p-5 transition-colors ${
-      href ? 'hover:shadow-lg cursor-pointer' : ''
+    <div className={`bg-white rounded-2xl shadow-card p-5 transition-all ${
+      href ? 'shadow-card-hover cursor-pointer' : ''
     }`}>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${
-        highlight ? 'bg-primary/10' : 'bg-muted'
-      }`}>
-        <Icon className={`w-4 h-4 ${highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
+          <p className="text-3xl font-bold tracking-tight text-foreground">{value}</p>
+        </div>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${c.bg}`}>
+          <Icon className={`w-5 h-5 ${c.icon}`} />
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-      <p className={`text-3xl font-bold ${highlight ? 'text-primary' : 'text-foreground'}`}>
-        {value}
-      </p>
     </div>
   )
 

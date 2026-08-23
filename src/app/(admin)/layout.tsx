@@ -38,12 +38,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const pendingRequests = (pendingSessionRequests ?? 0) + (pendingAddressRequests ?? 0)
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex min-h-screen bg-[#F5F4F2]">
       <AdminNav
         email={user.email ?? ''}
         navCounts={{ messages: unreadMessages ?? 0, invoices: pendingInvoices ?? 0, requests: pendingRequests ?? 0 }}
       />
-      <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>
+      <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto bg-[#F5F4F2] min-h-screen">{children}</main>
     </div>
   )
 }
