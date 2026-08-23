@@ -35,7 +35,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
     .is('read_at', null)
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-[#F5F4F2]">
       {profile.role === 'admin' && (
         <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4 relative z-50">
           Admin preview — viewing tutor portal{' '}
@@ -45,7 +45,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
       <div className="flex min-h-screen">
         <TutorNav name={tutor ? tutorDisplayName(tutor) : user.email ?? ''} photoUrl={tutor?.photo_url} unreadMessages={unreadMessages ?? 0} />
         <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto flex flex-col">
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 bg-[#F5F4F2]">{children}</div>
           <footer className="mt-12 pt-4 border-t border-border text-xs text-muted-foreground text-center">
             © {new Date().getFullYear()} Pocketnote. All rights reserved.
           </footer>

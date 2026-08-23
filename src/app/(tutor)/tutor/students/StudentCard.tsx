@@ -37,7 +37,7 @@ export default function StudentCard({
   const visibleMore = showAllUpcoming ? moreUpcoming : moreUpcoming.slice(0, 2)
 
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-card overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-border">
         <div className="flex items-start justify-between gap-4">

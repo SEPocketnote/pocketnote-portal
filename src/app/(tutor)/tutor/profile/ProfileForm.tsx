@@ -155,7 +155,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
     <form onSubmit={handleSubmit} className="space-y-4">
 
       {/* Identity + photo */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your details</h2>
 
         {/* Photo */}
@@ -245,7 +245,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
       </section>
 
       {/* Compliance */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Compliance</h2>
         <p className="text-xs text-muted-foreground">Required before you can be activated on the platform.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -314,7 +314,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
       </section>
 
       {/* Payment details */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payment details</h2>
           <p className="text-xs text-muted-foreground mt-1">Your bank account for receiving session payments.</p>
@@ -376,7 +376,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
       </section>
 
       {/* Superannuation */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Superannuation</h2>
           <p className="text-xs text-muted-foreground mt-1">Your super fund details for payment processing.</p>
@@ -410,7 +410,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
       </section>
 
       {/* Session mode */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session mode</h2>
         <Field label="How do you offer sessions?">
           <select className="input" value={form.mode} onChange={e => setForm({ ...form, mode: e.target.value })}>
@@ -422,7 +422,7 @@ export default function ProfileForm({ tutor }: { tutor: any }) {
       </section>
 
       {/* Subjects, year levels & credentials */}
-      <section className="bg-white rounded-2xl shadow-md p-6 space-y-5">
+      <section className="bg-white rounded-2xl shadow-card p-6 space-y-5">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">What you teach</h2>
 
         <div>

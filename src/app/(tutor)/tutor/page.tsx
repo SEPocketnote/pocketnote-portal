@@ -169,7 +169,7 @@ export default async function TutorDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
             {/* My Students */}
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="flex items-center justify-between px-5 pt-5 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -205,7 +205,7 @@ export default async function TutorDashboard() {
             </div>
 
             {/* Reports Due */}
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   reportsdue.length > 0 ? 'bg-amber-100' : 'bg-green-100'
@@ -253,7 +253,7 @@ export default async function TutorDashboard() {
           </div>
 
           {/* Upcoming Sessions */}
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <CalendarDays className="w-4 h-4 text-primary" />

@@ -50,7 +50,7 @@ export default function AddressForm({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 space-y-4">
+    <div className="bg-white rounded-2xl shadow-card p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Session address</h2>
         {done && (

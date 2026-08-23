@@ -40,11 +40,11 @@ export default async function TutorMessagesPage() {
       <h1 className="text-2xl font-semibold mb-6">Messages</h1>
 
       {!bookings?.length ? (
-        <div className="bg-white rounded-2xl shadow-md p-10 text-center text-sm text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center text-sm text-muted-foreground">
           No active bookings yet.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md divide-y divide-border/50">
+        <div className="bg-white rounded-2xl shadow-card divide-y divide-border/50">
           {bookings.map((b: any) => {
             const msgs = msgsByBooking[b.id] ?? []
             const last = msgs[0]

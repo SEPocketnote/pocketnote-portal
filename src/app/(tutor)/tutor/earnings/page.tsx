@@ -207,11 +207,11 @@ export default async function TutorEarningsPage() {
 
       {/* Summary tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl shadow-md p-5">
+        <div className="bg-white rounded-2xl shadow-card p-5">
           <p className="text-sm text-muted-foreground mb-1">Pending payment</p>
           <p className="text-2xl font-semibold text-primary">${(totalPending / 100).toFixed(2)}</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-md p-5">
+        <div className="bg-white rounded-2xl shadow-card p-5">
           <p className="text-sm text-muted-foreground mb-1">Total paid</p>
           <p className="text-2xl font-semibold">${(totalPaid / 100).toFixed(2)}</p>
         </div>
@@ -223,11 +223,11 @@ export default async function TutorEarningsPage() {
           Uninvoiced sessions
         </h2>
         {uninvoiced.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-md p-8 text-center text-sm text-muted-foreground">
+          <div className="bg-white rounded-2xl shadow-card p-8 text-center text-sm text-muted-foreground">
             No completed sessions awaiting invoicing.
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="divide-y divide-border">
               {uninvoiced.map((s) => {
                 const student = (s.bookings as any)?.students
@@ -268,11 +268,11 @@ export default async function TutorEarningsPage() {
           Invoice history
         </h2>
         {!invoices?.length ? (
-          <div className="bg-white rounded-2xl shadow-md p-8 text-center text-sm text-muted-foreground">
+          <div className="bg-white rounded-2xl shadow-card p-8 text-center text-sm text-muted-foreground">
             No invoices submitted yet.
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-md divide-y divide-border/50">
+          <div className="bg-white rounded-2xl shadow-card divide-y divide-border/50">
             {invoices.map((inv) => (
               <Link key={inv.id} href={`/tutor/earnings/${inv.id}`} className="block px-5 py-4 hover:bg-muted/20 transition-colors">
                 <div className="flex items-center justify-between">

@@ -56,7 +56,7 @@ export default async function ParentLayout({ children }: { children: React.React
   const needsSetup = profile.role !== 'admin' && (!hasTos || !hasCard)
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-[#F5F4F2]">
       {profile.role === 'admin' && (
         <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4 relative z-50">
           Admin preview — viewing parent portal{' '}
@@ -66,7 +66,7 @@ export default async function ParentLayout({ children }: { children: React.React
       {needsSetup && <SetupGateModal hasCard={hasCard} />}
       <div className="flex min-h-screen">
         <ParentNav name={parent?.name ?? user.email ?? ''} unreadMessages={unreadMessages ?? 0} />
-        <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto">{children}</main>
+        <main className="flex-1 pt-20 p-4 md:p-8 overflow-auto bg-[#F5F4F2] min-h-screen">{children}</main>
       </div>
     </div>
   )

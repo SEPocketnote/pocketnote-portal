@@ -76,7 +76,7 @@ export default function MiniCalendar({ sessions, tz }: { sessions: CalendarSessi
     day === todayLocal.day && viewMonth === todayLocal.month && viewYear === todayLocal.year
 
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-card overflow-hidden">
 
       {/* Coral gradient header */}
       <div className="bg-gradient-to-r from-primary to-primary/75 px-5 py-4">

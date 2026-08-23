@@ -136,7 +136,7 @@ export default async function ParentDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
             {/* My Bookings */}
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <BookOpen className="w-4 h-4 text-primary" />
@@ -183,7 +183,7 @@ export default async function ParentDashboard() {
             </div>
 
             {/* My Tutors */}
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <UserCircle className="w-4 h-4 text-primary" />
@@ -223,7 +223,7 @@ export default async function ParentDashboard() {
           </div>
 
           {/* Upcoming Sessions */}
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <CalendarDays className="w-4 h-4 text-primary" />
@@ -283,7 +283,7 @@ export default async function ParentDashboard() {
 
           {/* Past Sessions */}
           {pastSessions.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-card overflow-hidden">
               <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-border">
                 <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center shrink-0">
                   <CalendarDays className="w-4 h-4 text-muted-foreground" />

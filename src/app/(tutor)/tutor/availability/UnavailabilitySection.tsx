@@ -103,7 +103,7 @@ export default function UnavailabilitySection() {
 
       {/* Add form */}
       {adding && (
-        <div className="bg-white rounded-2xl shadow-md p-5 mb-4 space-y-4">
+        <div className="bg-white rounded-2xl shadow-card p-5 mb-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">From</label>
@@ -161,11 +161,11 @@ export default function UnavailabilitySection() {
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : blocks.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md px-5 py-6 text-sm text-muted-foreground text-center">
+        <div className="bg-white rounded-2xl shadow-card px-5 py-6 text-sm text-muted-foreground text-center">
           No temporary unavailability set.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md divide-y divide-border/50">
+        <div className="bg-white rounded-2xl shadow-card divide-y divide-border/50">
           {blocks.map(b => (
             <div key={b.id} className="flex items-start justify-between gap-3 px-5 py-3">
               <div>
