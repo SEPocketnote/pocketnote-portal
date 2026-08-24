@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     abn: data.Abn,
     name: data.EntityName,
     type: data.EntityTypeName,
-    status: data.AbnStatus, // 'Active' | 'Cancelled'
+    status: data.AbnStatus?.trim(), // 'Active' | 'Cancelled'
     state: data.AddressState,
     postcode: data.AddressPostcode,
     gstRegistered: !!data.Gst, // Gst is a date string when registered, empty/null otherwise
