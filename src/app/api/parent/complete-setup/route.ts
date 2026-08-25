@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { stripe } from '@/lib/stripe'
-import { createBookingSubscription } from '@/lib/stripe-subscriptions'
 import { z } from 'zod'
 
 const Schema = z.object({
@@ -47,38 +46,6 @@ export async function POST(request: Request) {
     admin.from('parents').update({ default_payment_method_id: paymentMethodId }).eq('id', parent.id),
     supabase.from('profiles').update({ tos_accepted_at: new Date().toISOString() }).eq('id', user.id),
   ])
-
-  // Create subscriptions for any recurring bookings that don't have one yet
-  const { data: pendingBookings } = await admin
-    .from('bookings')
-    .select('id, rate_cents_snapshot, duration_minutes, schedule_type, start_date, sessions(scheduled_at)')
-    .eq('parent_id', parent.id)
-    .eq('status', 'confirmed')
-    .in('schedule_type', ['weekly', 'fortnightly'])
-    .is('stripe_subscription_id', null)
-
-  if (pendingBookings && pendingBookings.length > 0) {
-    await Promise.allSettled(
-      pendingBookings.map(async (booking) => {
-        if (!booking.rate_cents_snapshot) return
-        // Use the earliest scheduled session date as the billing anchor
-        const sessions = (booking.sessions as { scheduled_at: string }[] | null) ?? []
-        const firstDate = sessions.length > 0
-          ? new Date(sessions.sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0].scheduled_at)
-          : new Date(booking.start_date)
-
-        const subId = await createBookingSubscription({
-          stripeCustomerId: parent.stripe_customer_id!,
-          paymentMethodId,
-          rateCents: booking.rate_cents_snapshot,
-          durationMinutes: booking.duration_minutes ?? 60,
-          scheduleType: booking.schedule_type as 'weekly' | 'fortnightly',
-          firstSessionDate: firstDate,
-        })
-        await admin.from('bookings').update({ stripe_subscription_id: subId }).eq('id', booking.id)
-      })
-    )
-  }
 
   return NextResponse.json({ ok: true })
 }
