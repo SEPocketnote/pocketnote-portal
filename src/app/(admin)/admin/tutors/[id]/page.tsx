@@ -88,6 +88,7 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
         tutorId={id}
         tutor={{
           legal_name: tutor.legal_name ?? '',
+          preferred_name: tutor.preferred_name ?? '',
           email: tutor.email ?? '',
           phone: tutor.phone ?? '',
           location: tutor.location ?? '',

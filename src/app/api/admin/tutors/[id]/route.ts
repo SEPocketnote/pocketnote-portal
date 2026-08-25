@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 const Schema = z.object({
   legal_name: z.string().min(1).optional(),
+  preferred_name: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   location: z.string().optional(),

@@ -28,6 +28,7 @@ type RateTier = {
 
 type TutorValues = {
   legal_name: string
+  preferred_name: string
   email: string
   phone: string
   location: string
@@ -183,6 +184,10 @@ export default function EditTutorForm({
             <Field label="Full name">
               <input className="input" value={values.legal_name}
                 onChange={e => set('legal_name', e.target.value)} />
+            </Field>
+            <Field label="Preferred name">
+              <input className="input" value={values.preferred_name}
+                onChange={e => set('preferred_name', e.target.value)} />
             </Field>
             <Field label="Email">
               <input type="email" className="input" value={values.email}
@@ -346,6 +351,7 @@ export default function EditTutorForm({
             </p>
           )}
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <Info label="Preferred name" value={tutor.preferred_name} />
             <Info label="Phone" value={tutor.phone} />
             <Info label="Session mode" value={tutor.mode === 'either' ? 'Online & in-person' : tutor.mode === 'online' ? 'Online only' : 'In-person only'} />
             <Info label="Suburb" value={tutor.location} />
