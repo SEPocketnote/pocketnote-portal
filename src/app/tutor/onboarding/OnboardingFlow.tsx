@@ -13,7 +13,6 @@ const AU_STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
 
 type Slot = { id: string; day_of_week: number; start_time: string; end_time: string }
 
-type AbnStatus = { state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; gstRegistered?: boolean }
 
 function toggle(arr: string[], val: string) {
   return arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]
@@ -87,7 +86,6 @@ export default function OnboardingFlow({
   const [codeAccepted, setCodeAccepted] = useState(false)
   const [childSafetyAccepted, setChildSafetyAccepted] = useState(false)
   const [credInput, setCredInput] = useState('')
-  const [abnStatus, setAbnStatus] = useState<AbnStatus>({ state: 'idle' })
   const [otherSubject, setOtherSubject] = useState(
     (tutor.subjects ?? []).find((s: string) => !SUBJECTS.includes(s)) ?? ''
   )
@@ -140,29 +138,6 @@ export default function OnboardingFlow({
     }
   }
 
-  // ── ABN lookup ────────────────────────────────────────────────────────────
-
-  async function verifyAbn() {
-    const abn = form.abn.replace(/\s/g, '')
-    if (!abn) return
-    setAbnStatus({ state: 'loading' })
-    try {
-      const res = await fetch(`/api/admin/abn-lookup?abn=${encodeURIComponent(abn)}`)
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        setAbnStatus({ state: 'invalid' })
-      } else {
-        const gstRegistered = data.gstRegistered ?? false
-        setAbnStatus({ state: data.status === 'Active' ? 'valid' : 'invalid', name: data.name, gstRegistered })
-        if (data.status === 'Active') {
-          setForm(f => ({ ...f, gst_registered: gstRegistered }))
-        }
-      }
-    } catch {
-      setAbnStatus({ state: 'invalid' })
-    }
-  }
-
   // ── Credentials ───────────────────────────────────────────────────────────
 
   function addCredential() {
@@ -202,7 +177,6 @@ export default function OnboardingFlow({
     try {
       // Only include gst_registered if ABN was verified this session
       const payload: Record<string, any> = { ...form }
-      if (abnStatus.state !== 'valid') delete payload.gst_registered
       payload.subjects = form.subjects.map(s =>
         s === 'Other' ? (otherSubject.trim() || 'Other') : s
       )
@@ -425,30 +399,8 @@ export default function OnboardingFlow({
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Compliance</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="ABN" required>
-                <div className="flex gap-2">
-                  <input type="text" className="input flex-1" placeholder="e.g. 12 345 678 901" value={form.abn}
-                    onChange={e => {
-                      setForm(f => ({ ...f, abn: e.target.value }))
-                      setAbnStatus({ state: 'idle' })
-                    }} />
-                  <button type="button" onClick={verifyAbn} disabled={!form.abn.trim() || abnStatus.state === 'loading'}
-                    className="px-3 py-2 text-sm rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50 shrink-0">
-                    {abnStatus.state === 'loading' ? '…' : 'Verify'}
-                  </button>
-                </div>
-                {abnStatus.state === 'valid' && (
-                  <div className="mt-1 space-y-0.5">
-                    <p className="text-xs text-green-600">✓ {abnStatus.name} · Active</p>
-                    <p className="text-xs text-muted-foreground">
-                      GST registered: <span className={abnStatus.gstRegistered ? 'text-green-600 font-medium' : 'text-foreground font-medium'}>
-                        {abnStatus.gstRegistered ? 'Yes' : 'No'}
-                      </span>
-                    </p>
-                  </div>
-                )}
-                {abnStatus.state === 'invalid' && (
-                  <p className="text-xs text-destructive mt-1">ABN not found or cancelled</p>
-                )}
+                <input type="text" className="input" placeholder="e.g. 12 345 678 901" value={form.abn}
+                  onChange={e => setForm(f => ({ ...f, abn: e.target.value }))} />
               </Field>
               <Field label="WWCC number" required>
                 <input type="text" className="input" placeholder="e.g. WWC0123456E" value={form.wwcc_number}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import AddressAutocomplete from '@/components/AddressAutocomplete'
@@ -8,16 +8,6 @@ import SuburbAutocomplete from '@/components/SuburbAutocomplete'
 
 const AUS_STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
 
-const ABN_WEIGHTS = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-
-function isValidABN(abn: string): boolean {
-  const digits = abn.replace(/\s/g, '')
-  if (!/^\d{11}$/.test(digits)) return false
-  const nums = digits.split('').map(Number)
-  nums[0] -= 1
-  const sum = nums.reduce((acc, d, i) => acc + d * ABN_WEIGHTS[i], 0)
-  return sum % 89 === 0
-}
 
 type RateTier = {
   id: string
@@ -72,34 +62,9 @@ export default function EditTutorForm({
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [abnStatus, setAbnStatus] = useState<{ state: 'idle' | 'loading' | 'valid' | 'invalid'; name?: string; status?: string }>({ state: 'idle' })
-  const abnDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
-
   function set(key: keyof TutorValues, value: string | null) {
     setValues(v => ({ ...v, [key]: value }))
-    if (key === 'abn') lookupABN(value ?? '')
   }
-
-  function lookupABN(raw: string) {
-    if (abnDebounce.current) clearTimeout(abnDebounce.current)
-    if (!isValidABN(raw)) {
-      setAbnStatus({ state: 'idle' })
-      return
-    }
-    setAbnStatus({ state: 'loading' })
-    abnDebounce.current = setTimeout(async () => {
-      const res = await fetch(`/api/admin/abn-lookup?abn=${encodeURIComponent(raw.replace(/\s/g, ''))}`)
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        setAbnStatus({ state: 'invalid' })
-      } else {
-        setAbnStatus({ state: data.status === 'Active' ? 'valid' : 'invalid', name: data.name, status: data.status })
-      }
-    }, 600)
-  }
-
-  // Run lookup on mount if ABN is already populated
-  useEffect(() => { if (tutor.abn) lookupABN(tutor.abn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tier = rateTiers.find(t => t.id === values.rate_tier_id)
   const effectiveOnlineCents = onlineOverrideDollars
@@ -198,25 +163,8 @@ export default function EditTutorForm({
                 onChange={e => set('phone', e.target.value)} />
             </Field>
             <Field label="ABN">
-              <div className="relative">
-                <input className="input" value={values.abn}
-                  onChange={e => set('abn', e.target.value)} />
-                {abnStatus.state === 'loading' && (
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">…</span>
-                )}
-                {abnStatus.state === 'valid' && (
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-green-500 text-sm">✓</span>
-                )}
-                {abnStatus.state === 'invalid' && (
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-red-500 text-sm">✗</span>
-                )}
-              </div>
-              {abnStatus.state === 'valid' && abnStatus.name && (
-                <p className="text-xs text-green-600 mt-1">{abnStatus.name} · {abnStatus.status}</p>
-              )}
-              {abnStatus.state === 'invalid' && (
-                <p className="text-xs text-red-500 mt-1">ABN not found or cancelled</p>
-              )}
+              <input className="input" value={values.abn}
+                onChange={e => set('abn', e.target.value)} />
             </Field>
             <Field label="Address" className="sm:col-span-2">
               <AddressAutocomplete
