@@ -17,5 +17,5 @@ export default async function Home() {
     redirect('/parent')
   }
 
-  redirect('/enquiry')
+  redirect('/login')
 }
