@@ -29,6 +29,7 @@ const Schema = z.object({
   sessionsCount: z.number().int().min(1).max(200).optional(),
   recurrenceEndDate: z.string().optional(),
   durationMinutes: z.number().int().min(15).max(360).optional(),
+  suppressEmail: z.boolean().optional(),
 })
 
 export async function POST(request: Request) {
@@ -256,7 +257,7 @@ export async function POST(request: Request) {
         firstSession: firstSessionLabel,
         inviteUrl,
       })
-    } else {
+    } else if (!d.suppressEmail) {
       const tutorDisplayName = (tutor as any).preferred_name?.trim() || tutor.legal_name
       await sendBookingConfirmation({
         name: parent!.name,

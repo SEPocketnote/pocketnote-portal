@@ -74,6 +74,9 @@ export default function NewBookingForm({
     subjects: initialValues?.subjects ?? '',
   })
 
+  // Email
+  const [suppressEmail, setSuppressEmail] = useState(false)
+
   // Booking
   const [form, setForm] = useState({
     tutorId: '',
@@ -164,6 +167,7 @@ export default function NewBookingForm({
       scheduleType,
       ...(scheduleType !== 'single' && endCondition === 'count' ? { sessionsCount: parseInt(sessionsCount) } : {}),
       ...(scheduleType !== 'single' && endCondition === 'endDate' ? { recurrenceEndDate: endDate } : {}),
+      ...(parentMode === 'existing' && suppressEmail ? { suppressEmail: true } : {}),
     }
 
     try {
@@ -215,18 +219,29 @@ export default function NewBookingForm({
         )}
 
         {parentMode === 'existing' && selectedParent && (
-          <div className="flex items-start justify-between gap-4 p-3 rounded-lg bg-[#F5F4F2] border border-border">
-            <div>
-              <p className="text-sm font-medium">{selectedParent.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{selectedParent.email}</p>
-              {selectedParent.phone && (
-                <p className="text-xs text-muted-foreground">{selectedParent.phone}</p>
-              )}
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-4 p-3 rounded-lg bg-[#F5F4F2] border border-border">
+              <div>
+                <p className="text-sm font-medium">{selectedParent.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{selectedParent.email}</p>
+                {selectedParent.phone && (
+                  <p className="text-xs text-muted-foreground">{selectedParent.phone}</p>
+                )}
+              </div>
+              <button type="button" onClick={handleClearParent}
+                className="text-xs text-muted-foreground hover:text-primary shrink-0 mt-0.5">
+                Change
+              </button>
             </div>
-            <button type="button" onClick={handleClearParent}
-              className="text-xs text-muted-foreground hover:text-primary shrink-0 mt-0.5">
-              Change
-            </button>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="accent-primary"
+                checked={suppressEmail}
+                onChange={e => setSuppressEmail(e.target.checked)}
+              />
+              <span className="text-sm text-muted-foreground">Don't send a confirmation email to this parent</span>
+            </label>
           </div>
         )}
 
