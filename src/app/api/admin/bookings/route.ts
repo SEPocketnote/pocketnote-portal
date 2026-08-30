@@ -154,10 +154,11 @@ export async function POST(request: Request) {
   if (!parent) return NextResponse.json({ error: 'Failed to resolve parent' }, { status: 500 })
 
   // 4. Resolve student
-  let student: { id: string } | null = null
+  let student: { id: string; name?: string } | null = null
 
   if (d.studentId) {
-    student = { id: d.studentId }
+    const { data: existingStudent } = await admin.from('students').select('id, name').eq('id', d.studentId).single()
+    student = existingStudent
   } else {
     const subjectsArr = d.subjects ? d.subjects.split(',').map(s => s.trim()).filter(Boolean) : []
     const { data: newStudent } = await admin.from('students').insert({
@@ -277,7 +278,7 @@ export async function POST(request: Request) {
       await sendTutorBookingNotification({
         tutorName: tutorDisplayName,
         tutorEmail: tutor.email,
-        studentName: d.studentName ?? 'your new student',
+        studentName: student?.name ?? d.studentName ?? 'your new student',
         parentName: parent!.name,
         parentPhone: d.parentPhone ?? null,
         parentEmail: parent!.email,

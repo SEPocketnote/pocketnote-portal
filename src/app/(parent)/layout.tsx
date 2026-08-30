@@ -32,10 +32,17 @@ export default async function ParentLayout({ children }: { children: React.React
     try {
       const customer = await stripe.customers.retrieve(parent.stripe_customer_id)
       if (!('deleted' in customer)) {
-        const existingPmId =
+        // Check invoice default first, then fall back to any attached card
+        let existingPmId: string | null =
           typeof customer.invoice_settings?.default_payment_method === 'string'
             ? customer.invoice_settings.default_payment_method
             : (customer.invoice_settings?.default_payment_method as any)?.id ?? null
+
+        if (!existingPmId) {
+          const methods = await stripe.paymentMethods.list({ customer: parent.stripe_customer_id, type: 'card', limit: 1 })
+          existingPmId = methods.data[0]?.id ?? null
+        }
+
         if (existingPmId) {
           const admin = createAdminClient()
           await admin.from('parents').update({ default_payment_method_id: existingPmId }).eq('id', parent.id)
