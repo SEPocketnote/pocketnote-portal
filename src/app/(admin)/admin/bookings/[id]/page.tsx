@@ -142,9 +142,6 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             )}
           </div>
         </div>
-        {!subId && booking?.schedule_type !== 'single' && (
-          <p className="text-xs text-muted-foreground mb-3">No Stripe subscription — parent has not saved a card yet.</p>
-        )}
         {payments && payments.length > 0 ? (
           <div className="divide-y divide-border">
             {payments.map((p: any) => {
