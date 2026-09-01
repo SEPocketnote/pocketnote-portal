@@ -7,6 +7,7 @@ import EditParentForm from './EditParentForm'
 import ResendParentInviteButton from '../../bookings/[id]/ResendParentInviteButton'
 import StudentManager from '@/components/StudentManager'
 import DeleteAccountButton from '@/components/DeleteAccountButton'
+import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,6 +73,41 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
   const hasAccount = !!parent.user_id
   const confirmed = !!authUser?.email_confirmed_at
 
+  // Resolve payment method — check DB first, then Stripe directly for migrated parents
+  let paymentMethodId: string | null = parent.default_payment_method_id ?? null
+  let cardLast4: string | null = null
+  let cardBrand: string | null = null
+
+  if (parent.stripe_customer_id) {
+    if (!paymentMethodId) {
+      try {
+        const customer = await stripe.customers.retrieve(parent.stripe_customer_id)
+        if (!('deleted' in customer)) {
+          let pmId: string | null =
+            typeof customer.invoice_settings?.default_payment_method === 'string'
+              ? customer.invoice_settings.default_payment_method
+              : (customer.invoice_settings?.default_payment_method as any)?.id ?? null
+          if (!pmId) {
+            const methods = await stripe.paymentMethods.list({ customer: parent.stripe_customer_id, type: 'card', limit: 1 })
+            pmId = methods.data[0]?.id ?? null
+          }
+          if (pmId) {
+            paymentMethodId = pmId
+            await admin.from('parents').update({ default_payment_method_id: pmId }).eq('id', id)
+          }
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    if (paymentMethodId) {
+      try {
+        const pm = await stripe.paymentMethods.retrieve(paymentMethodId)
+        cardLast4 = pm.card?.last4 ?? null
+        cardBrand = pm.card?.brand ?? null
+      } catch { /* non-fatal */ }
+    }
+  }
+
   const activeBookings = (bookings ?? []).filter((b: any) => b.status === 'confirmed')
   const pastBookings = (bookings ?? []).filter((b: any) => b.status !== 'confirmed')
 
@@ -121,16 +157,38 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Account</h2>
           <ResendParentInviteButton parentId={id} name={parent.name} hasAccount={hasAccount} />
         </div>
-        {hasAccount ? (
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <Info label="Last sign-in" value={authUser?.last_sign_in_at ? format(new Date(authUser.last_sign_in_at), 'd MMM yyyy') : 'Never'} />
-            <Info label="Account created" value={authUser?.created_at ? format(new Date(authUser.created_at), 'd MMM yyyy') : '—'} />
-          </dl>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No portal access. Click <strong>Send invite</strong> to create an account and send them a login link.
-          </p>
-        )}
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-4">
+          {hasAccount ? (
+            <>
+              <Info label="Last sign-in" value={authUser?.last_sign_in_at ? format(new Date(authUser.last_sign_in_at), 'd MMM yyyy') : 'Never'} />
+              <Info label="Account created" value={authUser?.created_at ? format(new Date(authUser.created_at), 'd MMM yyyy') : '—'} />
+            </>
+          ) : (
+            <div className="sm:col-span-2">
+              <p className="text-sm text-muted-foreground">
+                No portal access. Click <strong>Send invite</strong> to create an account and send them a login link.
+              </p>
+            </div>
+          )}
+          <div className="sm:col-span-2 flex items-center gap-2">
+            <dt className="text-xs text-muted-foreground w-28 shrink-0">Payment method</dt>
+            {paymentMethodId && cardLast4 ? (
+              <dd className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                  {cardBrand ? cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1) : 'Card'} ···· {cardLast4}
+                </span>
+              </dd>
+            ) : paymentMethodId ? (
+              <dd>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Card on file</span>
+              </dd>
+            ) : (
+              <dd>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">No card saved</span>
+              </dd>
+            )}
+          </div>
+        </dl>
       </section>
 
       {/* Students */}
