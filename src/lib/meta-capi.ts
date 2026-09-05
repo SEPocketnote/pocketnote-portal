@@ -4,52 +4,48 @@ function sha256(value: string): string {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex')
 }
 
-function hashPhone(raw: string): string {
-  // Normalise to E.164-ish: digits only, prefix with 61 for AU numbers starting with 0
-  const digits = raw.replace(/\D/g, '')
-  const normalised = digits.startsWith('0') ? '61' + digits.slice(1) : digits
-  return createHash('sha256').update(normalised).digest('hex')
-}
-
 export async function sendMetaLeadEvent({
   email,
   phone,
   firstName,
-  lastName,
-  sourceUrl = 'https://pocketnote.com.au',
+  eventId,
+  clientIp,
+  userAgent,
+  sourceUrl = 'https://pocketnote.com.au/book-now/',
 }: {
   email: string
   phone?: string
   firstName?: string
-  lastName?: string
+  eventId?: string
+  clientIp?: string
+  userAgent?: string
   sourceUrl?: string
 }) {
   const pixelId = process.env.META_PIXEL_ID
   const token = process.env.META_CAPI_TOKEN
   if (!pixelId || !token) return
 
-  const userData: Record<string, string[]> = {
+  const userData: Record<string, unknown> = {
     em: [sha256(email)],
   }
-  if (phone) userData.ph = [hashPhone(phone)]
+  if (phone) userData.ph = [sha256(phone.replace(/\D/g, ''))]
   if (firstName) userData.fn = [sha256(firstName)]
-  if (lastName) userData.ln = [sha256(lastName)]
+  if (clientIp) userData.client_ip_address = clientIp
+  if (userAgent) userData.client_user_agent = userAgent
 
-  const payload = {
-    data: [{
-      event_name: 'Lead',
-      event_time: Math.floor(Date.now() / 1000),
-      action_source: 'website',
-      event_source_url: sourceUrl,
-      user_data: userData,
-    }],
-    access_token: token,
+  const event: Record<string, unknown> = {
+    event_name: 'Lead',
+    event_time: Math.floor(Date.now() / 1000),
+    action_source: 'website',
+    event_source_url: sourceUrl,
+    user_data: userData,
   }
+  if (eventId) event.event_id = eventId
 
   const res = await fetch(`https://graph.facebook.com/v19.0/${pixelId}/events`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ data: [event], access_token: token }),
   })
 
   if (!res.ok) {

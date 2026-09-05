@@ -27,6 +27,7 @@ const EnquirySchema = z.object({
   preferredDays: z.array(z.string()).optional(),
   preferredTimes: z.string().optional(),
   howHeard: z.string().optional(),
+  eventId: z.string().uuid().optional(),
 })
 
 export async function POST(request: Request) {
@@ -92,7 +93,9 @@ export async function POST(request: Request) {
     email: data.email,
     phone: data.phone,
     firstName: data.parentName.split(' ')[0],
-    lastName: data.parentName.split(' ').slice(1).join(' ') || undefined,
+    eventId: data.eventId,
+    clientIp: request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? undefined,
+    userAgent: request.headers.get('user-agent') ?? undefined,
   }).catch(err => console.error('[enquiry] meta capi failed:', err))
 
   return NextResponse.json({ ok: true }, { headers: CORS_HEADERS })
