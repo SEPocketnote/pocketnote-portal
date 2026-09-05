@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createBrevoDeal, sendEnquiryNotification, upsertBrevoContact } from '@/lib/brevo'
+import { sendMetaLeadEvent } from '@/lib/meta-capi'
 import { z } from 'zod'
 
 const CORS_HEADERS = {
@@ -85,6 +86,14 @@ export async function POST(request: Request) {
     })
     await createBrevoDeal({ name: data.parentName, email: data.email })
   })().catch(err => console.error('[enquiry] crm sync failed:', err))
+
+  // Meta CAPI — fire-and-forget, non-critical
+  sendMetaLeadEvent({
+    email: data.email,
+    phone: data.phone,
+    firstName: data.parentName.split(' ')[0],
+    lastName: data.parentName.split(' ').slice(1).join(' ') || undefined,
+  }).catch(err => console.error('[enquiry] meta capi failed:', err))
 
   return NextResponse.json({ ok: true }, { headers: CORS_HEADERS })
 }
