@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveRateCents } from '@/lib/rates'
 import { z } from 'zod'
 
 const CreateSchema = z.object({
@@ -69,20 +70,7 @@ export async function POST(request: Request) {
     // Fallback: resolve fresh if snapshot was not set (legacy bookings)
     if (!rate_cents) {
       const mode: 'online' | 'in-person' = booking?.mode === 'in-person' ? 'in-person' : 'online'
-      const modeOverride = mode === 'online'
-        ? tutor.online_rate_override_cents
-        : tutor.inperson_rate_override_cents
-
-      if (modeOverride) {
-        rate_cents = modeOverride
-      } else if (tutor.rate_tier_id) {
-        const { data: tier } = await admin
-          .from('rate_tiers')
-          .select('online_rate_cents, inperson_rate_cents')
-          .eq('id', tutor.rate_tier_id)
-          .single()
-        rate_cents = tier ? (mode === 'online' ? tier.online_rate_cents : tier.inperson_rate_cents) : null
-      }
+      rate_cents = await resolveRateCents({ tutorId: tutor.id, studentId: booking.student_id, mode, admin })
     }
 
     if (!rate_cents) {

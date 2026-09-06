@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { stateToTimezone } from '@/lib/timezone'
+import { resolveRateCents } from '@/lib/rates'
 import InvoiceForm from './InvoiceForm'
 
 export const dynamic = 'force-dynamic'
@@ -46,7 +47,7 @@ export default async function NewInvoicePage() {
     .from('sessions')
     .select(`
       id, scheduled_at, duration_minutes,
-      bookings!inner ( tutor_id, mode, rate_cents_snapshot, students ( name ) )
+      bookings!inner ( tutor_id, student_id, mode, rate_cents_snapshot, students ( name ) )
     `)
     .eq('status', 'completed')
     .eq('bookings.tutor_id', tutor.id)
@@ -67,17 +68,13 @@ export default async function NewInvoicePage() {
 
   if (uninvoiced.length === 0) redirect('/tutor/earnings')
 
-  const sessions = uninvoiced.map(s => {
+  const sessions = await Promise.all(uninvoiced.map(async s => {
     const booking = s.bookings as any
     const bookingMode: 'online' | 'in-person' = booking?.mode === 'in-person' ? 'in-person' : 'online'
 
-    // Resolve rate: snapshot → tutor override → tier
     let rate_cents: number | null = booking?.rate_cents_snapshot ?? null
     if (!rate_cents) {
-      const override = bookingMode === 'online'
-        ? tutor.online_rate_override_cents
-        : tutor.inperson_rate_override_cents
-      rate_cents = override ?? (bookingMode === 'online' ? tierOnlineCents : tierInpersonCents)
+      rate_cents = await resolveRateCents({ tutorId: tutor.id, studentId: booking.student_id, mode: bookingMode, admin })
     }
 
     return {
@@ -87,7 +84,7 @@ export default async function NewInvoicePage() {
       student_name: booking?.students?.name ?? null,
       rate_cents: rate_cents ?? 0,
     }
-  })
+  }))
 
   return (
     <div className="max-w-2xl">
