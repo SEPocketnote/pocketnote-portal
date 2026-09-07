@@ -1,6 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
-import { format } from 'date-fns'
-import { stateToTimezone, formatSessionFull } from '@/lib/timezone'
+import { stateToTimezone, formatSessionFull, formatDateOnly } from '@/lib/timezone'
 
 const POCKETNOTE = {
   name: 'Pocketnote',
@@ -264,7 +263,7 @@ export function InvoicePDF({
             <Text style={styles.invoiceTitle}>{invoiceTitle}</Text>
             <Text style={styles.invoiceMeta}>#{shortId}</Text>
             <Text style={styles.invoiceMeta}>
-              Submitted {format(new Date(invoice.submitted_at), 'd MMM yyyy')}
+              Submitted {formatDateOnly(invoice.submitted_at, tutorTz)}
             </Text>
             <View style={[styles.statusPill, { backgroundColor: statusColor.bg }]}>
               <Text style={{ color: statusColor.text }}>
@@ -274,11 +273,11 @@ export function InvoicePDF({
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.invoiceMeta}>
-              Period: {format(new Date(invoice.period_start), 'd MMM')} – {format(new Date(invoice.period_end), 'd MMM yyyy')}
+              Period: {formatDateOnly(invoice.period_start, tutorTz)} – {formatDateOnly(invoice.period_end, tutorTz)}
             </Text>
             {invoice.paid_at ? (
               <Text style={styles.invoiceMeta}>
-                Paid: {format(new Date(invoice.paid_at), 'd MMM yyyy')}
+                Paid: {formatDateOnly(invoice.paid_at, tutorTz)}
               </Text>
             ) : null}
           </View>

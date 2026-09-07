@@ -62,9 +62,14 @@ export function formatTime(date: Date | string, tz: string): string {
   return `${p.hour}:${p.minute} ${p.dayPeriod.toLowerCase()}`
 }
 
-function dateStrInTz(date: Date | string, tz: string): string {
+export function dateStrInTz(date: Date | string, tz: string): string {
   const p = getParts(new Date(date), tz, { year: 'numeric', month: '2-digit', day: '2-digit' })
   return `${p.year}-${p.month}-${p.day}`
+}
+
+export function formatDateOnly(date: Date | string, tz: string): string {
+  const p = getParts(new Date(date), tz, { day: 'numeric', month: 'short', year: 'numeric' })
+  return `${p.day} ${p.month} ${p.year}`
 }
 
 export function isTodayInTz(date: Date | string, tz: string): boolean {

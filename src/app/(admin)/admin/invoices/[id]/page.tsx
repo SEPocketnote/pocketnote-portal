@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { format } from 'date-fns'
-import { stateToTimezone, formatSessionFull } from '@/lib/timezone'
+import { stateToTimezone, formatSessionFull, formatDateOnly } from '@/lib/timezone'
 import InvoiceActions from './InvoiceActions'
 
 export const dynamic = 'force-dynamic'
@@ -108,12 +107,12 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
           <div>
             <dt className="text-xs text-muted-foreground">Period</dt>
             <dd className="font-medium mt-0.5">
-              {format(new Date(invoice.period_start), 'd MMM yyyy')} – {format(new Date(invoice.period_end), 'd MMM yyyy')}
+              {formatDateOnly(invoice.period_start, tutorTz)} – {formatDateOnly(invoice.period_end, tutorTz)}
             </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Submitted</dt>
-            <dd className="font-medium mt-0.5">{format(new Date(invoice.submitted_at), 'd MMM yyyy')}</dd>
+            <dd className="font-medium mt-0.5">{formatDateOnly(invoice.submitted_at, tutorTz)}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Sessions</dt>
@@ -134,7 +133,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
           {invoice.paid_at && (
             <div>
               <dt className="text-xs text-muted-foreground">Paid on</dt>
-              <dd className="font-medium mt-0.5">{format(new Date(invoice.paid_at), 'd MMM yyyy')}</dd>
+              <dd className="font-medium mt-0.5">{formatDateOnly(invoice.paid_at, tutorTz)}</dd>
             </div>
           )}
         </dl>

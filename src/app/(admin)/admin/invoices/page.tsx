@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
+import { formatDateOnly } from '@/lib/timezone'
+
+const SYDNEY_TZ = 'Australia/Sydney'
 
 export const dynamic = 'force-dynamic'
 
@@ -106,7 +109,7 @@ export default async function AdminInvoicesPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground text-xs">
-                          {format(new Date(inv.submitted_at), 'd MMM yyyy')}
+                          {formatDateOnly(inv.submitted_at, SYDNEY_TZ)}
                         </td>
                         <td className="px-4 py-3">
                           <a href={`/admin/invoices/${inv.id}`} className="text-xs text-primary hover:underline">

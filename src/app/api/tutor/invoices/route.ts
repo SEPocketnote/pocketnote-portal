@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveRateCents } from '@/lib/rates'
+import { stateToTimezone, dateStrInTz } from '@/lib/timezone'
 import { z } from 'zod'
 
 const CreateSchema = z.object({
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
 
   const { data: tutor } = await supabase
     .from('tutors')
-    .select('id, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents')
+    .select('id, state, rate_tier_id, online_rate_override_cents, inperson_rate_override_cents')
     .eq('user_id', user.id)
     .single()
 
@@ -85,9 +86,10 @@ export async function POST(request: Request) {
   const total_cents = sessionRates.reduce((sum, s) => sum + Math.round((s.minutes / 60) * s.rate_cents), 0)
   const sessions_count = sessions.length
 
+  const tutorTz = stateToTimezone(tutor.state)
   const scheduledDates = sessions.map(s => s.scheduled_at).sort()
-  const period_start = scheduledDates[0].split('T')[0]
-  const period_end = scheduledDates[scheduledDates.length - 1].split('T')[0]
+  const period_start = dateStrInTz(scheduledDates[0], tutorTz)
+  const period_end = dateStrInTz(scheduledDates[scheduledDates.length - 1], tutorTz)
 
   // For the invoice header rate: use the most common rate across sessions (for display)
   const rateCounts = new Map<number, number>()
