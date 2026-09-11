@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { format } from 'date-fns'
-import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
+import { stateToTimezone, formatSessionDateFullYear, formatTime, formatDateOnly } from '@/lib/timezone'
 import Link from 'next/link'
 
 function getPayCycleBanner() {
@@ -112,15 +111,24 @@ export default async function TutorEarningsPage() {
     .eq('bookings.tutor_id', tutor.id)
     .order('scheduled_at', { ascending: false })
 
-  // Get session IDs already in invoices — query separately to avoid RLS join issues
+  // Get session IDs on active invoices — sessions on rejected invoices are treated as uninvoiced
   const completedIds = (allCompletedSessions ?? []).map(s => s.id)
   const invoicedSessionIds = new Set<string>()
   if (completedIds.length) {
-    const { data: links } = await admin
-      .from('invoice_sessions')
-      .select('session_id')
-      .in('session_id', completedIds)
-    for (const l of links ?? []) invoicedSessionIds.add(l.session_id)
+    const { data: activeInvoices } = await admin
+      .from('invoices')
+      .select('id')
+      .eq('tutor_id', tutor.id)
+      .in('status', ['submitted', 'approved', 'paid'])
+    const activeInvoiceIds = (activeInvoices ?? []).map(i => i.id)
+    if (activeInvoiceIds.length) {
+      const { data: links } = await admin
+        .from('invoice_sessions')
+        .select('session_id')
+        .in('invoice_id', activeInvoiceIds)
+        .in('session_id', completedIds)
+      for (const l of links ?? []) invoicedSessionIds.add(l.session_id)
+    }
   }
 
   const uninvoiced = (allCompletedSessions ?? []).filter(s => !invoicedSessionIds.has(s.id))
@@ -173,12 +181,12 @@ export default async function TutorEarningsPage() {
                 ? 'Invoice window closed for this week'
                 : payCycle.isUrgent
                   ? 'Invoice due today!'
-                  : 'Invoice submission reminder'}
+                  : 'How to submit your weekly invoice'}
             </p>
             <p className={`text-sm mt-0.5 ${payCycle.isUrgent ? 'text-orange-700' : 'text-blue-700'}`}>
               {payCycle.isPast
-                ? `The Tuesday 6:00 pm deadline has passed. Any uninvoiced sessions will roll into next week's payment run.`
-                : `Submit your invoice by ${payCycle.deadlineLabel} (Sydney time) to be included in this week's payment run. Pay week runs Monday to Sunday.`}
+                ? `The Tuesday 6:00 pm deadline has passed. Any uninvoiced sessions will be processed in the following pay run.`
+                : `A pay week runs Monday to Sunday. Submit your invoice for all sessions completed during the week by ${payCycle.deadlineLabel} (Sydney time). Late invoice submissions will be processed in the following pay run.`}
             </p>
           </div>
           {uninvoiced.length > 0 && hasAnyRate && !payCycle.isPast && (
@@ -292,7 +300,7 @@ export default async function TutorEarningsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">
-                      {format(new Date(inv.period_start), 'd MMM')} – {format(new Date(inv.period_end), 'd MMM yyyy')}
+                      {formatDateOnly(inv.period_start, tz)} – {formatDateOnly(inv.period_end, tz)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {inv.sessions_count} session{inv.sessions_count !== 1 ? 's' : ''}
