@@ -52,14 +52,21 @@ export async function POST(request: Request) {
 
   // Check none are already on an active invoice (submitted, approved, or paid).
   // Sessions on a rejected invoice are allowed to be resubmitted.
-  const { data: existingLinks } = await admin
-    .from('invoice_sessions')
-    .select('session_id, invoices!inner(status)')
-    .in('session_id', session_ids)
-    .in('invoices.status', ['submitted', 'approved', 'paid'])
-
-  if (existingLinks && existingLinks.length > 0) {
-    return NextResponse.json({ error: 'One or more sessions are already included in an invoice.' }, { status: 400 })
+  const { data: activeInvoices } = await admin
+    .from('invoices')
+    .select('id')
+    .eq('tutor_id', tutor.id)
+    .in('status', ['submitted', 'approved', 'paid'])
+  const activeInvoiceIds = (activeInvoices ?? []).map(i => i.id)
+  if (activeInvoiceIds.length) {
+    const { data: existingLinks } = await admin
+      .from('invoice_sessions')
+      .select('session_id')
+      .in('invoice_id', activeInvoiceIds)
+      .in('session_id', session_ids)
+    if (existingLinks && existingLinks.length > 0) {
+      return NextResponse.json({ error: 'One or more sessions are already included in an invoice.' }, { status: 400 })
+    }
   }
 
   // Build per-session rate map, falling back through the rate hierarchy if snapshot is missing

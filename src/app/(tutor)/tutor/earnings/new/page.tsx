@@ -58,12 +58,21 @@ export default async function NewInvoicePage() {
   const completedIds = (allCompletedSessions ?? []).map(s => s.id)
   const invoicedSessionIds = new Set<string>()
   if (completedIds.length) {
-    const { data: links } = await admin
-      .from('invoice_sessions')
-      .select('session_id, invoices!inner(status)')
-      .in('session_id', completedIds)
-      .in('invoices.status', ['submitted', 'approved', 'paid'])
-    for (const l of links ?? []) invoicedSessionIds.add(l.session_id)
+    // First get active invoice IDs for this tutor, then find which sessions are on them.
+    const { data: activeInvoices } = await admin
+      .from('invoices')
+      .select('id')
+      .eq('tutor_id', tutor.id)
+      .in('status', ['submitted', 'approved', 'paid'])
+    const activeInvoiceIds = (activeInvoices ?? []).map(i => i.id)
+    if (activeInvoiceIds.length) {
+      const { data: links } = await admin
+        .from('invoice_sessions')
+        .select('session_id')
+        .in('invoice_id', activeInvoiceIds)
+        .in('session_id', completedIds)
+      for (const l of links ?? []) invoicedSessionIds.add(l.session_id)
+    }
   }
 
   const uninvoiced = (allCompletedSessions ?? []).filter(s => !invoicedSessionIds.has(s.id))
