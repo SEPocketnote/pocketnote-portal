@@ -53,14 +53,16 @@ export default async function NewInvoicePage() {
     .eq('bookings.tutor_id', tutor.id)
     .order('scheduled_at', { ascending: false })
 
-  // Filter out already-invoiced sessions
+  // Filter out sessions already on an active invoice (submitted, approved, or paid).
+  // Sessions on a rejected invoice are treated as available to resubmit.
   const completedIds = (allCompletedSessions ?? []).map(s => s.id)
   const invoicedSessionIds = new Set<string>()
   if (completedIds.length) {
     const { data: links } = await admin
       .from('invoice_sessions')
-      .select('session_id')
+      .select('session_id, invoices!inner(status)')
       .in('session_id', completedIds)
+      .in('invoices.status', ['submitted', 'approved', 'paid'])
     for (const l of links ?? []) invoicedSessionIds.add(l.session_id)
   }
 

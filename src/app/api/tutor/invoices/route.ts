@@ -50,11 +50,13 @@ export async function POST(request: Request) {
     }
   }
 
-  // Check none are already invoiced
+  // Check none are already on an active invoice (submitted, approved, or paid).
+  // Sessions on a rejected invoice are allowed to be resubmitted.
   const { data: existingLinks } = await admin
     .from('invoice_sessions')
-    .select('session_id')
+    .select('session_id, invoices!inner(status)')
     .in('session_id', session_ids)
+    .in('invoices.status', ['submitted', 'approved', 'paid'])
 
   if (existingLinks && existingLinks.length > 0) {
     return NextResponse.json({ error: 'One or more sessions are already included in an invoice.' }, { status: 400 })
