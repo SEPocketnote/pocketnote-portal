@@ -11,6 +11,8 @@ type Parent = {
   email: string
   phone: string | null
   created_at: string | null
+  user_id: string | null
+  default_payment_method_id: string | null
   students: { id: string }[] | null
   bookings: { id: string; status: string }[] | null
 }
@@ -53,6 +55,7 @@ export default function ParentsSearch({ parents }: { parents: Parent[] }) {
           <div className="md:hidden space-y-2">
             {filtered.map((p) => {
               const activeEnrolments = (p.bookings ?? []).filter(b => b.status === 'confirmed').length
+              const incompleteSetup = !!p.user_id && !p.default_payment_method_id
               return (
                 <Link
                   key={p.id}
@@ -66,6 +69,9 @@ export default function ParentsSearch({ parents }: { parents: Parent[] }) {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs text-muted-foreground">{p.students?.length ?? 0} student{p.students?.length !== 1 ? 's' : ''}</p>
+                    {incompleteSetup && (
+                      <p className="text-xs text-amber-600 font-medium">Incomplete setup</p>
+                    )}
                     {activeEnrolments > 0 && (
                       <p className="text-xs text-green-600 font-medium">{activeEnrolments} active</p>
                     )}
@@ -91,12 +97,16 @@ export default function ParentsSearch({ parents }: { parents: Parent[] }) {
               <tbody className="divide-y divide-border">
                 {filtered.map((p) => {
                   const activeEnrolments = (p.bookings ?? []).filter(b => b.status === 'confirmed').length
+                  const incompleteSetup = !!p.user_id && !p.default_payment_method_id
                   return (
                     <tr key={p.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <Link href={`/admin/parents/${p.id}`} className="font-medium hover:text-primary hover:underline">
                           {p.name}
                         </Link>
+                        {incompleteSetup && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">No card</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{p.email}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.phone || '—'}</td>

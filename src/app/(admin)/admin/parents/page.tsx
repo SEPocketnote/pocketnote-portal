@@ -1,15 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { UserPlus } from 'lucide-react'
 import ParentsSearch from './ParentsSearch'
 
-export default async function ParentsPage() {
-  const supabase = await createClient()
+export const dynamic = 'force-dynamic'
 
-  const { data: parents } = await supabase
+export default async function ParentsPage() {
+  const admin = createAdminClient()
+
+  const { data: parents } = await admin
     .from('parents')
     .select(`
-      id, name, email, phone, created_at,
+      id, name, email, phone, created_at, user_id, default_payment_method_id,
       students ( id ),
       bookings ( id, status )
     `)
