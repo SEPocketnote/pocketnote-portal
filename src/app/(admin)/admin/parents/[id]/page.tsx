@@ -135,6 +135,8 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No account</span>
           ) : !confirmed ? (
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Invited</span>
+          ) : !paymentMethodId ? (
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Incomplete setup</span>
           ) : (
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
           )}
