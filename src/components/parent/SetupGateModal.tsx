@@ -47,6 +47,7 @@ function CardForm() {
   const elements = useElements()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -90,7 +91,18 @@ function CardForm() {
     }
 
     window.dispatchEvent(new Event('pn:gate-complete'))
+    setSuccess(true)
+    setLoading(false)
     router.refresh()
+  }
+
+  if (success) {
+    return (
+      <div className="text-center py-4 space-y-2">
+        <p className="text-sm font-semibold text-green-700">Card saved successfully!</p>
+        <p className="text-xs text-muted-foreground">Taking you to the portal…</p>
+      </div>
+    )
   }
 
   return (
