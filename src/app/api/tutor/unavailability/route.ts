@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     startTime: is_all_day ? null : start_time,
     endTime: is_all_day ? null : end_time,
     notes: notes?.trim() || null,
-  }).catch(() => {/* non-fatal */})
+  }).catch((err) => { console.error('[unavailability] email failed:', err) })
 
   return NextResponse.json({ block: data })
 }
