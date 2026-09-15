@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendAdminUnavailabilityNotification } from '@/lib/brevo'
 
 export async function GET() {
   const supabase = await createClient()
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const { data: tutor } = await supabase.from('tutors').select('id').eq('user_id', user.id).single()
+  const { data: tutor } = await supabase.from('tutors').select('id, preferred_name, legal_name').eq('user_id', user.id).single()
   if (!tutor) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await req.json()
@@ -48,5 +49,17 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const tutorName = (tutor as any).preferred_name?.trim() || (tutor as any).legal_name || 'Unknown tutor'
+  sendAdminUnavailabilityNotification({
+    tutorName,
+    startDate: start_date,
+    endDate: end_date,
+    isAllDay: !!is_all_day,
+    startTime: is_all_day ? null : start_time,
+    endTime: is_all_day ? null : end_time,
+    notes: notes?.trim() || null,
+  }).catch(() => {/* non-fatal */})
+
   return NextResponse.json({ block: data })
 }

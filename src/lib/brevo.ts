@@ -1459,3 +1459,57 @@ export async function sendTutorBookingNotification({
 </html>`,
   })
 }
+
+export async function sendAdminUnavailabilityNotification(data: {
+  tutorName: string
+  startDate: string
+  endDate: string
+  isAllDay: boolean
+  startTime?: string | null
+  endTime?: string | null
+  notes?: string | null
+}) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const dateRange = data.startDate === data.endDate ? data.startDate : `${data.startDate} – ${data.endDate}`
+  const timeInfo = data.isAllDay ? 'All day' : `${data.startTime ?? ''} – ${data.endTime ?? ''}`
+
+  await brevoRequest('/smtp/email', {
+    sender: { email: 'updates@info.pocketnotetutors.com.au', name: 'Pocketnote Portal' },
+    to: (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || 'tara@pocketnote.com.au')
+      .split(',')
+      .map((e: string) => ({ email: e.trim() }))
+      .filter((e: { email: string }) => e.email),
+    subject: `Tutor unavailability — ${data.tutorName} (${dateRange})`,
+    htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background-color:#f5f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:24px;">
+          <span style="font-size:22px;font-weight:700;color:#E26F6F;letter-spacing:-0.5px;">Pocketnote</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border-radius:16px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">Tutor unavailability submitted</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">${data.tutorName} has submitted a temporary unavailability block.</p>
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f9f8f6;border-radius:10px;padding:4px;">
+            <tr><td style="padding:10px 16px;border-bottom:1px solid #f0eeeb;"><strong style="font-size:13px;color:#374151;">Tutor</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${data.tutorName}</td></tr>
+            <tr><td style="padding:10px 16px;border-bottom:1px solid #f0eeeb;"><strong style="font-size:13px;color:#374151;">Dates</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${dateRange}</td></tr>
+            <tr><td style="padding:10px 16px;${data.notes ? 'border-bottom:1px solid #f0eeeb;' : ''}"><strong style="font-size:13px;color:#374151;">Time</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${timeInfo}</td></tr>
+            ${data.notes ? `<tr><td style="padding:10px 16px;"><strong style="font-size:13px;color:#374151;">Notes</strong></td><td style="padding:10px 16px;font-size:13px;color:#374151;">${data.notes}</td></tr>` : ''}
+          </table>
+          <div style="margin-top:28px;text-align:center;">
+            <a href="${siteUrl}/admin/tutors" style="display:inline-block;background-color:#E26F6F;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">View tutors</a>
+          </div>
+        </td></tr>
+        <tr><td style="padding-top:28px;" align="center">
+          <p style="margin:0;font-size:12px;color:#b0b7c3;">&copy; 2026 Pocketnote. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  })
+}
