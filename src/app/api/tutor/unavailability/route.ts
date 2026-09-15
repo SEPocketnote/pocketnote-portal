@@ -51,15 +51,19 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const tutorName = (tutor as any).preferred_name?.trim() || (tutor as any).legal_name || 'Unknown tutor'
-  sendAdminUnavailabilityNotification({
-    tutorName,
-    startDate: start_date,
-    endDate: end_date,
-    isAllDay: !!is_all_day,
-    startTime: is_all_day ? null : start_time,
-    endTime: is_all_day ? null : end_time,
-    notes: notes?.trim() || null,
-  }).catch((err) => { console.error('[unavailability] email failed:', err) })
+  try {
+    await sendAdminUnavailabilityNotification({
+      tutorName,
+      startDate: start_date,
+      endDate: end_date,
+      isAllDay: !!is_all_day,
+      startTime: is_all_day ? null : start_time,
+      endTime: is_all_day ? null : end_time,
+      notes: notes?.trim() || null,
+    })
+  } catch (err) {
+    console.error('[unavailability] email failed:', err)
+  }
 
   return NextResponse.json({ block: data })
 }
