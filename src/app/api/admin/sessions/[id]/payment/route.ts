@@ -34,17 +34,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (!session?.booking_id) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
-  await admin.from('payments').insert({
-    booking_id: session.booking_id,
-    session_id: sessionId,
-    amount: amountCents,
-    status: 'paid',
-    paid_at: new Date(paidAt).toISOString(),
-    method,
-    stripe_charge_id: method === 'stripe_charge' ? (reference ?? null) : null,
-    // For non-Stripe methods the reference (claim number, bank ref, etc.) goes in notes
-    notes: method !== 'stripe_charge' ? (reference ?? notes ?? null) : (notes ?? null),
-  })
+  await Promise.all([
+    admin.from('payments').insert({
+      booking_id: session.booking_id,
+      session_id: sessionId,
+      amount: amountCents,
+      status: 'paid',
+      paid_at: new Date(paidAt).toISOString(),
+      method,
+      stripe_charge_id: method === 'stripe_charge' ? (reference ?? null) : null,
+      notes: method !== 'stripe_charge' ? (reference ?? notes ?? null) : (notes ?? null),
+    }),
+    admin.from('sessions').update({ payment_status: 'paid' }).eq('id', sessionId),
+  ])
 
   return NextResponse.json({ ok: true })
 }

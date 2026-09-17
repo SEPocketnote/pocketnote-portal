@@ -28,7 +28,15 @@ type ProgressReport = {
   notes: string | null
 }
 
-export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone, rateCentsSnapshot, report }: {
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  paid: 'text-green-600',
+  failed: 'text-red-500',
+  pending: 'text-amber-500',
+  waived: 'text-muted-foreground',
+  credited: 'text-muted-foreground',
+}
+
+export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone, rateCentsSnapshot, paymentStatus, report }: {
   sessionId: string
   index: number
   scheduledAt: string
@@ -36,6 +44,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
   durationMinutes: number
   timezone: string
   rateCentsSnapshot: number | null
+  paymentStatus?: string | null
   report?: ProgressReport | null
 }) {
   const router = useRouter()
@@ -204,8 +213,14 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
           )}
           <button
             onClick={() => { setPayOpen(o => !o); setPayError('') }}
-            title="Record payment"
-            className={`transition-colors ${payOpen ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+            title={paymentStatus ? `Payment: ${paymentStatus}` : 'Record payment'}
+            className={`transition-colors ${
+              payOpen
+                ? 'text-primary'
+                : paymentStatus && PAYMENT_STATUS_STYLES[paymentStatus]
+                  ? PAYMENT_STATUS_STYLES[paymentStatus]
+                  : 'text-muted-foreground hover:text-primary'
+            }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
           </button>
