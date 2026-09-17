@@ -9,7 +9,6 @@ import SessionRow from './SessionRow'
 import BookingStatus from './BookingStatus'
 import EnrolmentActions from './EnrolmentActions'
 import CancelAllSessions from './CancelAllSessions'
-import ParentRateEditor from './ParentRateEditor'
 
 function scheduleLabel(booking: any) {
   const type = booking.schedule_type
@@ -30,7 +29,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .from('bookings')
       .select(`
         id, status, mode, location, start_date, schedule_type, sessions_count, recurrence_end_date,
-        stripe_subscription_id, rate_cents_snapshot, parent_rate_cents,
+        stripe_subscription_id, rate_cents_snapshot,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
         tutors ( id, legal_name, preferred_name, email, state )
@@ -102,13 +101,6 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           {booking.location && <Info label="Location" value={booking.location} />}
           <Info label="Student year" value={student?.year_level} />
           <Info label="Subjects" value={student?.subjects?.join(', ')} />
-          <div>
-            <dt className="text-xs text-muted-foreground mb-0.5">Parent rate</dt>
-            <ParentRateEditor
-              bookingId={id}
-              initialRateCents={(booking as any).parent_rate_cents ?? null}
-            />
-          </div>
         </dl>
       </section>
 

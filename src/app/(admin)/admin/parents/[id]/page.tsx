@@ -7,7 +7,6 @@ import EditParentForm from './EditParentForm'
 import ResendParentInviteButton from '../../bookings/[id]/ResendParentInviteButton'
 import StudentManager from '@/components/StudentManager'
 import DeleteAccountButton from '@/components/DeleteAccountButton'
-import AutoChargeToggle from './AutoChargeToggle'
 import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
@@ -42,7 +41,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
   const now = new Date().toISOString()
 
   const [{ data: parent }, { data: bookings }, { data: upcomingSessions }] = await Promise.all([
-    admin.from('parents').select('*, auto_charge_enabled, students(id, name, year_level, subjects)').eq('id', id).single(),
+    admin.from('parents').select('*, students(id, name, year_level, subjects)').eq('id', id).single(),
     admin.from('bookings')
       .select(`
         id, status, mode, schedule_type, sessions_count, recurrence_end_date, start_date,
@@ -173,12 +172,6 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
               </p>
             </div>
           )}
-          <div className="sm:col-span-2">
-            <AutoChargeToggle
-              parentId={id}
-              initialValue={!!(parent as any).auto_charge_enabled}
-            />
-          </div>
           <div className="sm:col-span-2 flex items-center gap-2">
             <dt className="text-xs text-muted-foreground w-28 shrink-0">Payment method</dt>
             {paymentMethodId && cardLast4 ? (

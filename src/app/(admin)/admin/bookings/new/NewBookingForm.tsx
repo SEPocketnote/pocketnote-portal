@@ -77,9 +77,6 @@ export default function NewBookingForm({
   // Email
   const [suppressEmail, setSuppressEmail] = useState(false)
 
-  // Billing
-  const [parentRateDollars, setParentRateDollars] = useState('')
-
   // Booking
   const [form, setForm] = useState({
     tutorId: '',
@@ -171,7 +168,6 @@ export default function NewBookingForm({
       ...(scheduleType !== 'single' && endCondition === 'count' ? { sessionsCount: parseInt(sessionsCount) } : {}),
       ...(scheduleType !== 'single' && endCondition === 'endDate' ? { recurrenceEndDate: endDate } : {}),
       ...(parentMode === 'existing' && suppressEmail ? { suppressEmail: true } : {}),
-      ...(parentRateDollars ? { parentRateCents: Math.round(parseFloat(parentRateDollars) * 100) } : {}),
     }
 
     try {
@@ -377,30 +373,6 @@ export default function NewBookingForm({
                   value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
               </Field>
             )}
-          </div>
-        </section>
-      )}
-
-      {/* Billing */}
-      {parentResolved && (
-        <section className="bg-white rounded-2xl shadow-card p-6 space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Parent rate ($/hr)">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  className="input pl-7"
-                  placeholder="e.g. 95.00"
-                  value={parentRateDollars}
-                  onChange={e => setParentRateDollars(e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Hourly rate charged to the parent. Can be set or updated later.</p>
-            </Field>
           </div>
         </section>
       )}
