@@ -30,6 +30,7 @@ const Schema = z.object({
   recurrenceEndDate: z.string().optional(),
   durationMinutes: z.number().int().min(15).max(360).optional(),
   suppressEmail: z.boolean().optional(),
+  parentRateCents: z.number().int().min(0).optional(),
 })
 
 export async function POST(request: Request) {
@@ -225,6 +226,7 @@ export async function POST(request: Request) {
     recurrence_end_date: d.recurrenceEndDate ?? null,
     rate_cents_snapshot: rate_cents_snapshot ?? null,
     duration_minutes: durationMinutes,
+    parent_rate_cents: d.parentRateCents ?? null,
   }).select('id').single()
 
   if (!booking) return NextResponse.json({ error: 'Failed to create enrolment' }, { status: 500 })

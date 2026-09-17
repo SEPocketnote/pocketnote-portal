@@ -10,6 +10,7 @@ const Schema = z.object({
   tutorId: z.string().uuid().optional(),
   futureSessionTime: z.string().optional(), // HH:MM in tutor local time
   timezone: z.string().optional(),
+  parentRateCents: z.number().int().min(0).nullable().optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -77,6 +78,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const results = await Promise.all(updates)
     const failed = results.find(r => r.error)
     if (failed?.error) return NextResponse.json({ error: failed.error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  // Update parent rate
+  if (d.parentRateCents !== undefined) {
+    const { error } = await admin.from('bookings').update({ parent_rate_cents: d.parentRateCents }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   }
 
