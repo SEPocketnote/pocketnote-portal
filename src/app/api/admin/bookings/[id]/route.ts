@@ -11,6 +11,8 @@ const Schema = z.object({
   futureSessionTime: z.string().optional(), // HH:MM in tutor local time
   timezone: z.string().optional(),
   parentRateCents: z.number().int().min(0).nullable().optional(),
+  paymentDayOfWeek: z.number().int().min(0).max(6).nullable().optional(),
+  paymentTime: z.string().nullable().optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -84,6 +86,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // Update parent rate
   if (d.parentRateCents !== undefined) {
     const { error } = await admin.from('bookings').update({ parent_rate_cents: d.parentRateCents }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  // Update payment day
+  if (d.paymentDayOfWeek !== undefined || d.paymentTime !== undefined) {
+    const updates: Record<string, any> = {}
+    if (d.paymentDayOfWeek !== undefined) updates.payment_day_of_week = d.paymentDayOfWeek
+    if (d.paymentTime !== undefined) updates.payment_time = d.paymentTime
+    const { error } = await admin.from('bookings').update(updates).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   }

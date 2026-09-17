@@ -10,6 +10,7 @@ import BookingStatus from './BookingStatus'
 import EnrolmentActions from './EnrolmentActions'
 import CancelAllSessions from './CancelAllSessions'
 import ParentRateEditor from './ParentRateEditor'
+import PaymentDayEditor from './PaymentDayEditor'
 
 function scheduleLabel(booking: any) {
   const type = booking.schedule_type
@@ -30,7 +31,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .from('bookings')
       .select(`
         id, status, mode, location, start_date, schedule_type, sessions_count, recurrence_end_date,
-        stripe_subscription_id, rate_cents_snapshot, parent_rate_cents,
+        stripe_subscription_id, rate_cents_snapshot, parent_rate_cents, payment_day_of_week, payment_time,
         parents ( id, name, email, phone ),
         students ( name, year_level, subjects ),
         tutors ( id, legal_name, preferred_name, email, state )
@@ -107,6 +108,14 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             <ParentRateEditor
               bookingId={id}
               initialRateCents={(booking as any).parent_rate_cents ?? null}
+            />
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground mb-0.5">Payment day</dt>
+            <PaymentDayEditor
+              bookingId={id}
+              initialDayOfWeek={(booking as any).payment_day_of_week ?? null}
+              initialTime={(booking as any).payment_time ?? null}
             />
           </div>
         </dl>

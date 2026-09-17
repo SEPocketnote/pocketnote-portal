@@ -79,6 +79,9 @@ export default function NewBookingForm({
 
   // Billing
   const [parentRateDollars, setParentRateDollars] = useState('')
+  const [useFixedPaymentDay, setUseFixedPaymentDay] = useState(false)
+  const [paymentDayOfWeek, setPaymentDayOfWeek] = useState<number | null>(null)
+  const [paymentTime, setPaymentTime] = useState('18:00')
 
   // Booking
   const [form, setForm] = useState({
@@ -172,6 +175,7 @@ export default function NewBookingForm({
       ...(scheduleType !== 'single' && endCondition === 'endDate' ? { recurrenceEndDate: endDate } : {}),
       ...(parentMode === 'existing' && suppressEmail ? { suppressEmail: true } : {}),
       ...(parentRateDollars ? { parentRateCents: Math.round(parseFloat(parentRateDollars) * 100) } : {}),
+      ...(useFixedPaymentDay && paymentDayOfWeek !== null ? { paymentDayOfWeek, paymentTime } : {}),
     }
 
     try {
@@ -401,6 +405,49 @@ export default function NewBookingForm({
               </div>
               <p className="text-xs text-muted-foreground mt-1">Hourly rate charged to the parent. Can be set or updated later.</p>
             </Field>
+          </div>
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer w-fit">
+              <input
+                type="checkbox"
+                checked={useFixedPaymentDay}
+                onChange={e => setUseFixedPaymentDay(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-sm font-medium">Fixed weekly payment day</span>
+            </label>
+            <p className="text-xs text-muted-foreground mt-1 ml-6">For weekly/fortnightly enrolments — charge runs on the same day each week.</p>
+            {useFixedPaymentDay && (
+              <div className="mt-3 ml-6 space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">Payment day</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6], ['Sun', 0]].map(([label, val]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setPaymentDayOfWeek(val as number)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          paymentDayOfWeek === val
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-white text-foreground border-border hover:border-primary/50'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Field label="Payment time">
+                  <input
+                    type="time"
+                    className="input w-32"
+                    value={paymentTime}
+                    onChange={e => setPaymentTime(e.target.value)}
+                  />
+                </Field>
+              </div>
+            )}
           </div>
         </section>
       )}

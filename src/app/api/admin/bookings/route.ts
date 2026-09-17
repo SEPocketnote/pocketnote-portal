@@ -31,6 +31,8 @@ const Schema = z.object({
   durationMinutes: z.number().int().min(15).max(360).optional(),
   suppressEmail: z.boolean().optional(),
   parentRateCents: z.number().int().min(0).optional(),
+  paymentDayOfWeek: z.number().int().min(0).max(6).optional(),
+  paymentTime: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -227,6 +229,8 @@ export async function POST(request: Request) {
     rate_cents_snapshot: rate_cents_snapshot ?? null,
     duration_minutes: durationMinutes,
     parent_rate_cents: d.parentRateCents ?? null,
+    payment_day_of_week: d.paymentDayOfWeek ?? null,
+    payment_time: d.paymentTime ?? null,
   }).select('id').single()
 
   if (!booking) return NextResponse.json({ error: 'Failed to create enrolment' }, { status: 500 })
