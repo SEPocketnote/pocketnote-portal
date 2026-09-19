@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { toZonedDatetimeInput, toUtcFromZoned } from '@/lib/timezone'
+import { toZonedDatetimeInput, toUtcFromZoned, stateToTimezone } from '@/lib/timezone'
 import { z } from 'zod'
-import { calcChargeCents } from '@/lib/payments'
+import { calcChargeCents, calcPaymentDueAt } from '@/lib/payments'
 
 const Schema = z.object({
   status: z.enum(['pending', 'confirmed', 'completed', 'cancelled']).optional(),
@@ -117,13 +117,45 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: true })
   }
 
-  // Update payment day
+  // Update payment day — also recalculate payment_due_at on future scheduled sessions
   if (d.paymentDayOfWeek !== undefined || d.paymentTime !== undefined) {
-    const updates: Record<string, any> = {}
-    if (d.paymentDayOfWeek !== undefined) updates.payment_day_of_week = d.paymentDayOfWeek
-    if (d.paymentTime !== undefined) updates.payment_time = d.paymentTime
-    const { error } = await admin.from('bookings').update(updates).eq('id', id)
+    const bookingUpdates: Record<string, any> = {}
+    if (d.paymentDayOfWeek !== undefined) bookingUpdates.payment_day_of_week = d.paymentDayOfWeek
+    if (d.paymentTime !== undefined) bookingUpdates.payment_time = d.paymentTime
+    const { error } = await admin.from('bookings').update(bookingUpdates).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Fetch tutor timezone and effective payment day/time after update
+    const { data: bookingDetails } = await admin
+      .from('bookings')
+      .select('payment_day_of_week, payment_time, tutors(state)')
+      .eq('id', id)
+      .single()
+
+    const effectiveDow = (bookingDetails as any)?.payment_day_of_week as number | null
+    const effectiveTime = (bookingDetails as any)?.payment_time as string | null
+    const tz = stateToTimezone((bookingDetails?.tutors as any)?.state)
+    const now = new Date().toISOString()
+
+    const { data: futureSessions } = await admin
+      .from('sessions')
+      .select('id, scheduled_at')
+      .eq('booking_id', id)
+      .eq('status', 'scheduled')
+      .gte('scheduled_at', now)
+
+    if (futureSessions?.length) {
+      await Promise.all(
+        futureSessions.map(s =>
+          admin.from('sessions').update({
+            payment_due_at: (effectiveDow != null && effectiveTime)
+              ? calcPaymentDueAt(s.scheduled_at, effectiveDow, effectiveTime, tz).toISOString()
+              : null,
+          }).eq('id', s.id)
+        )
+      )
+    }
+
     return NextResponse.json({ ok: true })
   }
 

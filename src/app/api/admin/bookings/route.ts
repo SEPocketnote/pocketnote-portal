@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
 import { stateToTimezone, toUtcFromZoned, formatSessionFull } from '@/lib/timezone'
 import { resolveRateCents } from '@/lib/rates'
-import { calcChargeCents } from '@/lib/payments'
+import { calcChargeCents, calcPaymentDueAt } from '@/lib/payments'
 
 const Schema = z.object({
   // Parent — either existing ID or new details
@@ -248,6 +248,9 @@ export async function POST(request: Request) {
       status: 'scheduled',
       duration_minutes: durationMinutes,
       charge_cents: chargeCents,
+      payment_due_at: (d.paymentDayOfWeek != null && d.paymentTime)
+        ? calcPaymentDueAt(dt.toISOString(), d.paymentDayOfWeek, d.paymentTime, tutorTimezone).toISOString()
+        : null,
     }))
   )
 

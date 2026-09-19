@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendCancellationNotification } from '@/lib/brevo'
 import { stateToTimezone, formatSessionDateFullYear, formatTime } from '@/lib/timezone'
+import { calcPaymentDueAt } from '@/lib/payments'
 import { z } from 'zod'
 
 const Schema = z.object({
@@ -25,10 +26,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const admin = createAdminClient()
 
-  const updates: Record<string, string | number> = {}
+  const updates: Record<string, string | number | null> = {}
   if (parsed.data.status) updates.status = parsed.data.status
   if (parsed.data.scheduled_at) updates.scheduled_at = parsed.data.scheduled_at
   if (parsed.data.duration_minutes !== undefined) updates.duration_minutes = parsed.data.duration_minutes
+
+  // If rescheduling, recalculate payment_due_at based on booking's payment day
+  if (parsed.data.scheduled_at) {
+    const { data: sess } = await admin.from('sessions').select('booking_id').eq('id', id).single()
+    if (sess?.booking_id) {
+      const { data: booking } = await admin
+        .from('bookings')
+        .select('payment_day_of_week, payment_time, tutors(state)')
+        .eq('id', sess.booking_id)
+        .single()
+      const dow = (booking as any)?.payment_day_of_week as number | null
+      const pTime = (booking as any)?.payment_time as string | null
+      const tz = stateToTimezone((booking?.tutors as any)?.state)
+      updates.payment_due_at = (dow != null && pTime)
+        ? calcPaymentDueAt(parsed.data.scheduled_at, dow, pTime, tz).toISOString()
+        : null
+    }
+  }
 
   const { data: session, error } = await admin
     .from('sessions')
