@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { toZonedDatetimeInput, toUtcFromZoned } from '@/lib/timezone'
 import { z } from 'zod'
+import { calcChargeCents } from '@/lib/payments'
 
 const Schema = z.object({
   status: z.enum(['pending', 'confirmed', 'completed', 'cancelled']).optional(),
@@ -83,10 +84,36 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: true })
   }
 
-  // Update parent rate
+  // Update parent rate — also recalculate charge_cents on future scheduled sessions
   if (d.parentRateCents !== undefined) {
     const { error } = await admin.from('bookings').update({ parent_rate_cents: d.parentRateCents }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    if (d.parentRateCents != null) {
+      const now = new Date().toISOString()
+      const { data: futureSessions } = await admin
+        .from('sessions')
+        .select('id, duration_minutes, discount_type, discount_value')
+        .eq('booking_id', id)
+        .eq('status', 'scheduled')
+        .gte('scheduled_at', now)
+
+      if (futureSessions?.length) {
+        await Promise.all(
+          futureSessions.map(s =>
+            admin.from('sessions').update({
+              charge_cents: calcChargeCents(
+                d.parentRateCents!,
+                s.duration_minutes ?? 60,
+                (s as any).discount_type,
+                (s as any).discount_value,
+              ),
+            }).eq('id', s.id)
+          )
+        )
+      }
+    }
+
     return NextResponse.json({ ok: true })
   }
 

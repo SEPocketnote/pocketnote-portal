@@ -40,7 +40,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       .single(),
     supabase
       .from('sessions')
-      .select('id, scheduled_at, status, duration_minutes, payment_status, progress_reports(covered, went_well, needs_work, next_session_plan, notes)')
+      .select('id, scheduled_at, status, duration_minutes, payment_status, charge_cents, progress_reports(covered, went_well, needs_work, next_session_plan, notes)')
       .eq('booking_id', id)
       .order('scheduled_at', { ascending: true }),
     admin.from('tutors').select('id, legal_name, preferred_name').eq('active', true).order('legal_name'),
@@ -264,6 +264,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 durationMinutes={session.duration_minutes ?? 60}
                 timezone={tutorTimezone}
                 rateCentsSnapshot={(booking as any).rate_cents_snapshot ?? null}
+                chargeCents={(session as any).charge_cents ?? null}
                 paymentStatus={(session as any).payment_status ?? null}
                 report={(session as any).progress_reports ?? null}
               />

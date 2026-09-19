@@ -36,7 +36,7 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
   credited: 'text-muted-foreground',
 }
 
-export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone, rateCentsSnapshot, paymentStatus, report }: {
+export default function SessionRow({ sessionId, index, scheduledAt, status, durationMinutes, timezone, rateCentsSnapshot, chargeCents, paymentStatus, report }: {
   sessionId: string
   index: number
   scheduledAt: string
@@ -44,6 +44,7 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
   durationMinutes: number
   timezone: string
   rateCentsSnapshot: number | null
+  chargeCents?: number | null
   paymentStatus?: string | null
   report?: ProgressReport | null
 }) {
@@ -58,9 +59,17 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
   const [statusValue, setStatusValue] = useState(status)
   const [durationValue, setDurationValue] = useState(String(durationMinutes ?? 60))
 
+  // Resolved charge for display — stored value takes priority, fall back to rate snapshot calc
+  const displayCents: number | null =
+    chargeCents != null
+      ? chargeCents
+      : rateCentsSnapshot != null
+        ? Math.round((rateCentsSnapshot * durationMinutes) / 60)
+        : null
+
   // Payment form state
-  const defaultAmountDollars = rateCentsSnapshot
-    ? ((rateCentsSnapshot * durationMinutes) / 60 / 100).toFixed(2)
+  const defaultAmountDollars = displayCents != null
+    ? (displayCents / 100).toFixed(2)
     : ''
   const [payMethod, setPayMethod] = useState('stripe_charge')
   const [payAmount, setPayAmount] = useState(defaultAmountDollars)
@@ -198,7 +207,10 @@ export default function SessionRow({ sessionId, index, scheduledAt, status, dura
           <span className="text-xs text-muted-foreground w-16">Session {index}</span>
           <div>
             <p className="text-sm font-medium">{formatSessionDateFullYear(scheduledAt, timezone)}</p>
-            <p className="text-xs text-muted-foreground">{formatTime(scheduledAt, timezone)} · {durationMinutes} min</p>
+            <p className="text-xs text-muted-foreground">
+              {formatTime(scheduledAt, timezone)} · {durationMinutes} min
+              {displayCents != null && <span className="ml-1">· ${(displayCents / 100).toFixed(2)}</span>}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">

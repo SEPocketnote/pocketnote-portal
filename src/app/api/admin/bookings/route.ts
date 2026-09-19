@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
 import { stateToTimezone, toUtcFromZoned, formatSessionFull } from '@/lib/timezone'
 import { resolveRateCents } from '@/lib/rates'
+import { calcChargeCents } from '@/lib/payments'
 
 const Schema = z.object({
   // Parent — either existing ID or new details
@@ -236,12 +237,17 @@ export async function POST(request: Request) {
   if (!booking) return NextResponse.json({ error: 'Failed to create enrolment' }, { status: 500 })
 
   // 11. Insert sessions
+  const chargeCents = d.parentRateCents != null
+    ? calcChargeCents(d.parentRateCents, durationMinutes)
+    : null
+
   await admin.from('sessions').insert(
     sessionDates.map(dt => ({
       booking_id: booking.id,
       scheduled_at: dt.toISOString(),
       status: 'scheduled',
       duration_minutes: durationMinutes,
+      charge_cents: chargeCents,
     }))
   )
 
