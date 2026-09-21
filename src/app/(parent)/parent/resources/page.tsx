@@ -6,7 +6,7 @@ const resources = [
     icon: BookOpen,
     title: 'Getting started guide',
     description: 'Everything you need to know about your first session — what to expect, how to prepare, and how to get the most out of tutoring.',
-    href: null,
+    href: '/parent/resources/weekly-plan',
     external: false,
   },
   {
