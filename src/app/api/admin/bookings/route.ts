@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendParentWelcome, sendBookingConfirmation, sendTutorBookingNotification, upsertBrevoContact } from '@/lib/brevo'
 import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
-import { addWeeks, isBefore, isEqual, parseISO } from 'date-fns'
+import { addWeeks, isBefore, isEqual, parseISO, format } from 'date-fns'
 import { stateToTimezone, toUtcFromZoned, formatSessionFull } from '@/lib/timezone'
 import { resolveRateCents } from '@/lib/rates'
 
@@ -181,30 +181,34 @@ export async function POST(request: Request) {
   })
 
   // 7. Generate session dates
+  // Work in local date space so each session is individually converted to UTC,
+  // preserving the tutor's wall-clock time across DST boundaries.
   const intervalWeeks = d.scheduleType === 'fortnightly' ? 2 : 1
   const tutorTimezone = stateToTimezone(tutor.state)
-  // Interpret the admin's entered date+time in the tutor's local timezone
-  const firstSession = toUtcFromZoned(`${d.startDate}T${d.sessionTime}`, tutorTimezone)
+  const firstLocalDate = parseISO(d.startDate)
+
+  const toSessionUtc = (localDate: Date) =>
+    toUtcFromZoned(`${format(localDate, 'yyyy-MM-dd')}T${d.sessionTime}`, tutorTimezone)
 
   const sessionDates: Date[] = []
   if (d.scheduleType === 'single') {
-    sessionDates.push(firstSession)
+    sessionDates.push(toSessionUtc(firstLocalDate))
   } else if (d.sessionsCount) {
     for (let i = 0; i < d.sessionsCount; i++) {
-      sessionDates.push(addWeeks(firstSession, i * intervalWeeks))
+      sessionDates.push(toSessionUtc(addWeeks(firstLocalDate, i * intervalWeeks)))
     }
   } else if (d.recurrenceEndDate) {
     const end = parseISO(d.recurrenceEndDate)
-    let cur = firstSession
+    let cur = firstLocalDate
     while (isBefore(cur, end) || isEqual(cur, end)) {
-      sessionDates.push(cur)
+      sessionDates.push(toSessionUtc(cur))
       cur = addWeeks(cur, intervalWeeks)
     }
   } else {
     // Ongoing — generate 52 weeks (1 year) of sessions upfront
     const weeksToGenerate = intervalWeeks === 2 ? 26 : 52
     for (let i = 0; i < weeksToGenerate; i++) {
-      sessionDates.push(addWeeks(firstSession, i * intervalWeeks))
+      sessionDates.push(toSessionUtc(addWeeks(firstLocalDate, i * intervalWeeks)))
     }
   }
 
@@ -240,7 +244,7 @@ export async function POST(request: Request) {
   )
 
   // 12. Send email — welcome + magic link for new parents, booking confirmation for existing
-  const firstSessionLabel = formatSessionFull(firstSession, tutorTimezone)
+  const firstSessionLabel = formatSessionFull(sessionDates[0], tutorTimezone)
   try {
     if (isNewParent && authUserId) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
