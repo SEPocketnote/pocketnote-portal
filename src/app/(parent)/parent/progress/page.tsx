@@ -8,7 +8,7 @@ export default async function ProgressPage() {
 
   const { data: parent } = await supabase
     .from('parents')
-    .select('id, timezone')
+    .select('id, state, timezone')
     .eq('user_id', user!.id)
     .single()
 
@@ -51,7 +51,7 @@ export default async function ProgressPage() {
       ) : (
         <div className="space-y-4">
           {rows.map(({ session, report, booking }) => {
-            const tz = (parent as any)?.timezone ?? stateToTimezone(booking?.tutors?.state)
+            const tz = (parent as any)?.timezone ?? stateToTimezone((parent as any)?.state) ?? 'Australia/Sydney'
             const tutorName = booking?.tutors?.preferred_name?.trim() || booking?.tutors?.legal_name
             return (
               <div key={session.id} className="bg-white rounded-2xl shadow-card p-6">
