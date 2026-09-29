@@ -193,7 +193,8 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
         <hr className="border-border" />
 
         <Section title="Session preferences">
-          <Row label="Location" value={[enquiry.location, enquiry.postcode].filter(Boolean).join(' ') || '—'} />
+          <Row label="Location" value={enquiry.location || '—'} />
+          {enquiry.postcode && <Row label="Postcode" value={enquiry.postcode} />}
           <Row label="Mode" value={enquiry.mode_preference || '—'} />
           <Row label="Preferred days" value={enquiry.preferred_days?.join(', ') || '—'} />
           <Row label="Preferred times" value={enquiry.preferred_times || '—'} />
