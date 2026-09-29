@@ -1350,6 +1350,7 @@ export async function sendEnquiryNotification(data: {
   yearLevel: string
   subjects: string[]
   location: string
+  postcode?: string
   modePreference: string
   preferredDays?: string[]
   preferredTimes?: string
@@ -1371,7 +1372,7 @@ export async function sendEnquiryNotification(data: {
         <tr><td><strong>Student</strong></td><td>${data.studentName}</td></tr>
         <tr><td><strong>Year level</strong></td><td>${data.yearLevel}</td></tr>
         <tr><td><strong>Subjects</strong></td><td>${data.subjects.join(', ')}</td></tr>
-        <tr><td><strong>Location</strong></td><td>${data.location}</td></tr>
+        <tr><td><strong>Location</strong></td><td>${[data.location, data.postcode].filter(Boolean).join(' ')}</td></tr>
         <tr><td><strong>Mode</strong></td><td>${data.modePreference}</td></tr>
         <tr><td><strong>Preferred days</strong></td><td>${data.preferredDays?.join(', ') || '—'}</td></tr>
         <tr><td><strong>Preferred times</strong></td><td>${data.preferredTimes || '—'}</td></tr>

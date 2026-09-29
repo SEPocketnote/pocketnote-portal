@@ -18,6 +18,7 @@ type Enquiry = {
   year_level: string | null
   subjects: string[]
   location: string | null
+  postcode: string | null
   mode_preference: string | null
   preferred_days: string[]
   preferred_times: string | null
@@ -192,7 +193,7 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
         <hr className="border-border" />
 
         <Section title="Session preferences">
-          <Row label="Location" value={enquiry.location || '—'} />
+          <Row label="Location" value={[enquiry.location, enquiry.postcode].filter(Boolean).join(' ') || '—'} />
           <Row label="Mode" value={enquiry.mode_preference || '—'} />
           <Row label="Preferred days" value={enquiry.preferred_days?.join(', ') || '—'} />
           <Row label="Preferred times" value={enquiry.preferred_times || '—'} />

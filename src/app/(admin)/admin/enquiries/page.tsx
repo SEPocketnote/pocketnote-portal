@@ -162,7 +162,10 @@ export default async function EnquiriesPage({
                     <td className="px-4 py-3 text-muted-foreground">
                       {e.subjects?.join(', ') || '—'}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{e.location || '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {e.location || '—'}
+                      {e.postcode && <div className="text-xs">{e.postcode}</div>}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[e.status] ?? ''}`}>
                         {e.status}
