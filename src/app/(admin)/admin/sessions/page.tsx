@@ -23,7 +23,7 @@ export default async function SessionsPage({
       id, scheduled_at, status, duration_minutes,
       progress_reports ( covered, went_well, needs_work, next_session_plan, notes ),
       bookings!inner(
-        id, mode,
+        id, mode, status,
         parents ( id, name ),
         students ( name ),
         tutors ( id, legal_name, preferred_name, state )
@@ -43,9 +43,11 @@ export default async function SessionsPage({
     .eq('active', true)
     .order('legal_name')
 
-  const filtered = tutorParam
-    ? (sessions ?? []).filter((s: any) => s.bookings?.tutors?.id === tutorParam)
-    : (sessions ?? [])
+  const filtered = (sessions ?? []).filter((s: any) => {
+    if (tutorParam && s.bookings?.tutors?.id !== tutorParam) return false
+    if (filter === 'upcoming' && s.bookings?.status === 'cancelled') return false
+    return true
+  })
 
   return (
     <div>
