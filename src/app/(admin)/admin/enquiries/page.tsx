@@ -22,6 +22,15 @@ export default async function EnquiriesPage({
   const { status, q, sort, dir } = await searchParams
   const supabase = await createClient()
 
+  // Counts for conversion stats — unaffected by current filter
+  const { data: allEnquiries } = await supabase.from('enquiries').select('status')
+  const totalCount = allEnquiries?.length ?? 0
+  const confirmedCount = allEnquiries?.filter(e => e.status === 'confirmed').length ?? 0
+  const unconvertedCount = allEnquiries?.filter(e => e.status === 'unconverted').length ?? 0
+  const closedCount = confirmedCount + unconvertedCount
+  const overallRate = totalCount > 0 ? Math.round((confirmedCount / totalCount) * 100) : null
+  const closeRate = closedCount > 0 ? Math.round((confirmedCount / closedCount) * 100) : null
+
   let query = supabase.from('enquiries').select('*')
 
   if (status) query = query.eq('status', status)
@@ -75,6 +84,25 @@ export default async function EnquiriesPage({
           + New enquiry
         </Link>
       </div>
+
+      {(overallRate !== null || closeRate !== null) && (
+        <div className="flex gap-4 mb-5">
+          {overallRate !== null && (
+            <div className="bg-white rounded-xl shadow-card px-4 py-3 min-w-[120px]">
+              <p className="text-xs text-muted-foreground mb-0.5">Overall rate</p>
+              <p className="text-2xl font-semibold">{overallRate}%</p>
+              <p className="text-xs text-muted-foreground">{confirmedCount} of {totalCount}</p>
+            </div>
+          )}
+          {closeRate !== null && (
+            <div className="bg-white rounded-xl shadow-card px-4 py-3 min-w-[120px]">
+              <p className="text-xs text-muted-foreground mb-0.5">Close rate</p>
+              <p className="text-2xl font-semibold">{closeRate}%</p>
+              <p className="text-xs text-muted-foreground">{confirmedCount} of {closedCount} closed</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 mb-5">
         {/* Status filter tabs */}
