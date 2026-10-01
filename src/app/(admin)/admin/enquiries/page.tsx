@@ -89,14 +89,14 @@ export default async function EnquiriesPage({
         <div className="flex gap-4 mb-5">
           {overallRate !== null && (
             <div className="bg-white rounded-xl shadow-card px-4 py-3 min-w-[120px]">
-              <p className="text-xs text-muted-foreground mb-0.5">Overall rate</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Conversion rate</p>
               <p className="text-2xl font-semibold">{overallRate}%</p>
               <p className="text-xs text-muted-foreground">{confirmedCount} of {totalCount}</p>
             </div>
           )}
           {closeRate !== null && (
             <div className="bg-white rounded-xl shadow-card px-4 py-3 min-w-[120px]">
-              <p className="text-xs text-muted-foreground mb-0.5">Close rate</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Win rate</p>
               <p className="text-2xl font-semibold">{closeRate}%</p>
               <p className="text-xs text-muted-foreground">{confirmedCount} of {closedCount} closed</p>
             </div>
