@@ -57,6 +57,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { error } = await admin.from('tutors').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Sync email change to auth user
+  if (updates.email) {
+    try {
+      const { data: tutor } = await admin.from('tutors').select('user_id').eq('id', id).single()
+      if (tutor?.user_id) {
+        await admin.auth.admin.updateUserById(tutor.user_id, { email: updates.email })
+      }
+    } catch (err) {
+      console.error('[tutors] auth email sync failed:', err)
+    }
+  }
+
   // Send approval email when a tutor is verified for the first time
   if (updates.verified === true) {
     try {
