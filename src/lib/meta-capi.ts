@@ -39,6 +39,7 @@ export async function sendMetaLeadEvent({
     action_source: 'website',
     event_source_url: sourceUrl,
     user_data: userData,
+    custom_data: { currency: 'AUD' },
   }
   if (eventId) event.event_id = eventId
 
