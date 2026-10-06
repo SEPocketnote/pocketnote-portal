@@ -15,6 +15,7 @@ const Schema = z.object({
   preferredTimes: z.string().nullable().optional(),
   howHeard: z.string().nullable().optional(),
   status: z.enum(['new', 'contacted', 'confirmed', 'waitlisted', 'unconverted']).optional(),
+  unconvertedReason: z.string().nullable().optional(),
 })
 
 export async function PATCH(
@@ -46,6 +47,7 @@ export async function PATCH(
   if ('preferredTimes' in d) updates.preferred_times = d.preferredTimes
   if ('howHeard' in d) updates.how_heard = d.howHeard
   if (d.status !== undefined) updates.status = d.status
+  if ('unconvertedReason' in d) updates.unconverted_reason = d.unconvertedReason
 
   const { error } = await supabase.from('enquiries').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

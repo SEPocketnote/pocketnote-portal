@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const STATUSES = ['new', 'contacted', 'confirmed', 'waitlisted', 'unconverted'] as const
+const UNCONVERTED_REASONS = ['Price', 'Booked elsewhere', 'No tutor available', 'Took too long', 'Low quality lead', 'Unable to contact', 'Needs not met', 'Other']
 const SUBJECTS = ['Maths', 'English', 'Science', 'Chemistry', 'Physics', 'Biology', 'History', 'Geography', 'Economics', 'Other']
 const YEAR_LEVELS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12']
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -24,6 +25,7 @@ type Enquiry = {
   preferred_times: string | null
   how_heard: string | null
   status: string
+  unconverted_reason: string | null
 }
 
 type FormState = {
@@ -39,9 +41,13 @@ type FormState = {
   preferredTimes: string
   howHeard: string
   status: string
+  unconvertedReasonOption: string
+  unconvertedReasonOther: string
 }
 
 function formFromEnquiry(e: Enquiry): FormState {
+  const reason = e.unconverted_reason ?? ''
+  const isPreset = UNCONVERTED_REASONS.includes(reason)
   return {
     parentName: e.parent_name,
     email: e.email,
@@ -55,6 +61,8 @@ function formFromEnquiry(e: Enquiry): FormState {
     preferredTimes: e.preferred_times ?? '',
     howHeard: e.how_heard ?? '',
     status: e.status,
+    unconvertedReasonOption: reason ? (isPreset ? reason : 'Other') : '',
+    unconvertedReasonOther: reason && !isPreset ? reason : '',
   }
 }
 
@@ -136,6 +144,16 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
 
   async function handleSave() {
     if (!form) return
+
+    const unconvertedReason = form.status === 'unconverted'
+      ? (form.unconvertedReasonOption === 'Other' ? form.unconvertedReasonOther.trim() : form.unconvertedReasonOption)
+      : null
+
+    if (form.status === 'unconverted' && !unconvertedReason) {
+      setError('Please select a reason for not converting this lead.')
+      return
+    }
+
     setSaving(true)
     setError('')
     const res = await fetch(`/api/admin/enquiries/${enquiry.id}`, {
@@ -154,6 +172,7 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
         preferredTimes: form.preferredTimes || null,
         howHeard: form.howHeard || null,
         status: form.status,
+        unconvertedReason,
       }),
     })
     setSaving(false)
@@ -218,6 +237,9 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
               </label>
             ))}
           </div>
+          {enquiry.status === 'unconverted' && enquiry.unconverted_reason && (
+            <p className="text-sm text-muted-foreground mt-2">Reason: {enquiry.unconverted_reason}</p>
+          )}
         </Section>
       </div>
     )
@@ -310,6 +332,27 @@ export default function EnquiryDetails({ enquiry }: { enquiry: Enquiry }) {
             </label>
           ))}
         </div>
+        {f.status === 'unconverted' && (
+          <div className="space-y-2 pt-1">
+            <select
+              value={f.unconvertedReasonOption}
+              onChange={(e) => set('unconvertedReasonOption', e.target.value)}
+              className="input"
+            >
+              <option value="">Select reason…</option>
+              {UNCONVERTED_REASONS.map((r) => <option key={r}>{r}</option>)}
+            </select>
+            {f.unconvertedReasonOption === 'Other' && (
+              <input
+                type="text"
+                value={f.unconvertedReasonOther}
+                onChange={(e) => set('unconvertedReasonOther', e.target.value)}
+                placeholder="Describe reason…"
+                className="input"
+              />
+            )}
+          </div>
+        )}
       </section>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
