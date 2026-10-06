@@ -45,7 +45,7 @@ export default async function SessionsPage({
 
   const filtered = (sessions ?? []).filter((s: any) => {
     if (tutorParam && s.bookings?.tutors?.id !== tutorParam) return false
-    if (s.bookings?.status === 'cancelled' && s.status === 'scheduled') return false
+    if (s.bookings?.status === 'cancelled' && s.status !== 'completed') return false
     return true
   })
 
