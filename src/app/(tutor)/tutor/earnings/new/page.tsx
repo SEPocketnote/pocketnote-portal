@@ -7,7 +7,11 @@ import InvoiceForm from './InvoiceForm'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NewInvoicePage() {
+export default async function NewInvoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sessions?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -77,9 +81,15 @@ export default async function NewInvoicePage() {
 
   const uninvoiced = (allCompletedSessions ?? []).filter(s => !invoicedSessionIds.has(s.id))
 
-  if (uninvoiced.length === 0) redirect('/tutor/earnings')
+  const { sessions: sessionsParam } = await searchParams
+  const requestedIds = sessionsParam ? new Set(sessionsParam.split(',')) : null
+  const toInvoice = requestedIds
+    ? uninvoiced.filter(s => requestedIds.has(s.id))
+    : uninvoiced
 
-  const sessions = await Promise.all(uninvoiced.map(async s => {
+  if (toInvoice.length === 0) redirect('/tutor/earnings')
+
+  const sessions = await Promise.all(toInvoice.map(async s => {
     const booking = s.bookings as any
     const bookingMode: 'online' | 'in-person' = booking?.mode === 'in-person' ? 'in-person' : 'online'
 

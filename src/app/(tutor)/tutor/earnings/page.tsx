@@ -44,6 +44,26 @@ function getPayCycleBanner() {
   return { deadlineLabel: `${deadlineLabel}, 6:00 pm`, isUrgent, isPast, daysToDeadline }
 }
 
+function payWeekStart(scheduledAt: string, tz: string): string {
+  const localDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(scheduledAt))
+  const [year, month, day] = localDate.split('-').map(Number)
+  const d = new Date(year, month - 1, day)
+  const dow = d.getDay()
+  const daysToMon = dow === 0 ? 6 : dow - 1
+  const mon = new Date(year, month - 1, day - daysToMon)
+  return `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, '0')}-${String(mon.getDate()).padStart(2, '0')}`
+}
+
+function payWeekLabel(weekStart: string): string {
+  const [year, month, day] = weekStart.split('-').map(Number)
+  const mon = new Date(year, month - 1, day)
+  const sun = new Date(year, month - 1, day + 6)
+  const fmt = (d: Date) => new Intl.DateTimeFormat('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }).format(d)
+  return `${fmt(mon)} – ${fmt(sun)}`
+}
+
 export const dynamic = 'force-dynamic'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -93,11 +113,6 @@ export default async function TutorEarningsPage() {
     }
   }
 
-  // For estimating uninvoiced earnings, use the tutor's primary mode rate
-  const tutorMode = tutor.mode ?? 'either'
-  const primaryRate = tutorMode === 'in-person'
-    ? inpersonRateCents
-    : onlineRateCents  // online or either → use online rate for estimate
   const hasAnyRate = !!(onlineRateCents || inpersonRateCents)
 
   // Get all completed sessions for this tutor
@@ -143,12 +158,6 @@ export default async function TutorEarningsPage() {
   const totalPaid = (invoices ?? []).filter(i => i.status === 'paid').reduce((sum, i) => sum + i.total_cents, 0)
   const totalPending = (invoices ?? []).filter(i => i.status !== 'paid' && i.status !== 'rejected').reduce((sum, i) => sum + i.total_cents, 0)
 
-  // Estimate for uninvoiced (best-effort using primary rate)
-  const uninvoicedMinutes = uninvoiced.reduce((sum, s) => sum + (s.duration_minutes ?? 60), 0)
-  const uninvoicedEstimate = primaryRate
-    ? Math.round((uninvoicedMinutes / 60) * primaryRate)
-    : null
-
   const payCycle = getPayCycleBanner()
   const bankDetails = tutor.bank_details as { account_name?: string; bsb?: string; account_number?: string } | null
   const hasBankDetails = !!(bankDetails?.account_name && bankDetails?.bsb && bankDetails?.account_number)
@@ -189,11 +198,6 @@ export default async function TutorEarningsPage() {
                 : `A pay week runs Monday to Sunday. Submit your invoice for all sessions completed during the week by ${payCycle.deadlineLabel} (Sydney time). Late invoice submissions will be processed in the following pay run.`}
             </p>
           </div>
-          {uninvoiced.length > 0 && hasAnyRate && !payCycle.isPast && (
-            <Link href="/tutor/earnings/new" className="shrink-0 btn btn-primary text-sm px-4 py-2 whitespace-nowrap">
-              Submit now
-            </Link>
-          )}
         </div>
       </div>
 
@@ -239,7 +243,7 @@ export default async function TutorEarningsPage() {
         </div>
       </div>
 
-      {/* Uninvoiced sessions */}
+      {/* Uninvoiced sessions grouped by pay week */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
           Uninvoiced sessions
@@ -248,40 +252,60 @@ export default async function TutorEarningsPage() {
           <div className="bg-white rounded-2xl shadow-card p-8 text-center text-sm text-muted-foreground">
             No completed sessions awaiting invoicing.
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            <div className="divide-y divide-border">
-              {uninvoiced.map((s) => {
-                const student = (s.bookings as any)?.students
+        ) : (() => {
+          const groups = new Map<string, typeof uninvoiced>()
+          for (const s of uninvoiced) {
+            const key = payWeekStart(s.scheduled_at, tz)
+            if (!groups.has(key)) groups.set(key, [])
+            groups.get(key)!.push(s)
+          }
+          const sortedKeys = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a))
+          return (
+            <div className="space-y-4">
+              {sortedKeys.map(weekKey => {
+                const weekSessions = groups.get(weekKey)!
+                const totalMinutes = weekSessions.reduce((sum, s) => sum + (s.duration_minutes ?? 60), 0)
+                const sessionIds = weekSessions.map(s => s.id).join(',')
                 return (
-                  <div key={s.id} className="flex items-center justify-between px-5 py-3">
-                    <div>
-                      <p className="text-sm font-medium">{student?.name ?? '—'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)}
+                  <div key={weekKey} className="bg-white rounded-2xl shadow-card overflow-hidden">
+                    <div className="px-5 py-3 border-b border-border bg-[#F9F8F6]">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        {payWeekLabel(weekKey)}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>
+                    <div className="divide-y divide-border">
+                      {weekSessions.map((s) => {
+                        const student = (s.bookings as any)?.students
+                        return (
+                          <div key={s.id} className="flex items-center justify-between px-5 py-3">
+                            <div>
+                              <p className="text-sm font-medium">{student?.name ?? '—'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatSessionDateFullYear(s.scheduled_at, tz)} · {formatTime(s.scheduled_at, tz)}
+                              </p>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{s.duration_minutes ?? 60} min</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="border-t border-border px-5 py-4 bg-[#F5F4F2] flex items-center justify-between">
+                      <div className="text-sm">
+                        <span className="font-medium">{weekSessions.length} session{weekSessions.length !== 1 ? 's' : ''}</span>
+                        <span className="text-muted-foreground"> · {Math.floor(totalMinutes / 60)}h{totalMinutes % 60 > 0 ? ` ${totalMinutes % 60}m` : ''}</span>
+                      </div>
+                      {hasAnyRate && (
+                        <Link href={`/tutor/earnings/new?sessions=${sessionIds}`} className="btn btn-primary text-sm px-4 py-2">
+                          Create Invoice
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 )
               })}
             </div>
-            <div className="border-t border-border px-5 py-4 bg-[#F5F4F2] flex items-center justify-between">
-              <div className="text-sm">
-                <span className="font-medium">{uninvoiced.length} session{uninvoiced.length !== 1 ? 's' : ''}</span>
-                <span className="text-muted-foreground"> · {Math.floor(uninvoicedMinutes / 60)}h {uninvoicedMinutes % 60 > 0 ? `${uninvoicedMinutes % 60}m` : ''}</span>
-                {uninvoicedEstimate !== null && (
-                  <span className="text-muted-foreground"> · ~${(uninvoicedEstimate / 100).toFixed(2)} estimated</span>
-                )}
-              </div>
-              {hasAnyRate && (
-                <Link href="/tutor/earnings/new" className="btn btn-primary text-sm px-4 py-2">
-                  Create Invoice
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
+          )
+        })()}
       </section>
 
       {/* Invoice history */}
